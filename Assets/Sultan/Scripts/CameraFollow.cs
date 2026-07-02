@@ -14,8 +14,22 @@ public class CameraFollow : MonoBehaviour
     private float clampMinX;
     private float clampMaxX;
 
+    private Vector3 _activeOffset;
+    private Vector3 _activeRotation;
+    private Vector3 _goalOffset;
+    private Vector3 _goalRotation;
+    private float _blendSpeed = 5f;
+    private bool _hasOverride;
+    private bool _lockX;
+    private float _lockedX;
+
     private void Start()
     {
+        _activeOffset = offset;
+        _activeRotation = cameraRotation;
+        _goalOffset = offset;
+        _goalRotation = cameraRotation;
+
         transform.eulerAngles = cameraRotation;
         RecalculateClampLimits();
 
@@ -30,11 +44,42 @@ public class CameraFollow : MonoBehaviour
     {
         if (target == null) return;
 
-        float desiredX = Mathf.Clamp(target.position.x + offset.x, clampMinX, clampMaxX);
-        Vector3 desiredPos = new Vector3(desiredX, offset.y, offset.z);
+        float bt = 1f - Mathf.Exp(-_blendSpeed * Time.deltaTime);
+        _activeOffset = Vector3.Lerp(_activeOffset, _goalOffset, bt);
+        _activeRotation = Vector3.Lerp(_activeRotation, _goalRotation, bt);
+        transform.eulerAngles = _activeRotation;
+
+        float desiredX;
+        if (_lockX)
+            desiredX = _lockedX + _activeOffset.x;
+        else if (_hasOverride)
+            desiredX = target.position.x + _activeOffset.x;
+        else
+            desiredX = Mathf.Clamp(target.position.x + _activeOffset.x, clampMinX, clampMaxX);
+
+        Vector3 desiredPos = new Vector3(desiredX, _activeOffset.y, _activeOffset.z);
 
         float t = 1f - Mathf.Exp(-smoothSpeed * Time.deltaTime);
         transform.position = Vector3.Lerp(transform.position, desiredPos, t);
+    }
+
+    public void SetOverride(Vector3 overrideOffset, Vector3 overrideRotation, float speed, bool lockX = false, float lockedXPos = 0f)
+    {
+        _goalOffset = overrideOffset;
+        _goalRotation = overrideRotation;
+        _blendSpeed = speed;
+        _hasOverride = true;
+        _lockX = lockX;
+        _lockedX = lockedXPos;
+    }
+
+    public void ClearOverride(float speed)
+    {
+        _goalOffset = offset;
+        _goalRotation = cameraRotation;
+        _blendSpeed = speed;
+        _hasOverride = false;
+        _lockX = false;
     }
 
     public void SetTarget(Transform newTarget)
@@ -82,7 +127,6 @@ public class CameraFollow : MonoBehaviour
             clampMaxX = center;
         }
     }
-
 
     private void OnDrawGizmosSelected()
     {
