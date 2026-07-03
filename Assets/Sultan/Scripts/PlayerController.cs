@@ -156,11 +156,15 @@ public class PlayerController : MonoBehaviour
         {
             speed = normalWalkSpeed;
             animator.SetBool("IsCrouch" , !isCrouching);
+            characterController.height = 1;
+            characterController.center = Vector3.zero;
         }
         else if (!isCrouching)
         {
             animator.SetBool("IsCrouch", !isCrouching);
             speed = CrouchMoveSpeed;
+            characterController.height = 0.5f;
+            characterController.center = new Vector3(0, -0.23f, 0);
         }
     }
 
