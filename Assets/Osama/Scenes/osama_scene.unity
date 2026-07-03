@@ -348,6 +348,11 @@ MonoBehaviour:
   emissionBoost: 1
   roomLight: {fileID: 0}
   roomLightIntensity: 8
+  audioSource: {fileID: 0}
+  barIgniteSound: {fileID: 8300000, guid: f7314388aaa80ab45aa2de1a3645988b, type: 3}
+  barPitchStart: 0.9
+  barPitchStep: 0.05
+  eyeIgniteSound: {fileID: 8300000, guid: 7ff19bfd88ceefa45bfb710a3bd4b5cb, type: 3}
   playOnStart: 1
   loop: 1
 --- !u!4 &249906078 stripped
@@ -1501,9 +1506,10 @@ GameObject:
   - component: {fileID: 1961346060}
   - component: {fileID: 1961346065}
   - component: {fileID: 1961346064}
+  - component: {fileID: 1961346066}
   m_Layer: 0
   m_Name: Cube
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1523,7 +1529,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -1658,6 +1664,22 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1961346066
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1961346059}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c04fcda0c664b5744b166367c51f30c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraZone
+  zoneCamera: {fileID: 0}
+  activePriority: 20
+  inactivePriority: 0
+  playerTag: Player
 --- !u!1 &2097505921
 GameObject:
   m_ObjectHideFlags: 0

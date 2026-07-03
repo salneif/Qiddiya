@@ -50,6 +50,22 @@ public class RobotFurnaceChargeSequence : MonoBehaviour
     [Tooltip("شدة الضوء الأحمر لحظة الإطلاق")]
     [SerializeField] private float roomLightIntensity = 8f;
 
+    [Header("الأصوات")]
+    [Tooltip("مصدر الصوت المستخدم لتشغيل مقاطع الشحن (يُضاف تلقائيًا إذا تُرك فارغًا)")]
+    [SerializeField] private AudioSource audioSource;
+
+    [Tooltip("صوت اشتعال الشريط: طقّة معدنية + أزيز كهربائي خفيف. يتكرر لكل شريط بطبقة صوت (pitch) أعلى تدريجيًا")]
+    [SerializeField] private AudioClip barIgniteSound;
+
+    [Tooltip("طبقة الصوت (pitch) عند أول شريط")]
+    [SerializeField] private float barPitchStart = 0.9f;
+
+    [Tooltip("مقدار ارتفاع طبقة الصوت مع كل شريط جديد")]
+    [SerializeField] private float barPitchStep = 0.05f;
+
+    [Tooltip("صوت اشتعال العيون: قصير وحاد (زقّة/طنّة معدنية) يميّز آخر مرحلة قبل الإطلاق")]
+    [SerializeField] private AudioClip eyeIgniteSound;
+
     [Header("عام")]
     [SerializeField] private bool playOnStart = true;
     [SerializeField] private bool loop = true;
@@ -80,6 +96,13 @@ public class RobotFurnaceChargeSequence : MonoBehaviour
     {
         barEmitters = BuildEmitters(bars);
         eyeEmitters = BuildEmitters(eyes);
+
+        if (audioSource == null)
+            audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+            audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 1f;
 
         if (roomLight != null)
         {
@@ -163,14 +186,16 @@ public class RobotFurnaceChargeSequence : MonoBehaviour
             if (roomLight != null) roomLight.enabled = false;
 
             // 2) الشحن: الأشرطة من الأسفل للأعلى (تبقى مشتعلة تراكميًا)
-            foreach (var bar in barEmitters)
+            for (int i = 0; i < barEmitters.Length; i++)
             {
-                yield return RampEmitter(bar, barRampTime);
+                PlayBarSound(i);
+                yield return RampEmitter(barEmitters[i], barRampTime);
                 if (barDelay > 0f)
                     yield return new WaitForSeconds(barDelay);
             }
 
-            // 3) العيون آخر ما يشتعل
+            // 3) العيون آخر ما يشتعل (صوت حاد مميز)
+            PlayEyeSound();
             yield return RampGroup(eyeEmitters, eyeRampTime);
 
             // 4) الإطلاق: الغرفة تولّع أحمر
@@ -205,6 +230,20 @@ public class RobotFurnaceChargeSequence : MonoBehaviour
     private void OnFire()
     {
         // TODO: إطلاق شعاع الليزر من العيون + قتل الشخصية (لاحقًا)
+    }
+
+    private void PlayBarSound(int barIndex)
+    {
+        if (barIgniteSound == null) return;
+        audioSource.pitch = barPitchStart + barPitchStep * barIndex;
+        audioSource.PlayOneShot(barIgniteSound);
+    }
+
+    private void PlayEyeSound()
+    {
+        if (eyeIgniteSound == null) return;
+        audioSource.pitch = 1f;
+        audioSource.PlayOneShot(eyeIgniteSound);
     }
 
     private IEnumerator RampEmitter(Emitter emitter, float duration)
