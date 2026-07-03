@@ -27,7 +27,9 @@ public class SideScroller25DController : MonoBehaviour
     [SerializeField] private Vector3 lateralAxis = Vector3.right;
     [Tooltip("محور العمق (أمام/خلف) المسموح بحركة محدودة عليه")]
     [SerializeField] private Vector3 depthAxis = Vector3.forward;
-    [Tooltip("أقصى مسافة يمكن للشخصية الابتعاد بها عن خط البداية على محور العمق")]
+    [Tooltip("إذا مفعّل: يوقف اللاعب عند depthRange بشكل صناعي. أطفئه (الوضع الافتراضي) عشان الجدران/الكولايدرات فقط هي اللي تحدد العمق مثل Little Nightmares")]
+    [SerializeField] private bool constrainDepthToRange = false;
+    [Tooltip("أقصى مسافة يمكن للشخصية الابتعاد بها عن خط البداية على محور العمق (يُستخدم فقط عند تفعيل constrainDepthToRange)")]
     [SerializeField] private float depthRange = 0.6f;
     [SerializeField] private float depthSpeedScale = 0.5f;
 
@@ -129,8 +131,9 @@ public class SideScroller25DController : MonoBehaviour
     private float ClampedDepthInput()
     {
         float depthInput = moveInput.y;
-        float currentDepth = Vector3.Dot(transform.position, DepthDir) - depthOrigin;
+        if (!constrainDepthToRange) return depthInput;
 
+        float currentDepth = Vector3.Dot(transform.position, DepthDir) - depthOrigin;
         if (currentDepth >= depthRange && depthInput > 0f) return 0f;
         if (currentDepth <= -depthRange && depthInput < 0f) return 0f;
         return depthInput;
