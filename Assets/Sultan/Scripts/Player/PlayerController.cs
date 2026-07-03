@@ -87,7 +87,7 @@ public class PlayerController : MonoBehaviour
 
        
         move();
-       // zMove();
+        zMove();
         flip();
         updateAnimator();
 
