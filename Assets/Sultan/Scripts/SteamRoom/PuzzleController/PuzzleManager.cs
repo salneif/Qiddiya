@@ -55,7 +55,7 @@ public class PuzzleManager : MonoBehaviour
         if (Mathf.Abs(total - targetPressure) <= tolerance && allBoxes)
         {
             _solved = true;
-            Debug.Log("[Puzzle] SOLVED — door trigger point");
+            Debug.Log("[Puzzle] SOLVED");
             OnPuzzleSolved?.Invoke();
         }
     }
