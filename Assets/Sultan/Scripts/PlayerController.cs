@@ -106,6 +106,7 @@ public class PlayerController : MonoBehaviour
     public CharacterController characterController;
     public Animator animator;
     public float speed = 5f;
+    public float normalWalkSpeed;
     public float acceleration = 35f;
     public float deceleration = 50f;
     public float zMoveSpeed = 2.5f;
@@ -137,11 +138,30 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float blendTimeMovement;
     private float _blendSpeed;
 
+    // Ali - Conections
+    [SerializeField] private A_Crouch crouchSystem;
+
 
     void Start()
     {
         characterController = GetComponent<CharacterController>();
         _pusher = GetComponent<BoxPusher>();
+
+        crouchSystem.OnCrouch += OnCrouch;
+    }
+
+    private void OnCrouch(bool isCrouching, float CrouchMoveSpeed)
+    {
+        if(isCrouching)
+        {
+            speed = normalWalkSpeed;
+            animator.SetBool("IsCrouch" , !isCrouching);
+        }
+        else if (!isCrouching)
+        {
+            animator.SetBool("IsCrouch", !isCrouching);
+            speed = CrouchMoveSpeed;
+        }
     }
 
     void Update()
@@ -151,7 +171,7 @@ public class PlayerController : MonoBehaviour
         _inputZ = Input.GetAxisRaw("Vertical");
 
         move();
-        zMove();
+       // zMove();
         flip();
         updateAnimator();
 
