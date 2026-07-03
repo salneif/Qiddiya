@@ -54,8 +54,9 @@ public class PlayerController : MonoBehaviour
     private void OnJump(float jumpForce)
     {
        
-            _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
-            _isInAir = true;
+        _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
+        animator.SetTrigger("Jump");
+            
 
         
     }
@@ -65,16 +66,16 @@ public class PlayerController : MonoBehaviour
         if(isCrouching)
         {
             speed = normalWalkSpeed;
-            animator.SetBool("IsCrouch" , true);
+            animator.SetBool("IsCrouch" , false);
             characterController.height = 1;
             characterController.center = Vector3.zero;
         }
         else if (!isCrouching)
         {
-            animator.SetBool("IsCrouch", false);
+            animator.SetBool("IsCrouch", true);
             speed = CrouchMoveSpeed;
             characterController.height = 0.5f;
-            characterController.center = new Vector3(0, -0.23f, 0);
+            characterController.center = new Vector3(0, -0.25f, 0);
         }
     }
 
@@ -84,6 +85,7 @@ public class PlayerController : MonoBehaviour
         _inputX = Input.GetAxisRaw("Horizontal");
         _inputZ = Input.GetAxisRaw("Vertical");
 
+       
         move();
        // zMove();
         flip();
@@ -140,8 +142,7 @@ public class PlayerController : MonoBehaviour
     void updateAnimator()
     {
         if (animator == null) return;
-        // animator.SetFloat(SpeedHash, Mathf.Abs(_currentSpeed));
-        // animator.SetBool(GroundedHash, _isGrounded);
+       
         // if (_pusher != null) animator.SetBool(PushingHash, _pusher.IsPushing);
 
         //Ali 
@@ -158,6 +159,17 @@ public class PlayerController : MonoBehaviour
         _blendSpeed = Mathf.Lerp(_blendSpeed, targetSpeed, Time.deltaTime * blendTimeMovement);
         Debug.Log(_blendSpeed);
          animator.SetFloat("MovementBlend", _blendSpeed);
+
+
+        if(!IsGrounded)
+        {
+            animator.SetBool("InAir" , true);
+        }
+        else
+        {
+            animator.SetBool("InAir", false);
+
+        }
         //Ali
 
     }

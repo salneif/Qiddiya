@@ -31,6 +31,7 @@ public class A_CrouchAndJump : MonoBehaviour
     {
         if (context.performed && characterController.isGrounded)
         {
+            OnCrouch?.Invoke(isCrouching, crouchWalkSpeed);
             if (isCrouching)
             {
                 isCrouching = false;
@@ -39,7 +40,7 @@ public class A_CrouchAndJump : MonoBehaviour
             {
                 isCrouching = true;
             }
-            OnCrouch?.Invoke(isCrouching, crouchWalkSpeed);
+           
         }
        
     }
