@@ -126,10 +126,17 @@ public class PlayerController : MonoBehaviour
     private static readonly int GroundedHash = Animator.StringToHash("isGrounded");
     private static readonly int PushingHash = Animator.StringToHash("isPushing");
 
+
+
+
+
+
+
     //Ali- Animation
     [Header("Ali- Animation")]
     [SerializeField] private float blendTimeMovement;
     private float _blendSpeed;
+
 
     void Start()
     {
@@ -149,7 +156,6 @@ public class PlayerController : MonoBehaviour
         flip();
         updateAnimator();
 
-        Debug.Log(_currentSpeed);
     }
 
     void move()
@@ -185,10 +191,14 @@ public class PlayerController : MonoBehaviour
 
     void flip()
     {
-        if (Mathf.Abs(_inputX) < 0.01f) return;
+        Vector3 direction = new Vector3(_inputX,0,_inputZ);
+        if (direction.magnitude < 0.01f) { return; }
+        transform.rotation = Quaternion.LookRotation(direction);
+
+       /* if (Mathf.Abs(_inputX) < 0.01f) return;
         Vector3 s = transform.localScale;
         s.x = Mathf.Sign(_inputX) * Mathf.Abs(s.x);
-        transform.localScale = s;
+        *///transform.localScale = s;
     }
 
     void updateAnimator()
@@ -210,6 +220,7 @@ public class PlayerController : MonoBehaviour
             targetSpeed = 0;
         }
         _blendSpeed = Mathf.Lerp(_blendSpeed, targetSpeed, Time.deltaTime * blendTimeMovement);
+        Debug.Log(_blendSpeed);
          animator.SetFloat("MovementBlend", _blendSpeed);
         //Ali
 
