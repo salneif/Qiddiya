@@ -439,10 +439,58 @@ PrefabInstance:
       propertyPath: m_Height
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+      propertyPath: m_ActionEvents.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+      propertyPath: m_ActionEvents.Array.data[1].m_ActionId
+      value: 04b3895f-2046-47f5-946b-e88c958478ae
+      objectReference: {fileID: 0}
+    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+      propertyPath: m_ActionEvents.Array.data[1].m_ActionName
+      value: 'DefulatController/Jump[/Keyboard/space]'
+      objectReference: {fileID: 0}
+    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+      propertyPath: m_ActionEvents.Array.data[1].m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+      propertyPath: m_ActionEvents.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+      propertyPath: m_ActionEvents.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 8228169314593767981}
+    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+      propertyPath: m_ActionEvents.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+      propertyPath: m_ActionEvents.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: OnInputJump
+      objectReference: {fileID: 0}
+    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+      propertyPath: m_ActionEvents.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: A_CrouchAndJump, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+      propertyPath: m_ActionEvents.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 2197621358410965187, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+      propertyPath: jumpForce
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 2197621358410965187, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: crouchWalkSpeed
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4415379080658964846, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+      propertyPath: crouchAndJumpSystem
+      value: 
+      objectReference: {fileID: 8228169314593767981}
     - target: {fileID: 4435066882100454182, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: m_Name
       value: Gameplay
@@ -497,6 +545,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 9093604355590460308, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
   m_PrefabInstance: {fileID: 7127815602289805949}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &8228169314593767981 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2197621358410965187, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+  m_PrefabInstance: {fileID: 7127815602289805949}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83d687df42658204a90beb9c8f3e3f5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::A_Crouch
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

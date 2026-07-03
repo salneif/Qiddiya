@@ -2,12 +2,13 @@ using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class A_Crouch : MonoBehaviour
+public class A_CrouchAndJump : MonoBehaviour
 {
     // soooooooo we need a way to talk to other scripts made by sultan and osama 
     // we will do that by event system 
     // here we will fire the event and tell movement code about it with the required varlibals
     public event Action<bool, float> OnCrouch;
+    public event Action<float> OnJump;
 
 
     // we need to send some data with it 
@@ -15,9 +16,20 @@ public class A_Crouch : MonoBehaviour
     [SerializeField] private float crouchWalkSpeed;
     [SerializeField] private bool isCrouching = false;
 
+    [Header("Jump Numbers")]
+    [SerializeField] private float jumpForce;
+
+    private CharacterController characterController;
+
+
+    private void Start()
+    {
+        characterController = GetComponent<CharacterController>();
+    }
+
     public void OnInputCrouch(InputAction.CallbackContext context)
     {
-        if (context.performed)
+        if (context.performed && characterController.isGrounded)
         {
             if (isCrouching)
             {
@@ -30,5 +42,25 @@ public class A_Crouch : MonoBehaviour
             OnCrouch?.Invoke(isCrouching, crouchWalkSpeed);
         }
        
+    }
+
+    public void OnInputJump(InputAction.CallbackContext context)
+    {
+        
+
+        if(context.performed && !isCrouching && characterController.isGrounded)
+        {
+            OnJump?.Invoke(jumpForce);
+        }
+
+
+
+
+
+
+
+
+
+     
     }
 }

@@ -21,6 +21,7 @@ public class PlayerController : MonoBehaviour
     private bool _isGrounded;
     private bool _inputEnabled = true;
     private BoxPusher _pusher;
+    private bool _isInAir;
 
     private static readonly int SpeedHash = Animator.StringToHash("speed");
     private static readonly int GroundedHash = Animator.StringToHash("isGrounded");
@@ -38,7 +39,7 @@ public class PlayerController : MonoBehaviour
     private float _blendSpeed;
 
     // Ali - Conections
-    [SerializeField] private A_Crouch crouchSystem;
+    [SerializeField] private A_CrouchAndJump crouchAndJumpSystem;
 
 
     void Start()
@@ -46,7 +47,17 @@ public class PlayerController : MonoBehaviour
         characterController = GetComponent<CharacterController>();
         _pusher = GetComponent<BoxPusher>();
 
-        crouchSystem.OnCrouch += OnCrouch;
+        crouchAndJumpSystem.OnCrouch += OnCrouch;
+        crouchAndJumpSystem.OnJump += OnJump;
+    }
+
+    private void OnJump(float jumpForce)
+    {
+       
+            _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
+            _isInAir = true;
+
+        
     }
 
     private void OnCrouch(bool isCrouching, float CrouchMoveSpeed)
@@ -54,13 +65,13 @@ public class PlayerController : MonoBehaviour
         if(isCrouching)
         {
             speed = normalWalkSpeed;
-            animator.SetBool("IsCrouch" , !isCrouching);
+            animator.SetBool("IsCrouch" , true);
             characterController.height = 1;
             characterController.center = Vector3.zero;
         }
         else if (!isCrouching)
         {
-            animator.SetBool("IsCrouch", !isCrouching);
+            animator.SetBool("IsCrouch", false);
             speed = CrouchMoveSpeed;
             characterController.height = 0.5f;
             characterController.center = new Vector3(0, -0.23f, 0);
@@ -86,6 +97,8 @@ public class PlayerController : MonoBehaviour
             _verticalVelocity = -2f;
 
         _verticalVelocity += gravity * Time.deltaTime;
+
+
 
         bool pushing = _pusher != null && _pusher.IsPushing;
         float s = pushing ? speed * pushSpeedScale : speed;
