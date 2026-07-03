@@ -25,10 +25,15 @@ public class PlayerController : MonoBehaviour
     private static readonly int GroundedHash = Animator.StringToHash("isGrounded");
     private static readonly int PushingHash = Animator.StringToHash("isPushing");
 
+    //Ali- Animation
+    [Header("Ali- Animation")]
+    [SerializeField] private float blendTimeMovement;
+    private float _blendSpeed;
+
     void Start()
     {
         characterController = GetComponent<CharacterController>();
-        animator = GetComponent<Animator>();
+       // animator = GetComponent<Animator>();// we dont need this for now
         _pusher = GetComponent<BoxPusher>();
     }
 
@@ -42,6 +47,8 @@ public class PlayerController : MonoBehaviour
         zMove();
         flip();
         updateAnimator();
+
+        Debug.Log(_currentSpeed);
     }
 
     void move()
@@ -86,9 +93,25 @@ public class PlayerController : MonoBehaviour
     void updateAnimator()
     {
         if (animator == null) return;
-        animator.SetFloat(SpeedHash, Mathf.Abs(_currentSpeed));
-        animator.SetBool(GroundedHash, _isGrounded);
-        if (_pusher != null) animator.SetBool(PushingHash, _pusher.IsPushing);
+        // animator.SetFloat(SpeedHash, Mathf.Abs(_currentSpeed));
+        // animator.SetBool(GroundedHash, _isGrounded);
+        // if (_pusher != null) animator.SetBool(PushingHash, _pusher.IsPushing);
+
+        //Ali 
+        // we need to work in the blend tree here 
+        float targetSpeed;
+            if(Mathf.Abs(_currentSpeed) > 0)
+        {
+            targetSpeed = 1;
+        }
+        else
+        {
+            targetSpeed = 0;
+        }
+        _blendSpeed = Mathf.Lerp(_blendSpeed, targetSpeed, Time.deltaTime * blendTimeMovement);
+         animator.SetFloat("MovementBlend", _blendSpeed);
+        //Ali
+
     }
 
     public void SetInputEnabled(bool enabled)
