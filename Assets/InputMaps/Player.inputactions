@@ -1,0 +1,46 @@
+{
+    "version": 1,
+    "name": "Player",
+    "maps": [
+        {
+            "name": "DefulatController",
+            "id": "0ac76e7e-a72f-40af-8e21-11e3558ac7f7",
+            "actions": [
+                {
+                    "name": "Crouch",
+                    "type": "Button",
+                    "id": "617ad0a7-ed51-41de-9ae3-9884a33cb758",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "50db0581-a5d5-47c6-8682-6293cbcee08a",
+                    "path": "<Keyboard>/c",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Crouch",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "cab07388-5cb1-4176-9dbb-7a64c5d8130b",
+                    "path": "<Gamepad>/buttonSouth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Crouch",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
