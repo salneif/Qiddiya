@@ -25,15 +25,21 @@ public class PlayerController : MonoBehaviour
     private static readonly int GroundedHash = Animator.StringToHash("isGrounded");
     private static readonly int PushingHash = Animator.StringToHash("isPushing");
 
+
+
+
+
+
+
     //Ali- Animation
     [Header("Ali- Animation")]
     [SerializeField] private float blendTimeMovement;
     private float _blendSpeed;
 
+
     void Start()
     {
         characterController = GetComponent<CharacterController>();
-       // animator = GetComponent<Animator>();// we dont need this for now
         _pusher = GetComponent<BoxPusher>();
     }
 
@@ -48,7 +54,6 @@ public class PlayerController : MonoBehaviour
         flip();
         updateAnimator();
 
-        Debug.Log(_currentSpeed);
     }
 
     void move()
@@ -64,7 +69,7 @@ public class PlayerController : MonoBehaviour
         float rate = Mathf.Abs(_inputX) > 0.01f ? acceleration : deceleration;
         _currentSpeed = Mathf.MoveTowards(_currentSpeed, target, rate * Time.deltaTime);
 
-        Vector3 finalMove = new Vector3(_currentSpeed, _verticalVelocity, 0f);
+        Vector3 finalMove = new Vector3(_currentSpeed, _verticalVelocity, _currentZSpeed);
         characterController.Move(finalMove * Time.deltaTime);
         _isGrounded = characterController.isGrounded;
     }
@@ -77,17 +82,22 @@ public class PlayerController : MonoBehaviour
         float rate = Mathf.Abs(_inputZ) > 0.01f ? acceleration : deceleration;
         _currentZSpeed = Mathf.MoveTowards(_currentZSpeed, target, rate * Time.deltaTime);
 
-        Vector3 pos = transform.position;
-        pos.z = Mathf.Clamp(pos.z + _currentZSpeed * Time.deltaTime, zMin, zMax);
-        transform.position = pos;
+         Vector3 pos = transform.position;
+          pos.z = Mathf.Clamp(pos.z + _currentZSpeed * Time.deltaTime, zMin, zMax);
+         transform.position = pos;
+
+       
+
+
     }
 
     void flip()
     {
-        if (Mathf.Abs(_inputX) < 0.01f) return;
-        Vector3 s = transform.localScale;
-        s.x = Mathf.Sign(_inputX) * Mathf.Abs(s.x);
-        transform.localScale = s;
+        Vector3 direction = new Vector3(_inputX,0,_inputZ);
+        if (direction.magnitude < 0.01f) { return; }
+        transform.rotation = Quaternion.LookRotation(direction);
+
+       
     }
 
     void updateAnimator()
@@ -100,7 +110,7 @@ public class PlayerController : MonoBehaviour
         //Ali 
         // we need to work in the blend tree here 
         float targetSpeed;
-            if(Mathf.Abs(_currentSpeed) > 0)
+            if(Mathf.Abs(_currentSpeed) > 0 || (Mathf.Abs(_currentZSpeed) > 0))
         {
             targetSpeed = 1;
         }
@@ -109,6 +119,7 @@ public class PlayerController : MonoBehaviour
             targetSpeed = 0;
         }
         _blendSpeed = Mathf.Lerp(_blendSpeed, targetSpeed, Time.deltaTime * blendTimeMovement);
+        Debug.Log(_blendSpeed);
          animator.SetFloat("MovementBlend", _blendSpeed);
         //Ali
 
