@@ -153,7 +153,7 @@ MonoBehaviour:
   gravity: -20
   pushSpeedScale: 0.6
   blendTimeMovement: 4.7
-  crouchSystem: {fileID: 2197621358410965187}
+  crouchAndJumpSystem: {fileID: 2197621358410965187}
 --- !u!143 &132322277452640566
 CharacterController:
   m_ObjectHideFlags: 0
@@ -191,10 +191,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3f8352bf6c364099a003f1b1a9b79d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoxPusher
-  boxLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  blockCheckRange: 3
 --- !u!114 &2197621358410965187
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -207,8 +203,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83d687df42658204a90beb9c8f3e3f5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::A_Crouch
-  crouchWalkSpeed: 3
+  crouchWalkSpeed: 1
   isCrouching: 0
+  jumpForce: 1
 --- !u!114 &1526919308439671700
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -250,6 +247,22 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: 617ad0a7-ed51-41de-9ae3-9884a33cb758
     m_ActionName: 'DefulatController/New action[/Keyboard/space]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 2197621358410965187}
+        m_TargetAssemblyTypeName: A_CrouchAndJump, Assembly-CSharp
+        m_MethodName: OnInputJump
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 04b3895f-2046-47f5-946b-e88c958478ae
+    m_ActionName: 'DefulatController/Jump[/Keyboard/space]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: DefulatController
