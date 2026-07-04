@@ -3,7 +3,7 @@ using System;
 
 public class PuzzleManager : MonoBehaviour
 {
-    [SerializeField] private PressurePlate[] plates;
+    [SerializeField] private Lever[] levers;
     [SerializeField] private PressureMeter meter;
     [SerializeField] private SteamPipe pipe;
     [SerializeField] private float targetPressure = 85f;
@@ -16,43 +16,37 @@ public class PuzzleManager : MonoBehaviour
 
     void OnEnable()
     {
-        foreach (var p in plates)
+        foreach (var l in levers)
         {
-            p.OnPlatePressed += onPlateChanged;
-            p.OnPlateReleased += onPlateChanged;
+            l.OnLeverActivated += onLeverChanged;
+            l.OnLeverDeactivated += onLeverChanged;
         }
     }
 
     void OnDisable()
     {
-        foreach (var p in plates)
+        foreach (var l in levers)
         {
-            p.OnPlatePressed -= onPlateChanged;
-            p.OnPlateReleased -= onPlateChanged;
+            l.OnLeverActivated -= onLeverChanged;
+            l.OnLeverDeactivated -= onLeverChanged;
         }
     }
 
-    void onPlateChanged(PressurePlate plate)
+    void onLeverChanged(Lever lever)
     {
         if (_solved) return;
 
         float total = 0f;
-        bool allBoxes = true;
-
-        foreach (var p in plates)
-        {
-            if (!p.IsPressed) continue;
-            total += p.PressureValue;
-            if (!p.HasBox) allBoxes = false;
-        }
+        foreach (var l in levers)
+            if (l.IsOn) total += l.PressureValue;
 
         if (debug)
-            Debug.Log($"[Puzzle] {plate.ID} {(plate.IsPressed ? "pressed" : "released")} | total={total} | allBoxes={allBoxes}");
+            Debug.Log($"[Puzzle] {lever.ID} {(lever.IsOn ? "on" : "off")} | total={total}");
 
         meter.SetPressure(total);
         pipe.SetPressure(total);
 
-        if (Mathf.Abs(total - targetPressure) <= tolerance && allBoxes)
+        if (Mathf.Abs(total - targetPressure) <= tolerance)
         {
             _solved = true;
             Debug.Log("[Puzzle] SOLVED");
