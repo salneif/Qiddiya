@@ -66,6 +66,13 @@ public class RobotFurnaceChargeSequence : MonoBehaviour
     [Tooltip("صوت اشتعال العيون: قصير وحاد (زقّة/طنّة معدنية) يميّز آخر مرحلة قبل الإطلاق")]
     [SerializeField] private AudioClip eyeIgniteSound;
 
+    [Header("الهجوم القاتل (مرتبط باشتعال العيون)")]
+    [Tooltip("وحدة النظر/القتل. عند توهّج العيون، إذا رأت اللاعب مكشوفًا (مو زابن خلف جدار) قتلته")]
+    [SerializeField] private RobotEyeAttack eyeAttack;
+
+    [Tooltip("تفعيل قتل اللاعب لحظة توهّج العيون")]
+    [SerializeField] private bool lethalEyes = true;
+
     [Header("عام")]
     [SerializeField] private bool playOnStart = true;
     [SerializeField] private bool loop = true;
@@ -194,7 +201,9 @@ public class RobotFurnaceChargeSequence : MonoBehaviour
                     yield return new WaitForSeconds(barDelay);
             }
 
-            // 3) العيون آخر ما يشتعل (صوت حاد مميز)
+            // 3) العيون آخر ما يشتعل (صوت حاد مميز) — هنا يبدأ الخطر:
+            //    تُضاء كشافات العيون فيظهر الضوء والظل التحذيري على الجدران واللاعب
+            if (lethalEyes && eyeAttack != null) eyeAttack.BeginEyeGlow();
             PlayEyeSound();
             yield return RampGroup(eyeEmitters, eyeRampTime);
 
@@ -206,11 +215,13 @@ public class RobotFurnaceChargeSequence : MonoBehaviour
                 roomLight.enabled = true;
             }
 
+            // نافذة القتل: طوال توهّج العيون يُفحص خط النظر كل إطار،
+            // فإن انكشف اللاعب (مو زابن خلف جدار) مات فورًا
             OnFire();
+            yield return LethalWindow(fireHoldTime);
 
-            yield return new WaitForSeconds(fireHoldTime);
-
-            // 5) يخبو كل شيء تدريجيًا (fade out) بدل الإطفاء المفاجئ
+            // 5) يخبو كل شيء تدريجيًا (fade out) وتنطفئ كشافات العيون
+            if (lethalEyes && eyeAttack != null) eyeAttack.EndEyeGlow();
             yield return FadeAllOut(fireFadeOutTime);
             if (roomLight != null)
             {
@@ -225,11 +236,29 @@ public class RobotFurnaceChargeSequence : MonoBehaviour
     }
 
     /// <summary>
-    /// نقطة الإطلاق. لاحقًا نضيف هنا إطلاق الليزر وإلحاق الضرر باللاعب.
+    /// لحظة الإطلاق عند اكتمال توهّج العيون: فحص فوري لخط النظر.
+    /// القتل المستمر طوال التوهّج يتم في <see cref="LethalWindow"/>.
     /// </summary>
     private void OnFire()
     {
-        // TODO: إطلاق شعاع الليزر من العيون + قتل الشخصية (لاحقًا)
+        if (lethalEyes && eyeAttack != null)
+            eyeAttack.TryKillPlayer();
+    }
+
+    /// <summary>
+    /// نافذة قاتلة تمتد طوال توهّج العيون: تفحص خط النظر كل إطار،
+    /// فإذا خرج اللاعب من مخبئه أثناء التوهّج مات فورًا.
+    /// </summary>
+    private IEnumerator LethalWindow(float duration)
+    {
+        float t = 0f;
+        while (t < duration)
+        {
+            if (lethalEyes && eyeAttack != null)
+                eyeAttack.TryKillPlayer();
+            t += Time.deltaTime;
+            yield return null;
+        }
     }
 
     private void PlayBarSound(int barIndex)
