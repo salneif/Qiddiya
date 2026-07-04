@@ -17,19 +17,13 @@ public class PuzzleManager : MonoBehaviour
     void OnEnable()
     {
         foreach (var l in levers)
-        {
-            l.OnLeverActivated += onLeverChanged;
-            l.OnLeverDeactivated += onLeverChanged;
-        }
+            l.OnLeverChanged += onLeverChanged;
     }
 
     void OnDisable()
     {
         foreach (var l in levers)
-        {
-            l.OnLeverActivated -= onLeverChanged;
-            l.OnLeverDeactivated -= onLeverChanged;
-        }
+            l.OnLeverChanged -= onLeverChanged;
     }
 
     void onLeverChanged(Lever lever)
@@ -37,11 +31,12 @@ public class PuzzleManager : MonoBehaviour
         if (_solved) return;
 
         float total = 0f;
+        
         foreach (var l in levers)
-            if (l.IsOn) total += l.PressureValue;
+            total += l.PressureContribution;
 
         if (debug)
-            Debug.Log($"[Puzzle] {lever.ID} {(lever.IsOn ? "on" : "off")} | total={total}");
+            Debug.Log($"[Puzzle] {lever.ID} {lever.State} | total={total}");
 
         meter.SetPressure(total);
         pipe.SetPressure(total);
@@ -49,7 +44,7 @@ public class PuzzleManager : MonoBehaviour
         if (Mathf.Abs(total - targetPressure) <= tolerance)
         {
             _solved = true;
-            Debug.Log("[Puzzle] SOLVED");
+            Debug.Log("SOLVED");
             OnPuzzleSolved?.Invoke();
         }
     }

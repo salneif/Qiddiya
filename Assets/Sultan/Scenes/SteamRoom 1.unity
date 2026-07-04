@@ -173,7 +173,7 @@ BoxCollider:
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 4}
+  m_Center: {x: 0, y: 0, z: 2}
 --- !u!23 &36487159
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1151,13 +1151,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 331247411}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 1.2, z: -0.06}
   m_LocalScale: {x: 0.08, y: 0.5, z: 0.08}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1251147430}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
 --- !u!65 &331247413
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2433,13 +2433,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 601205067}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 1.2, z: -0.06}
   m_LocalScale: {x: 0.08, y: 0.5, z: 0.08}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1826353341}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
 --- !u!65 &601205069
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -7794,7 +7794,7 @@ Transform:
   m_GameObject: {fileID: 760941660}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 2.25}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -8437,13 +8437,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 856593532}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 1.2, z: -0.06}
   m_LocalScale: {x: 0.08, y: 0.5, z: 0.08}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1864584076}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
 --- !u!65 &856593534
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -15177,8 +15177,9 @@ MonoBehaviour:
   pressureValue: 25
   handle: {fileID: 331247412}
   indicator: {fileID: 1414835377}
-  onAngle: -45
-  offAngle: 45
+  middleAngle: 0
+  upAngle: -45
+  downAngle: 45
   animSpeed: 8
   interactKey: 101
 --- !u!65 &1251147432
@@ -25253,7 +25254,7 @@ BoxCollider:
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: -3}
+  m_Center: {x: 0, y: 0, z: -2}
 --- !u!1 &1363123569
 GameObject:
   m_ObjectHideFlags: 0
@@ -27360,8 +27361,9 @@ MonoBehaviour:
   pressureValue: 15
   handle: {fileID: 601205068}
   indicator: {fileID: 137282994}
-  onAngle: -45
-  offAngle: 45
+  middleAngle: -90
+  upAngle: -45
+  downAngle: 45
   animSpeed: 8
   interactKey: 101
 --- !u!1 &1834874569
@@ -27765,8 +27767,9 @@ MonoBehaviour:
   pressureValue: 50
   handle: {fileID: 856593533}
   indicator: {fileID: 1694230264}
-  onAngle: -45
-  offAngle: 45
+  middleAngle: 0
+  upAngle: -45
+  downAngle: 45
   animSpeed: 8
   interactKey: 101
 --- !u!65 &1864584078
@@ -28387,7 +28390,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2105682158
 Transform:
   m_ObjectHideFlags: 0
@@ -28422,8 +28425,9 @@ MonoBehaviour:
   pressureValue: 60
   handle: {fileID: 1534449117}
   indicator: {fileID: 1003680354}
-  onAngle: -45
-  offAngle: 45
+  middleAngle: 0
+  upAngle: -45
+  downAngle: 45
   animSpeed: 8
   interactKey: 101
 --- !u!65 &2105682160
