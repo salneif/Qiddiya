@@ -4,6 +4,7 @@ public class PlayerController : MonoBehaviour
 {
     public CharacterController characterController;
     public Animator animator;
+    public bool CanMove = true;
     public float speed = 5f;
     public float normalWalkSpeed;
     public float acceleration = 35f;
@@ -85,12 +86,13 @@ public class PlayerController : MonoBehaviour
         _inputX = Input.GetAxisRaw("Horizontal");
         _inputZ = Input.GetAxisRaw("Vertical");
 
-       
-        move();
-        zMove();
-        flip();
-        updateAnimator();
-
+        if (CanMove)
+        {
+            move();
+            zMove();
+            flip();
+            updateAnimator();
+        }
     }
 
     void move()
