@@ -480,8 +480,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03f0d6470b6ca8144bb7e77fb395a71f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerKillable
-  disableOnDeath: []
-  deathEffect: {fileID: 0}
+  disableOnDeath:
+  - {fileID: 497817677}
+  deathEffect: {fileID: 497817673}
   onDeath:
     m_PersistentCalls:
       m_Calls: []
@@ -489,7 +490,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   autoRespawn: 1
-  respawnDelay: 1.5
+  respawnDelay: 1
   respawnPoint: {fileID: 412688809}
 --- !u!114 &497817673
 MonoBehaviour:
@@ -520,8 +521,8 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 1
-      value: 1
+      time: 0.9541626
+      value: 1.069046
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -534,6 +535,17 @@ MonoBehaviour:
   baseColor: {r: 0.02, g: 0.02, b: 0.02, a: 1}
   edgeColor: {r: 1, g: 0.35, b: 0.05, a: 1}
   edgeEmission: 6
+--- !u!114 &497817677 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4415379080658964846, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+  m_PrefabInstance: {fileID: 815389534}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 497817664}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e64e525a637914a74a1e6b9801917786, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerController
 --- !u!1 &583007564
 GameObject:
   m_ObjectHideFlags: 0
@@ -1851,8 +1863,8 @@ MonoBehaviour:
   obstacleMask:
     serializedVersion: 2
     m_Bits: 1024
-  maxRange: 25
-  visionHalfAngle: 180
+  maxRange: 22.1
+  visionHalfAngle: 152.3
   forwardAxis: {x: 0, y: 0, z: 1}
   eyeLights: []
   eyeLightIntensity: 12
