@@ -37,19 +37,17 @@ Material:
   m_Shader: {fileID: -6465566751694194690, guid: 0053c5719979df14a9c275c846bd278c, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - _SURFACE_TYPE_TRANSPARENT
+  m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 2959
+  m_CustomRenderQueue: 1959
   stringTagMap:
-    RenderType: Transparent
+    RenderType: Opaque
   disabledShaderPasses:
-  - DepthOnly
-  - SHADOWCASTER
   - MOTIONVECTORS
+  - SHADOWCASTER
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -169,8 +167,8 @@ Material:
     - _DetailNormalMapScale: 1
     - _DistortAmmount: 0.048
     - _DistortAmmountCut: 0.12
-    - _DstBlend: 10
-    - _DstBlendAlpha: 10
+    - _DstBlend: 0
+    - _DstBlendAlpha: 0
     - _EmissionSaturation: 1
     - _EnvironmentReflections: 1
     - _GlossMapScale: 0
@@ -188,14 +186,14 @@ Material:
     - _SmoothnessTextureChannel: 0
     - _SoftParticle: 0
     - _SpecularHighlights: 1
-    - _SrcBlend: 5
+    - _SrcBlend: 1
     - _SrcBlendAlpha: 1
-    - _Surface: 1
+    - _Surface: 0
     - _UseSoftParticles: 1
     - _UserLerp: 0
     - _WorkflowMode: 1
     - _ZTest: 4
-    - _ZWrite: 0
+    - _ZWrite: 1
     - _ZWriteControl: 0
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
