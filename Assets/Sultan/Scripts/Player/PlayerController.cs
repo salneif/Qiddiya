@@ -2,6 +2,10 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    // we need instance so we dont ref in other scripts
+    public static PlayerController instance;
+
+
     public CharacterController characterController;
     public Animator animator;
     public bool CanMove = true;
@@ -43,6 +47,17 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private A_CrouchAndJump crouchAndJumpSystem;
 
 
+    private void Awake()
+    {
+        if(instance != null)
+        {
+            return;
+        }
+        else
+        {
+            instance = this;
+        }
+    }
     void Start()
     {
         characterController = GetComponent<CharacterController>();
