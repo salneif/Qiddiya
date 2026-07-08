@@ -27,6 +27,7 @@ public class ForceCrouchZone : MonoBehaviour
 
         pc.speed = pc.normalWalkSpeed;
         pc.animator.SetBool("IsCrouch", false);
+        Debug.Log(pc.animator.GetBool("IsCrouch"));
         pc.characterController.height = 1f;
         pc.characterController.center = Vector3.zero;
     }
