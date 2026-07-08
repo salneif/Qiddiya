@@ -15713,7 +15713,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2.72, y: 31.7, z: 29.54}
+  m_Size: {x: 2.21, y: 31.7, z: 29.54}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &244549842
 Transform:
@@ -15724,7 +15724,7 @@ Transform:
   m_GameObject: {fileID: 244549839}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.025726171, z: -0, w: 0.999669}
-  m_LocalPosition: {x: -62.7, y: 5.7, z: -4.3}
+  m_LocalPosition: {x: -62.6, y: 5.7, z: -4.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -117677,7 +117677,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 11.26, y: 31.7, z: 29.54}
+  m_Size: {x: 11.26, y: 15.12, z: 29.54}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &1076987942
 Transform:
@@ -117688,7 +117688,7 @@ Transform:
   m_GameObject: {fileID: 1076987939}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.025726171, z: -0, w: 0.999669}
-  m_LocalPosition: {x: -69.6, y: 4.6, z: -3.9}
+  m_LocalPosition: {x: -69.6, y: -3.6, z: -3.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -258175,6 +258175,7 @@ GameObject:
   - component: {fileID: 2960816377081355463}
   - component: {fileID: 8330906909634558883}
   - component: {fileID: 4324742089869933284}
+  - component: {fileID: 8330906909634558884}
   m_Layer: 0
   m_Name: FRST_Ground
   m_TagString: Untagged
@@ -398533,6 +398534,28 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2178728048697491698}
+  m_Mesh: {fileID: -1490170099857080602, guid: 42864f7882a73ee45b0f1cc7943d0b2f, type: 3}
+--- !u!64 &8330906909634558884
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2178728048697491698}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
   m_Mesh: {fileID: -1490170099857080602, guid: 42864f7882a73ee45b0f1cc7943d0b2f, type: 3}
 --- !u!1 &8331094345196411229
 GameObject:
