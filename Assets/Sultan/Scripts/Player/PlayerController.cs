@@ -69,6 +69,10 @@ public class PlayerController : MonoBehaviour
 
     private void OnJump(float jumpForce)
     {
+        if (!CanMove)
+        {
+            return ;
+        }
        
         _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
         animator.SetTrigger("Jump");
@@ -79,6 +83,10 @@ public class PlayerController : MonoBehaviour
 
     private void OnCrouch(bool isCrouching, float CrouchMoveSpeed)
     {
+        if (!CanMove)
+        {
+            return ;
+        }
         if(isCrouching)
         {
             speed = normalWalkSpeed;

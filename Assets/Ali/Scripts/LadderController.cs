@@ -9,6 +9,7 @@ public class LadderController : MonoBehaviour
    public bool AlreadyOnLadderNow = false ;
     private CharacterController characterController;
     private PlayerController playerController;
+    private A_CrouchAndJump playerCrouchAndJump;
 
 
     private float input;
@@ -35,6 +36,7 @@ public class LadderController : MonoBehaviour
     {
         characterController = GetComponent<CharacterController>();
         playerController = PlayerController.instance;
+        playerCrouchAndJump = A_CrouchAndJump.instance;
     }
 
     private void OnEnable()
@@ -60,7 +62,7 @@ public class LadderController : MonoBehaviour
             isGetingOutOftheLadder = true ;
             CurrentTimeTostopMovingTheplayer = timeToStopMovingTheplayer ;
             thisladderForward = -ladderForward;
-            AlreadyOnLadderNow =false;
+            AlreadyOnLadderNow = false;
             animator.SetBool("isOnLadder", false);
         }
         
@@ -75,6 +77,8 @@ public class LadderController : MonoBehaviour
             AlreadyOnLadderNow = true;
             animator.SetBool("isOnLadder", true);
             playerController.CanMove = false;
+            
+            
 
             // we need player to face the ladder 
             transform.forward = -ladderForward;
