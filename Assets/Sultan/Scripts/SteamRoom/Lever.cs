@@ -22,6 +22,10 @@ public class Lever : MonoBehaviour
     private bool _playerInRange;
     private float _currentAngle;
 
+
+    // Ali 
+    public event Action<Vector3> OnInteractWithLever;
+
     void Start()
     {
         _currentAngle = middleAngle;
