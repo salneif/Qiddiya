@@ -65011,6 +65011,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   characterController: {fileID: 498513454}
   animator: {fileID: 0}
+  CanMove: 1
   speed: 5
   normalWalkSpeed: 0
   acceleration: 35
@@ -345072,6 +345073,7 @@ GameObject:
   - component: {fileID: 2671442122492417920}
   - component: {fileID: 1067132698868839040}
   - component: {fileID: 5256370671686833292}
+  - component: {fileID: 6186585045089674782}
   m_Layer: 0
   m_Name: pCube30
   m_TagString: Untagged
@@ -345079,6 +345081,27 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!65 &6186585045089674782
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6186585045089674781}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.024700468, y: 0.101609655, z: 0.003819791}
+  m_Center: {x: 0.055533867, y: 0.05066763, z: -0.047915757}
 --- !u!1 &6195987501150585808
 GameObject:
   m_ObjectHideFlags: 0
@@ -345262,7 +345285,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!1 &6223161257420409757
 GameObject:
   m_ObjectHideFlags: 0
