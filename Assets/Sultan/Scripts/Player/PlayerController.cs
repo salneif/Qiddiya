@@ -174,7 +174,6 @@ public class PlayerController : MonoBehaviour
             targetSpeed = 0;
         }
         _blendSpeed = Mathf.Lerp(_blendSpeed, targetSpeed, Time.deltaTime * blendTimeMovement);
-        Debug.Log(_blendSpeed);
          animator.SetFloat("MovementBlend", _blendSpeed);
 
 

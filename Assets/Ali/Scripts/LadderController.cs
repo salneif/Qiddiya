@@ -5,14 +5,26 @@ using UnityEngine.InputSystem;
 
 public class LadderController : MonoBehaviour
 {
-   private static LadderController instance;
+   public static LadderController instance;
+   public bool AlreadyOnLadderNow = false ;
+    private CharacterController characterController;
+    private PlayerController playerController;
 
-    public bool AlreadyOnLadderNow;
 
     private float input;
-    private CharacterController characterController;
+    private bool isGetingOutOftheLadder;
+    private Vector3 thisladderForward;
+    [SerializeField] private float timeToStopMovingTheplayer;
+    [SerializeField] private float CurrentTimeTostopMovingTheplayer;
+    [SerializeField] private float speedToGtOutOftheLadder;
+    
 
     [SerializeField] private float climbSpeed;
+
+    [Header("Animation")]
+    [SerializeField] private Animator animator;
+
+
 
 
     private void Awake()
@@ -22,12 +34,13 @@ public class LadderController : MonoBehaviour
     private void Start()
     {
         characterController = GetComponent<CharacterController>();
+        playerController = PlayerController.instance;
     }
 
     private void OnEnable()
     {
         A_Ladderbegin.OnBeginLadder += OnbeginLadder;
-        A_Ladderbegin.OnEndLadder += OnEndLadder;
+        A_LadderEndPoint.OnEndLadder += OnEndLadder;
 
     }
 
@@ -36,34 +49,73 @@ public class LadderController : MonoBehaviour
     private void OnDisable()
     {
         A_Ladderbegin.OnBeginLadder -= OnbeginLadder;
-        A_Ladderbegin.OnEndLadder -= OnEndLadder;
+        A_LadderEndPoint.OnEndLadder -= OnEndLadder;
     }
-    private void OnEndLadder(A_Ladderbegin ladderbegin)
+    private void OnEndLadder(A_LadderEndPoint ladderEnd , Vector3 ladderForward)
     {
-        AlreadyOnLadderNow = false;
+       if(AlreadyOnLadderNow)
+        {
+            animator.ResetTrigger("StartLadder");
+            animator.SetTrigger("EndLadder");
+            isGetingOutOftheLadder = true ;
+            CurrentTimeTostopMovingTheplayer = timeToStopMovingTheplayer ;
+            thisladderForward = -ladderForward;
+            AlreadyOnLadderNow =false;
+            animator.SetBool("isOnLadder", false);
+        }
+        
     }
 
-    private void OnbeginLadder(A_Ladderbegin obj)
+    private void OnbeginLadder(A_Ladderbegin obj , Vector3 ladderForward)
     {
-        AlreadyOnLadderNow = true;
+        if (!AlreadyOnLadderNow)
+        {
+            animator.ResetTrigger("EndLadder");
+            animator.SetTrigger("StartLadder");
+            AlreadyOnLadderNow = true;
+            animator.SetBool("isOnLadder", true);
+            playerController.CanMove = false;
+
+            // we need player to face the ladder 
+            transform.forward = -ladderForward;
+            Debug.Log("it worked yooooooo");
+        }
+
+
+
     }
 
     private void Update()
     {
+       
+        
+        if (isGetingOutOftheLadder && CurrentTimeTostopMovingTheplayer > 0)
+        {
+            CurrentTimeTostopMovingTheplayer -= Time.deltaTime;
+            Vector3 movedir =  thisladderForward;
+            characterController.Move(movedir * speedToGtOutOftheLadder * Time.deltaTime);
+            if(CurrentTimeTostopMovingTheplayer < 0)
+            {
+                isGetingOutOftheLadder = false;
+                playerController.CanMove = true;
+            }
+        }
         if (AlreadyOnLadderNow)
         {
-            if(input == 0)
+            if (input == 0)
             {
+                animator.SetFloat("MovementDirInLadder", 0);
                 return;
             }
             else
             {
-                Vector3 climbDir = new Vector3(0, input ,0);
+                animator.SetFloat("MovementDirInLadder", input);
+                Vector3 climbDir = new Vector3(0, input, 0);
                 characterController.Move(climbDir * Time.deltaTime * climbSpeed);
-                Debug.Log("Worked");
+
             }
-        }
-    }
+          }
+         }
 
     public void OnInputLadder(InputAction.CallbackContext context)
     {

@@ -5,38 +5,37 @@ public class A_Ladderbegin : MonoBehaviour
 {
     private PlayerController controller;
 
-    private bool isOnLadder = false;
+   private LadderController LadderController;
 
-    public static event Action<A_Ladderbegin> OnBeginLadder;
-    public static event Action<A_Ladderbegin> OnEndLadder;
+    public static event Action<A_Ladderbegin , Vector3> OnBeginLadder;
+    public static event Action<A_Ladderbegin , Vector3> OnEndLadder;
 
-
-
-
-
+    
     private void Start()
     {
         controller = PlayerController.instance;
+        LadderController = LadderController.instance;
     }
    
-    private void OnControllerColliderHit(ControllerColliderHit hit)
+    
+    private void OnTriggerEnter(Collider other)
     {
-        if (hit.gameObject.CompareTag("Player"))
+        if (other.gameObject.CompareTag("Player"))
         {
-            if (!isOnLadder)
-            {
-                controller.CanMove = false;
+            
                 Debug.Log("it worked");
                 // we tell everyone that we made it to the ladder
-                OnBeginLadder?.Invoke(this);
-            }
-            else
-            {
-                controller.CanMove = true;
-                // we do the same here too
-                OnEndLadder?.Invoke(this);
-            }
+                OnBeginLadder?.Invoke(this , gameObject.transform.forward);
+            
+           
+              
 
         }
+    }
+    private void OnTriggerExit(Collider other)
+    {
+        // we do the same here too
+        OnEndLadder?.Invoke(this, gameObject.transform.forward);
+
     }
 }
