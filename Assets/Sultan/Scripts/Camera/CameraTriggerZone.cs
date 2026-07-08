@@ -20,7 +20,7 @@ public class CameraZoneTrigger : MonoBehaviour
         if (!other.CompareTag(playerTag)) return;
         if (_cameraFollow == null) return;
 
-        _cameraFollow.SetOverride(overrideOffset, overrideRotation, transitionSpeed, lockXPosition, lockedX);
+        _cameraFollow.SetOverride(this, overrideOffset, overrideRotation, transitionSpeed, lockXPosition, lockedX);
     }
 
     private void OnTriggerExit(Collider other)
@@ -28,7 +28,7 @@ public class CameraZoneTrigger : MonoBehaviour
         if (!other.CompareTag(playerTag)) return;
         if (_cameraFollow == null) return;
 
-        _cameraFollow.ClearOverride(transitionSpeed);
+        _cameraFollow.ClearOverride(this, transitionSpeed);
     }
 
     private void OnDrawGizmos()

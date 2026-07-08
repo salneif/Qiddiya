@@ -22,6 +22,7 @@ public class CameraFollow : MonoBehaviour
     private bool _hasOverride;
     private bool _lockX;
     private float _lockedX;
+    private Object _overrideOwner;
 
     private void Start()
     {
@@ -63,8 +64,9 @@ public class CameraFollow : MonoBehaviour
         transform.position = Vector3.Lerp(transform.position, desiredPos, t);
     }
 
-    public void SetOverride(Vector3 overrideOffset, Vector3 overrideRotation, float speed, bool lockX = false, float lockedXPos = 0f)
+    public void SetOverride(Object owner, Vector3 overrideOffset, Vector3 overrideRotation, float speed, bool lockX = false, float lockedXPos = 0f)
     {
+        _overrideOwner = owner;
         _goalOffset = overrideOffset;
         _goalRotation = overrideRotation;
         _blendSpeed = speed;
@@ -73,8 +75,11 @@ public class CameraFollow : MonoBehaviour
         _lockedX = lockedXPos;
     }
 
-    public void ClearOverride(float speed)
+    public void ClearOverride(Object owner, float speed)
     {
+        if (_overrideOwner != owner) return;
+
+        _overrideOwner = null;
         _goalOffset = offset;
         _goalRotation = cameraRotation;
         _blendSpeed = speed;
