@@ -3,45 +3,49 @@ using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
-/// مكوّن الموت للاعب بأسلوب Little Nightmares — يُركّب على كائن اللاعب
-/// <b>دون تعديل سكربت حركته</b> (فسكربت الحركة ليس لنا).
+/// Death/respawn handler for the player, Little Nightmares style.
+/// Attach it to the player object WITHOUT touching the movement script
+/// (the movement controller is owned by someone else).
 ///
-/// عند <see cref="Kill"/>:
-///  - يوقف أي سكربتات حركة تحدّدها في <see cref="disableOnDeath"/> (مثل سكربتات علي).
-///  - يشغّل مؤثر الاحتراق (إن وُجد) فتتفتّت الشخصية بالنار.
-///  - يشغّل حدث <see cref="onDeath"/> (لصوت/شاشة سوداء/اهتزاز...).
-///  - ثم ينقل اللاعب إلى <see cref="respawnPoint"/> (تحدّده أنت) ويعيد تجسّده حيًّا.
+/// On <see cref="Kill"/>:
+///  - Disables any movement/input scripts listed in <see cref="disableOnDeath"/>.
+///  - Plays the burn/dissolve death effect (if assigned).
+///  - Fires <see cref="onDeath"/> (sound / black screen / camera shake...).
+///  - Teleports the player to the current respawn point and reforms it alive.
 ///
-/// العدو (RobotEyeAttack) هو من ينادي Kill() عند رؤيته للّاعب مكشوفًا.
+/// The respawn point can be updated at runtime by a checkpoint via
+/// <see cref="SetRespawnPoint"/>.
 /// </summary>
 public class PlayerKillable : MonoBehaviour
 {
-    [Header("ما يُعطّل لحظة الموت")]
-    [Tooltip("اسحب هنا سكربتات الحركة/الإدخال التي تريد إيقافها عند الموت " +
-             "(مثل سكربتات التحكم). تُعاد تلقائيًا عند الإحياء.")]
+    [Header("Disabled on death")]
+    [Tooltip("Movement/input scripts to disable while dead. Re-enabled on respawn.")]
     [SerializeField] private Behaviour[] disableOnDeath;
 
-    [Header("مؤثر الموت (احتراق)")]
-    [Tooltip("مكوّن DeathDissolveEffect على نفس اللاعب — اختياري. يعطي احتراقًا ناريًا عند الموت.")]
+    [Header("Death effect (burn)")]
+    [Tooltip("Optional DeathDissolveEffect on the same player for a fiery death.")]
     [SerializeField] private DeathDissolveEffect deathEffect;
 
-    [Header("أحداث")]
-    [Tooltip("يُستدعى مرة واحدة لحظة الموت")]
+    [Header("Events")]
+    [Tooltip("Invoked once the moment the player dies.")]
     [SerializeField] private UnityEvent onDeath;
-    [Tooltip("يُستدعى لحظة الإحياء")]
+    [Tooltip("Invoked the moment the player respawns.")]
     [SerializeField] private UnityEvent onRespawn;
 
-    [Header("الإحياء")]
-    [Tooltip("إعادة اللاعب تلقائيًا بعد الموت")]
+    [Header("Respawn")]
+    [Tooltip("Automatically respawn the player after death.")]
     [SerializeField] private bool autoRespawn = true;
-    [Tooltip("مدة بقاء اللاعب مختفيًا بعد الاحتراق قبل أن يعود (ثواني)")]
+    [Tooltip("How long the player stays gone after burning, before returning (seconds).")]
     [SerializeField] private float respawnDelay = 0.6f;
-    [Tooltip("نقطة الإحياء التي تحدّدها أنت — أنشئ Empty GameObject في المكان الذي تريد " +
-             "أن يعود إليه اللاعب واسحبه هنا. إذا تُركت فارغة يعود لمكانه عند بداية اللعبة.")]
+    [Tooltip("Current respawn point. Updated by checkpoints at runtime. " +
+             "If null, the player returns to its start position.")]
     [SerializeField] private Transform respawnPoint;
 
-    /// <summary>هل اللاعب ميّت حاليًا؟ (يستخدمها العدو لتجنّب القتل المكرر)</summary>
+    /// <summary>Is the player currently dead? (used by enemies to avoid double-kills)</summary>
     public bool IsDead { get; private set; }
+
+    /// <summary>The current respawn point (last checkpoint), or null.</summary>
+    public Transform RespawnPoint => respawnPoint;
 
     private Vector3 startPosition;
     private Quaternion startRotation;
@@ -54,7 +58,14 @@ public class PlayerKillable : MonoBehaviour
             deathEffect = GetComponent<DeathDissolveEffect>();
     }
 
-    /// <summary>يقتل اللاعب: يوقف التحكم، يحرق الشخصية، ثم يعيدها لنقطة الإحياء.</summary>
+    /// <summary>Sets the last checkpoint the player will respawn at.</summary>
+    public void SetRespawnPoint(Transform point)
+    {
+        if (point != null)
+            respawnPoint = point;
+    }
+
+    /// <summary>Kills the player: stops control, burns the body, then returns it to the checkpoint.</summary>
     public void Kill()
     {
         if (IsDead) return;
@@ -67,7 +78,7 @@ public class PlayerKillable : MonoBehaviour
         StartCoroutine(DeathRoutine());
     }
 
-    /// <summary>إحياء فوري (يدوي) لنقطة الإحياء وإرجاع التحكم.</summary>
+    /// <summary>Instantly respawns the player at the checkpoint and restores control.</summary>
     public void Respawn()
     {
         StopAllCoroutines();
@@ -80,25 +91,25 @@ public class PlayerKillable : MonoBehaviour
 
     private IEnumerator DeathRoutine()
     {
-        // 1) الاحتراق: تتفتّت الشخصية بالنار
+        // 1) Burn away
         if (deathEffect != null)
             yield return deathEffect.PlayDeath();
 
         if (!autoRespawn)
             yield break;
 
-        // 2) تبقى مختفية لحظة (شعور بالموت)
+        // 2) Stay gone for a moment
         if (respawnDelay > 0f)
             yield return new WaitForSeconds(respawnDelay);
 
-        // 3) النقل إلى نقطة الإحياء (وهي مختفية)
+        // 3) Teleport to the checkpoint (while invisible)
         MoveToSpawn();
 
-        // 4) إعادة التجسّد من النار
+        // 4) Reform from the ashes
         if (deathEffect != null)
             yield return deathEffect.PlayReform();
 
-        // 5) رجوع التحكم
+        // 5) Give control back
         IsDead = false;
         SetControlEnabled(true);
         onRespawn?.Invoke();
@@ -112,7 +123,8 @@ public class PlayerKillable : MonoBehaviour
     }
 
     /// <summary>
-    /// نقل آمن للاعب: يعطّل CharacterController لحظة النقل حتى لا يقاوم تغيير الموضع.
+    /// Safe teleport: temporarily disables the CharacterController so it does not
+    /// fight the position change.
     /// </summary>
     private void TeleportTo(Vector3 pos, Quaternion rot)
     {
