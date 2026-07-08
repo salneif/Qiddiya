@@ -36,7 +36,7 @@ public class CameraFollow : MonoBehaviour
         if (snapOnStart && target != null)
         {
             float snappedX = Mathf.Clamp(target.position.x + offset.x, clampMinX, clampMaxX);
-            transform.position = new Vector3(snappedX, offset.y, offset.z);
+            transform.position = new Vector3(snappedX, target.position.y + offset.y, offset.z);
         }
     }
 
@@ -57,7 +57,7 @@ public class CameraFollow : MonoBehaviour
         else
             desiredX = Mathf.Clamp(target.position.x + _activeOffset.x, clampMinX, clampMaxX);
 
-        Vector3 desiredPos = new Vector3(desiredX, _activeOffset.y, _activeOffset.z);
+        Vector3 desiredPos = new Vector3(desiredX, target.position.y + _activeOffset.y, _activeOffset.z);
 
         float t = 1f - Mathf.Exp(-smoothSpeed * Time.deltaTime);
         transform.position = Vector3.Lerp(transform.position, desiredPos, t);
