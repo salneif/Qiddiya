@@ -4,24 +4,18 @@ public class LavaFlow : MonoBehaviour
 {
     enum Phase { Idle, Flowing, Holding, Reversing, Waiting, Restoring }
 
-    // Flow endpoints
     [SerializeField] private float startY = 6.9338f;
     [SerializeField] private float endY = 5.67822f;
     [SerializeField] private float startZ = 1.5425f;
     [SerializeField] private float endZ = 0.92509f;
     [SerializeField] private float startScaleZ = 0.01319f;
     [SerializeField] private float endScaleZ = 0.114714f;
-
-    // Timing
     [SerializeField] private float flowSpeed = 0.2f;
     [SerializeField] private float holdDuration = 5f;
     [SerializeField] private float waitDuration = 10f;
-
-    // Sphere
     [SerializeField] private Transform sphere;
     private static readonly Vector3 SphereMaxScale = new Vector3(1.2f, 1.2f, 0f);
 
-    // State
     private Phase _phase = Phase.Idle;
     private float _progress;
     private float _timer;
