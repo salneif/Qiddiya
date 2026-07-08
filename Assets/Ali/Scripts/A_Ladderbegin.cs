@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class A_Ladderbegin : MonoBehaviour
 {
-    private PlayerController controller;
 
    private LadderController LadderController;
 
@@ -13,7 +12,6 @@ public class A_Ladderbegin : MonoBehaviour
     
     private void Start()
     {
-        controller = PlayerController.instance;
         LadderController = LadderController.instance;
     }
    
@@ -32,10 +30,5 @@ public class A_Ladderbegin : MonoBehaviour
 
         }
     }
-    private void OnTriggerExit(Collider other)
-    {
-        // we do the same here too
-        OnEndLadder?.Invoke(this, gameObject.transform.forward);
-
-    }
+    
 }
