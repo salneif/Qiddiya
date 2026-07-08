@@ -4,12 +4,12 @@ using System;
 public class PuzzleManager : MonoBehaviour
 {
     [SerializeField] private Lever[] levers;
-    [SerializeField] private PressureMeter meter;
-    [SerializeField] private SteamPipe pipe;
-    [SerializeField] private float targetPressure = 85f;
+    [SerializeField] private ClockFace clock;
+    [SerializeField] private float targetMinutes = 180f;
     [SerializeField] private float tolerance = 2f;
     [SerializeField] private bool debug;
 
+    // win animation
     [SerializeField] private Transform platform;
     [SerializeField] private float rotateSpeed = 30f;
     [SerializeField] private float riseSpeed = 0.5f;
@@ -55,12 +55,11 @@ public class PuzzleManager : MonoBehaviour
             total += l.PressureContribution;
 
         if (debug)
-            Debug.Log($"[Puzzle] {lever.ID} {lever.State} | total={total}");
+            Debug.Log($"[Puzzle] {lever.ID} {lever.State} | total={total} mins");
 
-        meter.SetPressure(total);
-        pipe.SetPressure(total);
+        clock.SetMinutes(total);
 
-        if (Mathf.Abs(total - targetPressure) <= tolerance)
+        if (Mathf.Abs(total - targetMinutes) <= tolerance)
         {
             _solved = true;
             Debug.Log("SOLVED");

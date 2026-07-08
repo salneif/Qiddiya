@@ -53,7 +53,9 @@ public class Lever : MonoBehaviour
     void applyRotation()
     {
         if (handle == null) return;
-        handle.localRotation = Quaternion.Euler(_currentAngle, 0f, 0f);
+        // handle.localRotation = Quaternion.Euler(_currentAngle, 0f, 0f);
+        Vector3 angles = handle.localEulerAngles;
+        handle.localRotation = Quaternion.Euler(_currentAngle, angles.y, angles.z);
     }
 
     void OnTriggerEnter(Collider other)
