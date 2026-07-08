@@ -2,8 +2,13 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    // we need instance so we dont ref in other scripts
+    public static PlayerController instance;
+
+
     public CharacterController characterController;
     public Animator animator;
+    public bool CanMove = true;
     public float speed = 5f;
     public float normalWalkSpeed;
     public float acceleration = 35f;
@@ -42,6 +47,17 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private A_CrouchAndJump crouchAndJumpSystem;
 
 
+    private void Awake()
+    {
+        if(instance != null)
+        {
+            return;
+        }
+        else
+        {
+            instance = this;
+        }
+    }
     void Start()
     {
         characterController = GetComponent<CharacterController>();
@@ -53,6 +69,10 @@ public class PlayerController : MonoBehaviour
 
     private void OnJump(float jumpForce)
     {
+        if (!CanMove)
+        {
+            return ;
+        }
        
         _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
         animator.SetTrigger("Jump");
@@ -63,6 +83,10 @@ public class PlayerController : MonoBehaviour
 
     private void OnCrouch(bool isCrouching, float CrouchMoveSpeed)
     {
+        if (!CanMove)
+        {
+            return ;
+        }
         if(isCrouching)
         {
             speed = normalWalkSpeed;
@@ -85,12 +109,13 @@ public class PlayerController : MonoBehaviour
         _inputX = Input.GetAxisRaw("Horizontal");
         _inputZ = Input.GetAxisRaw("Vertical");
 
-       
-        move();
-        zMove();
-        flip();
-        updateAnimator();
-
+        if (CanMove)
+        {
+            move();
+            zMove();
+            flip();
+            updateAnimator();
+        }
     }
 
     void move()
@@ -157,8 +182,7 @@ public class PlayerController : MonoBehaviour
             targetSpeed = 0;
         }
         _blendSpeed = Mathf.Lerp(_blendSpeed, targetSpeed, Time.deltaTime * blendTimeMovement);
-        //Debug.Log(_blendSpeed);
-        animator.SetFloat("MovementBlend", _blendSpeed);
+         animator.SetFloat("MovementBlend", _blendSpeed);
 
 
         if(!IsGrounded)
