@@ -1,18 +1,19 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 /// <summary>
 /// لمبة تبدّل العالم بين حالتين بأسلوب مسرحي:
-///  - حالة الإطفاء (OFF): تنطفئ أغلب الأضواء، تختفي أشياء (كالعلم الأصفر)،
-///    وصوت اللمبة يكون فيه صدى بسيط.
+///  - حالة الإطفاء (OFF): تنطفئ أغلب الأضواء، والعالم ملوّن/مظلم، وصوت اللمبة فيه صدى بسيط.
 ///  - حالة الإشعال (ON): يتحوّل العالم إلى أبيض وأسود، مع صوت إضاءة وموسيقى مختلفة.
 ///
-/// تبدأ اللعبة (اختياريًا) واللمبة مطفأة فيطفى كل شيء ويختفي العلم، ثم عند إشعالها
-/// ينقلب العالم أبيض وأسود.
+/// عند التبديل: تومض الشاشة إلى الأسود (~ثانية) لتخفي لحظة التحويل، وأثناء السواد
+/// يُبدّل العالم فعليًا، ثم تنكشف الشاشة على العالم الجديد.
 ///
-/// نادِ <see cref="Toggle"/> أو <see cref="SetLamp"/> من زر تفاعل/تريجر، أو استخدم
-/// زر الاختبار في المحرر.
+/// الأشياء في <see cref="hideInBlackAndWhite"/> تختفي عندما يصير العالم أبيض وأسود.
+///
+/// نادِ <see cref="Toggle"/> أو <see cref="SetLamp"/> من تفاعل/تريجر، أو استخدم زر الاختبار.
 /// </summary>
 public class LampSwitch : MonoBehaviour
 {
@@ -22,14 +23,22 @@ public class LampSwitch : MonoBehaviour
     [Tooltip("أضواء العالم التي تنطفئ عند إطفاء اللمبة")]
     [SerializeField] private Light[] worldLights;
 
-    [Header("أشياء تختفي عند الإطفاء")]
-    [Tooltip("العلم الأصفر وأي أشياء تختفي في الظلام")]
-    [SerializeField] private GameObject[] hideWhenOff;
+    [Header("أشياء تختفي في الأبيض والأسود")]
+    [Tooltip("العلم الأصفر وأي أشياء ملوّنة تختفي عندما يصير العالم أبيض وأسود")]
+    [SerializeField] private GameObject[] hideInBlackAndWhite;
 
     [Header("الأبيض والأسود")]
     [SerializeField] private WorldBWController worldBW;
     [Tooltip("عند الإشعال يتحوّل العالم إلى أبيض وأسود")]
     [SerializeField] private bool blackAndWhiteWhenOn = true;
+
+    [Header("وميض الشاشة السوداء عند التحويل")]
+    [Tooltip("صورة سوداء تغطّي الشاشة عليها Canvas Group — تومض عند التبديل")]
+    [SerializeField] private CanvasGroup blackScreen;
+    [Tooltip("سرعة تعتيم/كشف الشاشة (ثواني)")]
+    [SerializeField] private float blinkFadeTime = 0.15f;
+    [Tooltip("مدة بقاء الشاشة سوداء قبل كشف العالم الجديد (ثواني)")]
+    [SerializeField] private float blackHoldTime = 1f;
 
     [Header("صوت اللمبة")]
     [SerializeField] private AudioSource sfxSource;
@@ -37,6 +46,8 @@ public class LampSwitch : MonoBehaviour
     [SerializeField] private AudioClip lampOnSfx;
     [Tooltip("صوت إطفاء اللمبة")]
     [SerializeField] private AudioClip lampOffSfx;
+    [Tooltip("صوت اختفاء الأشياء عند التحوّل إلى الأبيض والأسود")]
+    [SerializeField] private AudioClip vanishSfx;
     [Tooltip("فلتر صدى يُفعّل في حالة الإطفاء لإعطاء إحساس الصدى البسيط")]
     [SerializeField] private AudioReverbFilter offReverb;
 
@@ -48,7 +59,7 @@ public class LampSwitch : MonoBehaviour
     [SerializeField] private AudioClip offMusic;
 
     [Header("البداية")]
-    [Tooltip("تبدأ اللعبة واللمبة مطفأة (يطفى كل شيء ويختفي العلم)")]
+    [Tooltip("تبدأ اللعبة واللمبة مطفأة")]
     [SerializeField] private bool startOff = true;
 
     [Header("اختبار (في المحرر)")]
@@ -60,14 +71,16 @@ public class LampSwitch : MonoBehaviour
     public UnityEvent onLampOff;
 
     private bool isOn;
+    private Coroutine blinkRoutine;
 
     /// <summary>هل اللمبة مشتعلة الآن؟</summary>
     public bool IsOn => isOn;
 
     private void Start()
     {
-        // ضبط الحالة الابتدائية فورًا وبلا أصوات
-        ApplyState(!startOff, playSfx: false);
+        if (blackScreen != null) blackScreen.alpha = 0f;
+        // ضبط الحالة الابتدائية فورًا وبلا وميض ولا أصوات
+        ApplyVisualState(!startOff, bwInstant: true, silent: true);
     }
 
     private void Update()
@@ -77,32 +90,88 @@ public class LampSwitch : MonoBehaviour
             Toggle();
     }
 
-    /// <summary>يبدّل حالة اللمبة (مع الأصوات).</summary>
-    public void Toggle() => ApplyState(!isOn, playSfx: true);
+    /// <summary>يبدّل حالة اللمبة (مع الوميض والأصوات).</summary>
+    public void Toggle() => SetLamp(!isOn);
 
-    /// <summary>يضبط حالة اللمبة صراحةً (مع الأصوات).</summary>
-    public void SetLamp(bool on) => ApplyState(on, playSfx: true);
+    /// <summary>يضبط حالة اللمبة صراحةً (مع الوميض والأصوات).</summary>
+    public void SetLamp(bool on)
+    {
+        // صوت الطقّة فورًا عند لمس المفتاح
+        PlaySfx(on ? lampOnSfx : lampOffSfx);
+        if (offReverb != null) offReverb.enabled = !on;
 
-    private void ApplyState(bool on, bool playSfx)
+        if (blackScreen != null && isActiveAndEnabled)
+        {
+            if (blinkRoutine != null) StopCoroutine(blinkRoutine);
+            blinkRoutine = StartCoroutine(BlinkThenApply(on));
+        }
+        else
+        {
+            ApplyVisualState(on, bwInstant: false, silent: false);
+        }
+    }
+
+    private IEnumerator BlinkThenApply(bool on)
+    {
+        // 1) تعتيم الشاشة إلى الأسود
+        yield return FadeScreen(1f, blinkFadeTime);
+
+        // 2) أثناء السواد: بدّل العالم فعليًا (لا يراه اللاعب)
+        ApplyVisualState(on, bwInstant: true, silent: false);
+
+        // 3) ابقَ على السواد لحظة
+        if (blackHoldTime > 0f)
+            yield return new WaitForSeconds(blackHoldTime);
+
+        // 4) اكشف العالم الجديد
+        yield return FadeScreen(0f, blinkFadeTime);
+        blinkRoutine = null;
+    }
+
+    private IEnumerator FadeScreen(float target, float duration)
+    {
+        if (blackScreen == null) yield break;
+        float start = blackScreen.alpha;
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            blackScreen.alpha = Mathf.Lerp(start, target, duration > 0f ? t / duration : 1f);
+            yield return null;
+        }
+        blackScreen.alpha = target;
+        blackScreen.blocksRaycasts = target > 0.5f;
+    }
+
+    private void ApplyVisualState(bool on, bool bwInstant, bool silent)
     {
         isOn = on;
+        bool bw = blackAndWhiteWhenOn && on;
 
         // اللمبة وأضواء العالم
         if (lampLight != null) lampLight.enabled = on;
         foreach (var l in worldLights)
             if (l != null) l.enabled = on;
 
-        // أشياء تختفي في الظلام (تظهر فقط عند الإشعال)
-        foreach (var go in hideWhenOff)
-            if (go != null) go.SetActive(on);
+        // الأشياء الملوّنة تختفي في الأبيض والأسود
+        bool anyHidden = false;
+        foreach (var go in hideInBlackAndWhite)
+            if (go != null)
+            {
+                if (bw && go.activeSelf) anyHidden = true;
+                go.SetActive(!bw);
+            }
+
+        // صوت اختفاء الأشياء
+        if (!silent && anyHidden)
+            PlaySfx(vanishSfx);
 
         // تحويل العالم لأبيض وأسود
         if (worldBW != null)
-            worldBW.SetBlackAndWhite(blackAndWhiteWhenOn && on);
-
-        // الصوت: صدى في حالة الإطفاء
-        if (offReverb != null) offReverb.enabled = !on;
-        if (playSfx) PlaySfx(on ? lampOnSfx : lampOffSfx);
+        {
+            if (bwInstant) worldBW.SetInstant(bw);
+            else worldBW.SetBlackAndWhite(bw);
+        }
 
         // الموسيقى تتبدّل حسب الحالة
         SwitchMusic(on ? onMusic : offMusic);
