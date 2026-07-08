@@ -124,6 +124,11 @@ Animator:
   m_CorrespondingSourceObject: {fileID: 8580747092853854330, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
   m_PrefabInstance: {fileID: 7127815602289805949}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &107651325 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 155197962420096804, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
+  m_PrefabInstance: {fileID: 870384909}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &203844586
 GameObject:
   m_ObjectHideFlags: 0
@@ -526,17 +531,25 @@ PrefabInstance:
       propertyPath: m_Name
       value: Zipline
       objectReference: {fileID: 0}
+    - target: {fileID: 4576626751386048774, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
+      propertyPath: grip
+      value: 
+      objectReference: {fileID: 107651325}
+    - target: {fileID: 4576626751386048774, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
+      propertyPath: endpointTransform
+      value: 
+      objectReference: {fileID: 656164583}
     - target: {fileID: 6560838092910369334, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
       propertyPath: m_LocalScale.y
-      value: 253.77382
+      value: 1428.569
       objectReference: {fileID: 0}
     - target: {fileID: 6560838092910369334, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -515
+      value: -1470
       objectReference: {fileID: 0}
     - target: {fileID: 6560838092910369334, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 93
+      value: -587
       objectReference: {fileID: 0}
     - target: {fileID: 7173122688070011402, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
       propertyPath: m_LocalPosition.x
@@ -587,7 +600,7 @@ Transform:
   m_GameObject: {fileID: 1187116439}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -357.8, y: 214.9, z: -12.7}
+  m_LocalPosition: {x: -720.6, y: -54.67, z: -6.58}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -20234,6 +20247,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::A_ZipLineSystem
   WeAreInZipLine: 0
   animator: {fileID: 13099760}
+  currentGrip: {fileID: 0}
+  ziplineSpeed: 5
 --- !u!1 &8230469993904197259
 GameObject:
   m_ObjectHideFlags: 0
