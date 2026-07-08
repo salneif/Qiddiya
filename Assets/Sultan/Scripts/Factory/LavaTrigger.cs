@@ -16,9 +16,11 @@ public class LavaTrigger : MonoBehaviour
         if (_player == null) return;
 
         _triggered = true;
+        //BELOW LINE TO BE COMMENTED OUT
         _player.SetInputEnabled(false);
     }
 
+    // FUNCTION TO BE COMMENTED OUT
     void OnDisable()
     {
         if (_triggered && _player != null)
