@@ -2,11 +2,12 @@ using UnityEngine;
 
 public class CameraZoneTrigger : MonoBehaviour
 {
-    [SerializeField] private Vector3 overrideOffset = new Vector3(0f, 10f, -2f);
-    [SerializeField] private Vector3 overrideRotation = new Vector3(75f, 0f, 0f);
+    [SerializeField] private Vector3 overrideOffset = Vector3.zero;
+    [SerializeField] private Vector3 overrideRotation = Vector3.zero;
     [SerializeField] private float transitionSpeed = 3f;
     [SerializeField] private bool lockXPosition;
     [SerializeField] private float lockedX;
+    [SerializeField] private bool centerOnPlayer;
     [SerializeField] private string playerTag = "Player";
     private CameraFollow _cameraFollow;
 
@@ -20,7 +21,7 @@ public class CameraZoneTrigger : MonoBehaviour
         if (!other.CompareTag(playerTag)) return;
         if (_cameraFollow == null) return;
 
-        _cameraFollow.SetOverride(this, overrideOffset, overrideRotation, transitionSpeed, lockXPosition, lockedX);
+        _cameraFollow.SetOverride(this, overrideOffset, overrideRotation, transitionSpeed, lockXPosition, lockedX, centerOnPlayer);
     }
 
     private void OnTriggerExit(Collider other)
