@@ -5,21 +5,14 @@ public class TopDownCameraFollow : MonoBehaviour
     [SerializeField] private Transform target;
     [SerializeField] private Vector3 offset = Vector3.zero;
     [SerializeField] private Vector3 cameraRotation = Vector3.zero;
-
-    [SerializeField] private float roomWidth = 20f;
-    [SerializeField] private float firstRoomCenterX = 0f;
-    [SerializeField] private float boundaryPadding = 0.3f;
-    [SerializeField] private float roomTransitionSpeed = 3f;
-
+    [SerializeField] private float xFollowSpeed = 7f;
     [SerializeField] private float zFollowSpeed = 7f;
-
     [SerializeField] private bool anchorYFromTargetOnStart = true;
     [SerializeField] private float anchorY = 0f;
     [SerializeField] private float yFollowSpeed = 5f;
 
     private Vector3 _baseOffset;
     private Vector3 _baseRotation;
-    private float _roomCenterX;
     private Vector3 _anchor;
     private Vector3 _activeOffset;
     private Vector3 _activeRotation;
@@ -36,11 +29,13 @@ public class TopDownCameraFollow : MonoBehaviour
             if (anchorYFromTargetOnStart)
                 anchorY = target.position.y;
 
-            _roomCenterX = roomCenterFromX(target.position.x);
-            _anchor = new Vector3(_roomCenterX, anchorY, target.position.z);
+            _anchor = new Vector3(target.position.x, anchorY, target.position.z);
         }
 
         _baseOffset = transform.position - _anchor;
+
+        _baseOffset.x = 0f;
+
         _baseRotation = transform.eulerAngles;
 
         _activeOffset = _baseOffset + offset;
@@ -57,8 +52,6 @@ public class TopDownCameraFollow : MonoBehaviour
     {
         if (target == null) return;
 
-        updateRoom();
-
         if (_overrideOwner == null)
         {
             _goalOffset = _baseOffset + offset;
@@ -68,11 +61,11 @@ public class TopDownCameraFollow : MonoBehaviour
         float dt = Time.deltaTime;
 
         float bt = 1f - Mathf.Exp(-_blendSpeed * dt);
-        _activeOffset = Vector3.Lerp(_activeOffset, _goalOffset, bt);
+        _activeOffset = Vector3.Slerp(_activeOffset, _goalOffset, bt);
         _activeRotation = Vector3.Lerp(_activeRotation, _goalRotation, bt);
 
-        float tx = 1f - Mathf.Exp(-roomTransitionSpeed * dt);
-        _anchor.x = Mathf.Lerp(_anchor.x, _roomCenterX, tx);
+        float tx = 1f - Mathf.Exp(-xFollowSpeed * dt);
+        _anchor.x = Mathf.Lerp(_anchor.x, target.position.x, tx);
 
         float goalY = _followTargetY ? target.position.y : anchorY;
         float ty = 1f - Mathf.Exp(-yFollowSpeed * dt);
@@ -85,26 +78,13 @@ public class TopDownCameraFollow : MonoBehaviour
         transform.position = _anchor + _activeOffset;
     }
 
-    private void updateRoom()
-    {
-        float halfW = roomWidth * 0.5f;
-        float x = target.position.x;
-
-        if (x > _roomCenterX + halfW + boundaryPadding || x < _roomCenterX - halfW - boundaryPadding)
-            _roomCenterX = roomCenterFromX(x);
-    }
-
-    private float roomCenterFromX(float x)
-    {
-        int index = Mathf.FloorToInt((x - firstRoomCenterX + roomWidth * 0.5f) / roomWidth);
-        return firstRoomCenterX + index * roomWidth;
-    }
-
-    public void SetOverride(Object owner, Vector3 overrideOffset, Vector3 overrideRotation, float speed, bool followTargetY = false)
+    public void SetOverride(Object owner, Vector3 overrideOffset, Vector3 overrideRotation, float speed, bool followTargetY = false, float cameraYaw = 0f)
     {
         _overrideOwner = owner;
-        _goalOffset = _baseOffset + overrideOffset;
-        _goalRotation = _baseRotation + overrideRotation;
+
+        Quaternion turn = Quaternion.Euler(0f, cameraYaw, 0f);
+        _goalOffset = turn * (_baseOffset + overrideOffset);
+        _goalRotation = _baseRotation + new Vector3(0f, cameraYaw, 0f) + overrideRotation;
         _blendSpeed = speed;
         _followTargetY = followTargetY;
     }
@@ -126,21 +106,15 @@ public class TopDownCameraFollow : MonoBehaviour
         target = newTarget;
     }
 
+    public float HeadingYaw => _goalRotation.y;
+
     private void OnDrawGizmosSelected()
     {
-        float halfW = roomWidth * 0.5f;
-        float y = Application.isPlaying ? _anchor.y : anchorY;
-        float z = target != null ? target.position.z : 0f;
+        if (target == null) return;
 
-        Gizmos.color = new Color(1f, 0.9f, 0.2f, 0.6f);
-        for (int i = -4; i <= 5; i++)
-        {
-            float boundaryX = firstRoomCenterX - halfW + i * roomWidth;
-            Gizmos.DrawLine(new Vector3(boundaryX, y, z - 6f), new Vector3(boundaryX, y, z + 6f));
-        }
-
+        Vector3 a = Application.isPlaying ? _anchor : target.position;
         Gizmos.color = new Color(0f, 0.8f, 1f, 0.6f);
-        float centerX = Application.isPlaying ? _roomCenterX : firstRoomCenterX;
-        Gizmos.DrawLine(new Vector3(centerX, y, z - 6f), new Vector3(centerX, y, z + 6f));
+        Gizmos.DrawWireSphere(a, 0.4f);
+        Gizmos.DrawLine(transform.position, a);
     }
 }

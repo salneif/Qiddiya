@@ -14,10 +14,9 @@ public class PlayerController : MonoBehaviour
     public float acceleration = 35f;
     public float deceleration = 50f;
     public float zMoveSpeed = 2.5f;
-    // public float zMin = -1f;
-    // public float zMax = 2f;
     public float gravity = -20f;
     public float pushSpeedScale = 0.6f;
+    public bool cameraRelative = false;
     private float _currentSpeed;
     private float _currentZSpeed;
     private float _verticalVelocity;
@@ -27,6 +26,11 @@ public class PlayerController : MonoBehaviour
     private bool _inputEnabled = true;
     private BoxPusher _pusher;
     private bool _isInAir;
+    private TopDownCameraFollow _topDownCam;
+    private Vector3 _moveRight = Vector3.right;
+    private Vector3 _moveForward = Vector3.forward;
+    private int _lastRawX;
+    private int _lastRawZ;
 
     private static readonly int SpeedHash = Animator.StringToHash("speed");
     private static readonly int GroundedHash = Animator.StringToHash("isGrounded");
@@ -62,6 +66,9 @@ public class PlayerController : MonoBehaviour
     {
         characterController = GetComponent<CharacterController>();
         _pusher = GetComponent<BoxPusher>();
+
+        if (Camera.main != null)
+            _topDownCam = Camera.main.GetComponent<TopDownCameraFollow>();
 
         crouchAndJumpSystem.OnCrouch += OnCrouch;
         crouchAndJumpSystem.OnJump += OnJump;
@@ -111,11 +118,36 @@ public class PlayerController : MonoBehaviour
 
         if (CanMove)
         {
+            updateMoveBasis();
             zMove();
             move();
             flip();
             updateAnimator();
         }
+    }
+
+    void updateMoveBasis()
+    {
+        if (!cameraRelative)
+        {
+            _moveRight = Vector3.right;
+            _moveForward = Vector3.forward;
+            return;
+        }
+
+        int rx = _inputX > 0.01f ? 1 : (_inputX < -0.01f ? -1 : 0);
+        int rz = _inputZ > 0.01f ? 1 : (_inputZ < -0.01f ? -1 : 0);
+        if (rx == _lastRawX && rz == _lastRawZ) return;
+
+        _lastRawX = rx;
+        _lastRawZ = rz;
+
+        if (rx == 0 && rz == 0) return;
+
+        float yaw = _topDownCam != null ? _topDownCam.HeadingYaw : 0f;
+        Quaternion q = Quaternion.Euler(0f, yaw, 0f);
+        _moveRight = q * Vector3.right;
+        _moveForward = q * Vector3.forward;
     }
 
     void move()
@@ -133,7 +165,8 @@ public class PlayerController : MonoBehaviour
         float rate = Mathf.Abs(_inputX) > 0.01f ? acceleration : deceleration;
         _currentSpeed = Mathf.MoveTowards(_currentSpeed, target, rate * Time.deltaTime);
 
-        Vector3 finalMove = new Vector3(_currentSpeed, _verticalVelocity, _currentZSpeed);
+        Vector3 planar = _moveRight * _currentSpeed + _moveForward * _currentZSpeed;
+        Vector3 finalMove = new Vector3(planar.x, _verticalVelocity, planar.z);
         characterController.Move(finalMove * Time.deltaTime);
         _isGrounded = characterController.isGrounded;
     }
@@ -143,21 +176,11 @@ public class PlayerController : MonoBehaviour
         float target = (_pusher != null && _pusher.IsPushing) ? 0f : _inputZ * zMoveSpeed;
         float rate = Mathf.Abs(target) > 0.01f ? acceleration : deceleration;
         _currentZSpeed = Mathf.MoveTowards(_currentZSpeed, target, rate * Time.deltaTime);
-        // if (_pusher != null && _pusher.IsPushing) return;
-
-        // float target = _inputZ * zMoveSpeed;
-        // float rate = Mathf.Abs(_inputZ) > 0.01f ? acceleration : deceleration;
-        // _currentZSpeed = Mathf.MoveTowards(_currentZSpeed, target, rate * Time.deltaTime);
-
-        //  Vector3 pos = transform.position;
-        //   pos.z = Mathf.Clamp(pos.z + _currentZSpeed * Time.deltaTime, zMin, zMax);
-        //  transform.position = pos;
-
     }
 
     void flip()
     {
-        Vector3 direction = new Vector3(_inputX,0,_inputZ);
+        Vector3 direction = _moveRight * _inputX + _moveForward * _inputZ;
         if (direction.magnitude < 0.01f) { return; }
         transform.rotation = Quaternion.LookRotation(direction);
 

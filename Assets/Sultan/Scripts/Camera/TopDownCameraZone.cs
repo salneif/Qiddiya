@@ -5,7 +5,9 @@ public class TopDownCameraZone : MonoBehaviour
     [SerializeField] private Vector3 overrideOffset = Vector3.zero;
     [SerializeField] private Vector3 overrideRotation = Vector3.zero;
     [SerializeField] private float transitionSpeed = 3f;
-    [SerializeField] private bool followPlayerY = true;
+    [SerializeField] private bool followPlayerY = false;
+    [SerializeField] private float cameraYaw = 0f;
+
     [SerializeField] private string playerTag = "Player";
     private TopDownCameraFollow _cameraFollow;
 
@@ -19,7 +21,7 @@ public class TopDownCameraZone : MonoBehaviour
         if (!other.CompareTag(playerTag)) return;
         if (_cameraFollow == null) return;
 
-        _cameraFollow.SetOverride(this, overrideOffset, overrideRotation, transitionSpeed, followPlayerY);
+        _cameraFollow.SetOverride(this, overrideOffset, overrideRotation, transitionSpeed, followPlayerY, cameraYaw);
     }
 
     private void OnTriggerExit(Collider other)
