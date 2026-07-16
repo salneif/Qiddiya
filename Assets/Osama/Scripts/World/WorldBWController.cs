@@ -102,6 +102,18 @@ public class WorldBWController : MonoBehaviour
         Apply(on ? 1f : 0f);
     }
 
+    /// <summary>
+    /// يضبط شدة الأبيض/الأسود مباشرة (0 ملوّن → 1 أبيض/أسود) بلا انتقال داخلي —
+    /// يستخدمه القائد WorldChangeSequence ليحرّك كل شيء بتوقيت موحّد.
+    /// </summary>
+    public void SetAmount01(float amount01)
+    {
+        if (routine != null) { StopCoroutine(routine); routine = null; }
+        amount01 = Mathf.Clamp01(amount01);
+        targetBW = amount01 > 0.5f;
+        Apply(amount01);
+    }
+
     private IEnumerator Blend(float target)
     {
         float start = CurrentAmount();
