@@ -154,6 +154,7 @@ MonoBehaviour:
   transitionSpeed: 1
   lockXPosition: 0
   lockedX: 0
+  centerOnPlayer: 0
   playerTag: Player
 --- !u!65 &5743097
 BoxCollider:
@@ -227,6 +228,7 @@ MonoBehaviour:
   transitionSpeed: 1
   lockXPosition: 0
   lockedX: 0
+  centerOnPlayer: 0
   playerTag: Player
 --- !u!65 &7162115
 BoxCollider:
@@ -16122,6 +16124,7 @@ MonoBehaviour:
   transitionSpeed: 1
   lockXPosition: 0
   lockedX: 0
+  centerOnPlayer: 0
   playerTag: Player
 --- !u!65 &244549841
 BoxCollider:
@@ -66123,8 +66126,6 @@ MonoBehaviour:
   acceleration: 35
   deceleration: 50
   zMoveSpeed: 2.5
-  zMin: -1
-  zMax: 2
   gravity: -20
   pushSpeedScale: 0.6
   blendTimeMovement: 0
@@ -66238,6 +66239,7 @@ MonoBehaviour:
   transitionSpeed: 5
   lockXPosition: 0
   lockedX: 0
+  centerOnPlayer: 0
   playerTag: Player
 --- !u!65 &512796856
 BoxCollider:
@@ -66700,6 +66702,7 @@ MonoBehaviour:
   transitionSpeed: 1
   lockXPosition: 0
   lockedX: 0
+  centerOnPlayer: 0
   playerTag: Player
 --- !u!65 &562313563
 BoxCollider:
@@ -97140,13 +97143,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 773706768}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.34284, y: 0, z: 0, w: 0.9393938}
-  m_LocalPosition: {x: -18.05, y: -23, z: 7.87}
+  m_LocalRotation: {x: 0.13052616, y: 0, z: 0, w: 0.9914449}
+  m_LocalPosition: {x: -150, y: -10, z: -31}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 2050550174}
-  m_LocalEulerAnglesHint: {x: -40.1, y: 0, z: 0}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 15, y: 0, z: 0}
 --- !u!114 &773706772
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -97203,14 +97206,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0946c33191f242dfa356388206030ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraFollow
-  target: {fileID: 1273880685}
-  offset: {x: 0, y: 4.86, z: -30}
-  cameraRotation: {x: 3, y: 0, z: 0}
-  smoothSpeed: 7
-  snapOnStart: 1
-  roomMinX: -308.5
-  roomMaxX: 100
-  autoCalculateBounds: 1
+  target: {fileID: 1987323204}
+  offset: {x: 0, y: 0, z: 0}
+  cameraRotation: {x: 0, y: 0, z: 0}
+  xFollowSpeed: 7
+  clampX: 1
+  roomWidth: 20
+  firstRoomCenterX: 0
+  boundaryPadding: 0.3
+  roomTransitionSpeed: 3
+  clampMargin: 4
+  followTargetY: 1
+  yFollowSpeed: 5
+  followTargetZ: 1
+  zFollowSpeed: 7
 --- !u!1 &774509024
 GameObject:
   m_ObjectHideFlags: 0
@@ -103793,6 +103802,7 @@ MonoBehaviour:
   transitionSpeed: 5
   lockXPosition: 0
   lockedX: 0
+  centerOnPlayer: 0
   playerTag: Player
 --- !u!65 &941009194
 BoxCollider:
@@ -114235,11 +114245,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4415379080658964846, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: zMax
-      value: 20
+      value: 200
       objectReference: {fileID: 0}
     - target: {fileID: 4415379080658964846, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: zMin
-      value: -20
+      value: -200
       objectReference: {fileID: 0}
     - target: {fileID: 4415379080658964846, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: speed
@@ -114259,15 +114269,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8419201673582269653, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -90.86
+      value: -179
       objectReference: {fileID: 0}
     - target: {fileID: 8419201673582269653, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -7.36
+      value: -16.439
       objectReference: {fileID: 0}
     - target: {fileID: 8419201673582269653, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -18.1
+      value: -21.42
       objectReference: {fileID: 0}
     - target: {fileID: 8419201673582269653, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: m_LocalRotation.w
@@ -114299,7 +114309,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9093604355590460308, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -6.998
+      value: -7
       objectReference: {fileID: 0}
     - target: {fileID: 9093604355590460308, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: m_LocalPosition.y
@@ -114307,7 +114317,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9093604355590460308, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 28.969
+      value: 27.9
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -120037,6 +120047,7 @@ MonoBehaviour:
   transitionSpeed: 1
   lockXPosition: 0
   lockedX: 0
+  centerOnPlayer: 0
   playerTag: Player
 --- !u!65 &1076987941
 BoxCollider:
@@ -140760,11 +140771,6 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     vectorLabel1_3: W
---- !u!4 &1273880685 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 9093604355590460308, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-  m_PrefabInstance: {fileID: 985983755}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1283109467
 GameObject:
   m_ObjectHideFlags: 0
@@ -161355,6 +161361,7 @@ MonoBehaviour:
   transitionSpeed: 5
   lockXPosition: 0
   lockedX: 0
+  centerOnPlayer: 0
   playerTag: Player
 --- !u!65 &1450124523
 BoxCollider:
@@ -166403,6 +166410,7 @@ MonoBehaviour:
   transitionSpeed: 1
   lockXPosition: 0
   lockedX: 0
+  centerOnPlayer: 0
   playerTag: Player
 --- !u!65 &1483023092
 BoxCollider:
@@ -167092,6 +167100,7 @@ MonoBehaviour:
   transitionSpeed: 5
   lockXPosition: 0
   lockedX: 0
+  centerOnPlayer: 0
   playerTag: Player
 --- !u!65 &1552060788
 BoxCollider:
@@ -183725,6 +183734,7 @@ MonoBehaviour:
   transitionSpeed: 1
   lockXPosition: 0
   lockedX: 0
+  centerOnPlayer: 0
   playerTag: Player
 --- !u!65 &1853162787
 BoxCollider:
@@ -188651,6 +188661,7 @@ MonoBehaviour:
   transitionSpeed: 5
   lockXPosition: 0
   lockedX: 0
+  centerOnPlayer: 0
   playerTag: Player
 --- !u!65 &1861313748
 BoxCollider:
@@ -193715,6 +193726,7 @@ MonoBehaviour:
   transitionSpeed: 1
   lockXPosition: 0
   lockedX: 0
+  centerOnPlayer: 0
   playerTag: Player
 --- !u!65 &1910639918
 BoxCollider:
@@ -213392,6 +213404,7 @@ MonoBehaviour:
   transitionSpeed: 3
   lockXPosition: 0
   lockedX: 0
+  centerOnPlayer: 0
   playerTag: Player
 --- !u!65 &1966500223
 BoxCollider:
@@ -213802,6 +213815,11 @@ MonoBehaviour:
   baseColor: {r: 0.02, g: 0.02, b: 0.02, a: 1}
   edgeColor: {r: 1, g: 0.35, b: 0.05, a: 1}
   edgeEmission: 6
+--- !u!4 &1987323204 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 9093604355590460308, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+  m_PrefabInstance: {fileID: 985983755}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1989769415 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1655896930728171829, guid: 91101480143df4b9499bb40e8b31d494, type: 3}
@@ -214276,15 +214294,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2050550173}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.41707397, y: 0, z: 0, w: 0.9088726}
-  m_LocalPosition: {x: -130.4, y: 5.4, z: -9.8}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.03, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 773706771}
   - {fileID: 296239862}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 49.3, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2051743323
 GameObject:
   m_ObjectHideFlags: 0
@@ -285131,7 +285148,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9125447261468031596}
   - component: {fileID: 2044917950370996170}
-  - component: {fileID: 5453051036150183019}
+  - component: {fileID: 9125447261468031597}
   m_Layer: 0
   m_Name: Camera Colider
   m_TagString: Untagged
@@ -351040,24 +351057,6 @@ MonoBehaviour:
   downAngle: 45
   animSpeed: 8
   interactKey: 101
---- !u!114 &5453051036150183019
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2974587326027601428}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0f15083339fc64f07865cd398dc26ad8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CameraZoneTrigger
-  overrideOffset: {x: 0, y: 1.5, z: -16.5}
-  overrideRotation: {x: 10, y: 0, z: 0}
-  transitionSpeed: 5
-  lockXPosition: 0
-  lockedX: 0
-  playerTag: Player
 --- !u!4 &5456698733155944269
 Transform:
   m_ObjectHideFlags: 0
@@ -359301,6 +359300,7 @@ MonoBehaviour:
   transitionSpeed: 3
   lockXPosition: 0
   lockedX: 0
+  centerOnPlayer: 0
   playerTag: Player
 --- !u!1 &5777102906331247161
 GameObject:
@@ -452675,6 +452675,25 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2257154599157086008}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &9125447261468031597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2974587326027601428}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f15083339fc64f07865cd398dc26ad8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraZoneTrigger
+  overrideOffset: {x: 0, y: -7, z: 14.5}
+  overrideRotation: {x: 0, y: 0, z: 0}
+  transitionSpeed: 6
+  lockXPosition: 0
+  lockedX: 0
+  centerOnPlayer: 1
+  playerTag: Player
 --- !u!4 &9126274940863724147
 Transform:
   m_ObjectHideFlags: 0
@@ -453574,6 +453593,7 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 4655145426237347528}
+  - {fileID: 773706771}
   - {fileID: 1787185290}
   - {fileID: 2137808261}
   - {fileID: 2050550174}

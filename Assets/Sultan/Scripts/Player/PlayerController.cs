@@ -14,8 +14,8 @@ public class PlayerController : MonoBehaviour
     public float acceleration = 35f;
     public float deceleration = 50f;
     public float zMoveSpeed = 2.5f;
-    public float zMin = -1f;
-    public float zMax = 2f;
+    // public float zMin = -1f;
+    // public float zMax = 2f;
     public float gravity = -20f;
     public float pushSpeedScale = 0.6f;
     private float _currentSpeed;
@@ -111,8 +111,8 @@ public class PlayerController : MonoBehaviour
 
         if (CanMove)
         {
-            move();
             zMove();
+            move();
             flip();
             updateAnimator();
         }
@@ -140,18 +140,18 @@ public class PlayerController : MonoBehaviour
 
     void zMove()
     {
-        if (_pusher != null && _pusher.IsPushing) return;
-
-        float target = _inputZ * zMoveSpeed;
-        float rate = Mathf.Abs(_inputZ) > 0.01f ? acceleration : deceleration;
+        float target = (_pusher != null && _pusher.IsPushing) ? 0f : _inputZ * zMoveSpeed;
+        float rate = Mathf.Abs(target) > 0.01f ? acceleration : deceleration;
         _currentZSpeed = Mathf.MoveTowards(_currentZSpeed, target, rate * Time.deltaTime);
+        // if (_pusher != null && _pusher.IsPushing) return;
 
-         Vector3 pos = transform.position;
-          pos.z = Mathf.Clamp(pos.z + _currentZSpeed * Time.deltaTime, zMin, zMax);
-         transform.position = pos;
+        // float target = _inputZ * zMoveSpeed;
+        // float rate = Mathf.Abs(_inputZ) > 0.01f ? acceleration : deceleration;
+        // _currentZSpeed = Mathf.MoveTowards(_currentZSpeed, target, rate * Time.deltaTime);
 
-       
-
+        //  Vector3 pos = transform.position;
+        //   pos.z = Mathf.Clamp(pos.z + _currentZSpeed * Time.deltaTime, zMin, zMax);
+        //  transform.position = pos;
 
     }
 
