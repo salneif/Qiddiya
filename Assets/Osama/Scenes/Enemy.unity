@@ -119,26 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &72289595 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3318619056162425904, guid: 5663cd20e7cb8214ab48ad96b3146529, type: 3}
-  m_PrefabInstance: {fileID: 252678021}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &72289597
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 72289595}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6458f2afc0652424886f7b88549dbe16, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CameraShake
-  defaultMagnitude: 0.3
-  defaultDuration: 0.5
-  damping: 1
 --- !u!1 &101591183
 GameObject:
   m_ObjectHideFlags: 0
@@ -354,10 +334,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 3318619056162425904, guid: 5663cd20e7cb8214ab48ad96b3146529, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 72289597}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5663cd20e7cb8214ab48ad96b3146529, type: 3}
 --- !u!1 &263078524
 GameObject:
@@ -770,19 +747,7 @@ MonoBehaviour:
   testToggleKey: 21
   onExpandComplete:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 72289595}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: 
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   onShrinkComplete:
     m_PersistentCalls:
       m_Calls: []
