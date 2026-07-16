@@ -47,7 +47,7 @@ public class TopDownCameraFollow : MonoBehaviour
         _activeRotation = _baseRotation + cameraRotation;
         _goalOffset = _activeOffset;
         _goalRotation = _activeRotation;
-
+//
         transform.eulerAngles = _activeRotation;
         if (target != null)
             transform.position = _anchor + _activeOffset;
