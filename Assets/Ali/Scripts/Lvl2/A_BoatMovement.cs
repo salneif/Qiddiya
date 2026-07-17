@@ -8,6 +8,7 @@ public class A_BoatMovement : MonoBehaviour
     [SerializeField] private Transform targetPoint;
     [SerializeField] private float boatSpeed;
 
+    
 
 
     private void Awake()
