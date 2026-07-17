@@ -133,8 +133,17 @@ public class FlagGlitchEnemy : MonoBehaviour
 
         bool hunting = s == State.Hunting;
         if (solidForm != null) solidForm.SetActive(hunting);
-        if (glitchForm != null) glitchForm.SetActive(!hunting);
+        if (glitchForm != null)
+        {
+            glitchForm.SetActive(!hunting);
+            glitchForm.transform.localPosition = glitchBaseLocalPos; // إلغاء اهتزاز القلتش
+        }
         if (glitchVfx != null) glitchVfx.SetActive(!hunting);
+
+        // إعادة سرعة الأنيميتور الطبيعية عند الخروج من حالة الشبح
+        glitchFrozen = false;
+        glitchTimer = 0f;
+        if (animator != null) animator.speed = 1f;
     }
 
     private void Update()
@@ -146,8 +155,43 @@ public class FlagGlitchEnemy : MonoBehaviour
             if (player == null) return;
         }
 
-        float speed = state == State.Hunting ? Hunt() : Retreat();
+        float speed;
+        if (state == State.Hunting)
+        {
+            speed = Hunt();
+        }
+        else
+        {
+            UpdateGlitchStutter(); // يضبط glitchFrozen وسرعة الأنيميتور
+            speed = Retreat();
+        }
+
         if (hasSpeedParam) animator.SetFloat(speedHash, speed);
+    }
+
+    /// <summary>يجمّد ويشغّل الأنيميتور بشكل عشوائي سريع فتطلع المشية متقطّعة (قلتش).</summary>
+    private void UpdateGlitchStutter()
+    {
+        if (!glitchAnimation || animator == null)
+        {
+            glitchFrozen = false;
+            return;
+        }
+
+        glitchTimer -= Time.deltaTime;
+        if (glitchTimer <= 0f)
+        {
+            glitchFrozen = !glitchFrozen;
+            animator.speed = glitchFrozen ? 0f : 1f;
+            glitchTimer = glitchFrozen
+                ? Random.Range(glitchFreezeTime.x, glitchFreezeTime.y)
+                : Random.Range(glitchOnTime.x, glitchOnTime.y);
+
+            // قفزة اهتزاز بصرية عند كل تبديل
+            if (glitchForm != null && glitchJitter > 0f)
+                glitchForm.transform.localPosition = glitchBaseLocalPos +
+                    (Vector3)(Random.insideUnitCircle * glitchJitter);
+        }
     }
 
     private float Hunt()
@@ -231,9 +275,19 @@ public class FlagGlitchEnemy : MonoBehaviour
     private float Retreat()
     {
         Vector3 away = Flatten(transform.position - player.position);
-        if (away.magnitude >= retreatDistance) return 0f; // بعيد كفاية → يقف
+        if (away.magnitude >= retreatDistance)
+        {
+            FaceDir((player.position - transform.position).normalized); // يظل مواجهًا اللاعب وهو واقف
+            return 0f; // بعيد كفاية → يقف
+        }
 
-        Move(away.normalized, retreatSpeed);
+        // أثناء تجمّد القلتش لا يتحرك (فتطلع الحركة متقطّعة كالتشويه)
+        if (!glitchFrozen)
+            Move(away.normalized, retreatSpeed);
+        else
+            FaceDir(away.normalized);
+
+        // نُبقي بارامتر السرعة مرتفعًا ليظل يختار مقطع المشي؛ التقطيع من animator.speed
         return retreatSpeed;
     }
 
