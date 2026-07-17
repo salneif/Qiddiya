@@ -9,7 +9,7 @@ public class A_WaterEnemySystem : MonoBehaviour
     [SerializeField] private float timeAboveWater;
     [SerializeField] private float timeUnderWater;
     [SerializeField] private bool isUnderWater;
-    private float _CountDown;
+    [SerializeField] private float _CountDown;
     
 
 
@@ -20,6 +20,7 @@ public class A_WaterEnemySystem : MonoBehaviour
     private void Awake()
     {
         animator = GetComponent<Animator>();
+        isUnderWater = false;
     }
     private void Update()
     {
@@ -36,10 +37,36 @@ public class A_WaterEnemySystem : MonoBehaviour
         }
 
 
+        if (_CountDown > 0)
+        {
+            _CountDown -= Time.deltaTime;
+
+            if (_CountDown <= 0)
+            {
+                if (isUnderWater)
+                {
+                    animator.SetBool("isAboveWater", true);
+                    _CountDown = -99;
+                }
+                else if (!isUnderWater)
+                {
+                    animator.SetBool("isAboveWater", false);
+                    _CountDown = -99;
+
+                }
+            }
+        }
     }
 
-    public void OnUnderWaterWater()
+    public void OnUnderWaterStart()
     {
+        isUnderWater = true;
+        _CountDown = timeUnderWater;
+    }
 
+    public void OnAboveWaterStart()
+    {
+        isUnderWater = false;
+        _CountDown = timeAboveWater;
     }
 }
