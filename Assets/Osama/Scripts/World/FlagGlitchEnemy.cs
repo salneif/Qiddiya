@@ -52,6 +52,16 @@ public class FlagGlitchEnemy : MonoBehaviour
     [Tooltip("اسم بارامتر Float للسرعة في الأنيميتور (0 = وقوف، >0 = مشي)")]
     [SerializeField] private string speedParam = "Speed";
 
+    [Header("قلتش المشية (حالة الشبح)")]
+    [Tooltip("في حالة الشبح، المشية تشتغل لكن متقطّعة كأنها تشويه فيديو")]
+    [SerializeField] private bool glitchAnimation = true;
+    [Tooltip("مدة تشغيل الأنميشن قبل التجمّد (عشوائي بين X و Y ثانية)")]
+    [SerializeField] private Vector2 glitchOnTime = new Vector2(0.05f, 0.16f);
+    [Tooltip("مدة التجمّد (عشوائي بين X و Y ثانية)")]
+    [SerializeField] private Vector2 glitchFreezeTime = new Vector2(0.03f, 0.12f);
+    [Tooltip("اهتزاز مكاني بصري عند كل قفزة قلتش (متر)")]
+    [SerializeField] private float glitchJitter = 0.08f;
+
     [Header("الأشكال البصرية")]
     [Tooltip("الشكل الصلب (يطارد ويؤذي)")]
     [SerializeField] private GameObject solidForm;
@@ -71,6 +81,9 @@ public class FlagGlitchEnemy : MonoBehaviour
     private float groundY;
     private float blinkTimer;
     private bool blinking;
+    private float glitchTimer;
+    private bool glitchFrozen;
+    private Vector3 glitchBaseLocalPos;
 
     /// <summary>هل العدو في وضع المطاردة (صلب ومؤذٍ)؟</summary>
     public bool IsHunting => state == State.Hunting;
@@ -79,6 +92,7 @@ public class FlagGlitchEnemy : MonoBehaviour
     {
         groundY = transform.position.y;
         if (animator == null) animator = GetComponentInChildren<Animator>();
+        if (glitchForm != null) glitchBaseLocalPos = glitchForm.transform.localPosition;
         CacheSpeedParam();
     }
 
