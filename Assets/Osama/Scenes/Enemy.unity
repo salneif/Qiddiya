@@ -33832,6 +33832,14 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: 416d2448baa041742b3019bb5aa7326a, type: 2}
+    - target: {fileID: 8804795166771358170, guid: 48504d14ef5a147f5af2d57e3ec5f72d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 7c8115aeeef0ad64dad0dc1b68e0b974, type: 2}
+    - target: {fileID: 8804795166771358170, guid: 48504d14ef5a147f5af2d57e3ec5f72d, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 7c8115aeeef0ad64dad0dc1b68e0b974, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -57605,6 +57613,13 @@ MonoBehaviour:
   contactRange: 1.3
   turnSpeed: 8
   lockToGroundY: 1
+  blinkMovement: 1
+  blinkStep: 3
+  blinkInterval: 1.2
+  blinkHidden: 0.25
+  blinkVfx: {fileID: 0}
+  blinkAudio: {fileID: 0}
+  blinkSound: {fileID: 0}
   animator: {fileID: 1070121503}
   speedParam: Speed
   solidForm: {fileID: 1558900376}
@@ -101028,7 +101043,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 8cbe8faca1b7b3549a3515178b192497, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

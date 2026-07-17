@@ -32,6 +32,21 @@ public class FlagGlitchEnemy : MonoBehaviour
     [Tooltip("تثبيت ارتفاع العدو على مستوى الأرض (يمنعه من الطيران)")]
     [SerializeField] private bool lockToGroundY = true;
 
+    [Header("الاختفاء والظهور (Blink) — طابع الرعب")]
+    [Tooltip("يومض (يختفي ويقفز) بدل المشي المستمر أثناء المطاردة")]
+    [SerializeField] private bool blinkMovement = true;
+    [Tooltip("مسافة القفزة الواحدة نحو اللاعب (متر)")]
+    [SerializeField] private float blinkStep = 3f;
+    [Tooltip("فترة الانتظار الظاهر قبل كل ومضة (ثواني)")]
+    [SerializeField] private float blinkInterval = 1.2f;
+    [Tooltip("مدة الاختفاء أثناء الومضة (ثواني)")]
+    [SerializeField] private float blinkHidden = 0.25f;
+    [Tooltip("VFX يظهر لحظة الاختفاء ولحظة الظهور (اختياري)")]
+    [SerializeField] private GameObject blinkVfx;
+    [Tooltip("صوت الومضة (اختياري)")]
+    [SerializeField] private AudioSource blinkAudio;
+    [SerializeField] private AudioClip blinkSound;
+
     [Header("الأنميشن")]
     [SerializeField] private Animator animator;
     [Tooltip("اسم بارامتر Float للسرعة في الأنيميتور (0 = وقوف، >0 = مشي)")]
@@ -54,6 +69,8 @@ public class FlagGlitchEnemy : MonoBehaviour
     private int speedHash;
     private bool hasSpeedParam;
     private float groundY;
+    private float blinkTimer;
+    private bool blinking;
 
     /// <summary>هل العدو في وضع المطاردة (صلب ومؤذٍ)؟</summary>
     public bool IsHunting => state == State.Hunting;
@@ -95,6 +112,11 @@ public class FlagGlitchEnemy : MonoBehaviour
     private void SetState(State s)
     {
         state = s;
+        // إيقاف أي ومضة جارية حتى لا تعيد تفعيل الشكل الخطأ
+        StopAllCoroutines();
+        blinking = false;
+        blinkTimer = 0f;
+
         bool hunting = s == State.Hunting;
         if (solidForm != null) solidForm.SetActive(hunting);
         if (glitchForm != null) glitchForm.SetActive(!hunting);
@@ -129,8 +151,67 @@ public class FlagGlitchEnemy : MonoBehaviour
             return 0f;
         }
 
+        // يواجه اللاعب دائمًا حتى وهو واقف بين الومضات
+        FaceDir(to.normalized);
+
+        if (blinkMovement)
+        {
+            if (!blinking)
+            {
+                blinkTimer += Time.deltaTime;
+                if (blinkTimer >= blinkInterval)
+                {
+                    blinkTimer = 0f;
+                    StartCoroutine(DoBlink(to.normalized, dist));
+                }
+            }
+            return 0f; // لا مشية ظاهرة — يظهر واقفًا ثم يومض
+        }
+
         Move(to.normalized, huntSpeed);
         return huntSpeed;
+    }
+
+    private System.Collections.IEnumerator DoBlink(Vector3 dir, float distToPlayer)
+    {
+        blinking = true;
+        PlayBlink();
+
+        // يختفي
+        if (solidForm != null) solidForm.SetActive(false);
+        yield return new WaitForSeconds(blinkHidden);
+
+        // يقفز نحو اللاعب (بدون تجاوزه)
+        float step = Mathf.Min(blinkStep, Mathf.Max(0f, distToPlayer - contactRange * 0.9f));
+        transform.position += dir * step;
+        if (lockToGroundY)
+        {
+            Vector3 p = transform.position; p.y = groundY; transform.position = p;
+        }
+
+        // يظهر فجأة
+        if (solidForm != null) solidForm.SetActive(true);
+        PlayBlink();
+        blinking = false;
+    }
+
+    private void PlayBlink()
+    {
+        if (blinkVfx != null)
+        {
+            blinkVfx.transform.position = transform.position;
+            blinkVfx.SetActive(false);
+            blinkVfx.SetActive(true); // إعادة تشغيل المؤثر
+        }
+        if (blinkSound != null && blinkAudio != null)
+            blinkAudio.PlayOneShot(blinkSound);
+    }
+
+    private void FaceDir(Vector3 dir)
+    {
+        if (dir.sqrMagnitude < 0.0001f) return;
+        Quaternion look = Quaternion.LookRotation(dir, Vector3.up);
+        transform.rotation = Quaternion.Slerp(transform.rotation, look, Time.deltaTime * turnSpeed);
     }
 
     private float Retreat()
