@@ -3,76 +3,147 @@ using UnityEngine;
 public class CameraFollow : MonoBehaviour
 {
     [SerializeField] private Transform target;
-    [SerializeField] private Vector3 offset = new Vector3(0f, 3.8f, -14f);
-    [SerializeField] private Vector3 cameraRotation = new Vector3(3f, 0f, 0f);
-    [SerializeField] private float smoothSpeed = 7f;
-    [SerializeField] private bool snapOnStart = true;
-    [SerializeField] private float roomMinX = -10f;
-    [SerializeField] private float roomMaxX = 10f;
-    [SerializeField] private bool autoCalculateBounds = true;
+    [SerializeField] private Vector3 offset = Vector3.zero;
+    [SerializeField] private Vector3 cameraRotation = Vector3.zero;
+    [SerializeField] private float xFollowSpeed = 7f;
+    [SerializeField] private bool clampX = true;
+    [SerializeField] private float roomWidth = 20f;
+    [SerializeField] private float firstRoomCenterX = 0f;
+    [SerializeField] private float boundaryPadding = 0.3f;
+    [SerializeField] private float roomTransitionSpeed = 3f;
+    [SerializeField] private float clampMargin = 4f;
+    [SerializeField] private bool followTargetY = true;
+    [SerializeField] private float yFollowSpeed = 5f;
+    [SerializeField] private bool followTargetZ = false;
+    [SerializeField] private float zFollowSpeed = 7f;
 
-    private float clampMinX;
-    private float clampMaxX;
-
+    private float _roomCenterX;
+    private float _windowCenter;
+    private Vector3 _baseOffset;
+    private Vector3 _baseRotation;
+    private Vector3 _anchor;
     private Vector3 _activeOffset;
     private Vector3 _activeRotation;
     private Vector3 _goalOffset;
     private Vector3 _goalRotation;
     private float _blendSpeed = 5f;
-    private bool _hasOverride;
     private bool _lockX;
     private float _lockedX;
+    private bool _centerOnTarget;
     private Object _overrideOwner;
 
     private void Start()
     {
-        _activeOffset = offset;
-        _activeRotation = cameraRotation;
-        _goalOffset = offset;
-        _goalRotation = cameraRotation;
+        _roomCenterX = firstRoomCenterX;
 
-        transform.eulerAngles = cameraRotation;
-        RecalculateClampLimits();
+        if (target != null)
+            _roomCenterX = roomCenterFromX(target.position.x);
 
-        if (snapOnStart && target != null)
+        _windowCenter = _roomCenterX;
+
+        if (target != null)
         {
-            float snappedX = Mathf.Clamp(target.position.x + offset.x, clampMinX, clampMaxX);
-            transform.position = new Vector3(snappedX, target.position.y + offset.y, offset.z);
+            float halfWindow = Mathf.Max(0f, roomWidth * 0.5f - clampMargin);
+            float startX = clampX
+                ? Mathf.Clamp(target.position.x, _windowCenter - halfWindow, _windowCenter + halfWindow)
+                : target.position.x;
+            _anchor = new Vector3(startX, target.position.y, target.position.z);
         }
+
+        _baseOffset = transform.position - _anchor;
+        _baseOffset.x = 0f;
+
+        _baseRotation = transform.eulerAngles;
+
+        _activeOffset = _baseOffset + offset;
+        _activeRotation = _baseRotation + cameraRotation;
+        _goalOffset = _activeOffset;
+        _goalRotation = _activeRotation;
+
+        transform.eulerAngles = _activeRotation;
+        if (target != null)
+            transform.position = _anchor + _activeOffset;
     }
 
     private void LateUpdate()
     {
         if (target == null) return;
 
-        float bt = 1f - Mathf.Exp(-_blendSpeed * Time.deltaTime);
+        updateRoom();
+
+        if (_overrideOwner == null)
+        {
+            _goalOffset = _baseOffset + offset;
+            _goalRotation = _baseRotation + cameraRotation;
+        }
+
+        float dt = Time.deltaTime;
+
+        float bt = 1f - Mathf.Exp(-_blendSpeed * dt);
         _activeOffset = Vector3.Lerp(_activeOffset, _goalOffset, bt);
         _activeRotation = Vector3.Lerp(_activeRotation, _goalRotation, bt);
-        transform.eulerAngles = _activeRotation;
 
-        float desiredX;
+        float halfWindow = Mathf.Max(0f, roomWidth * 0.5f - clampMargin);
+
+        if (clampX)
+        {
+            float tw = 1f - Mathf.Exp(-roomTransitionSpeed * dt);
+            _windowCenter = Mathf.Lerp(_windowCenter, _roomCenterX, tw);
+        }
+
+        float goalX;
         if (_lockX)
-            desiredX = _lockedX + _activeOffset.x;
-        else if (_hasOverride)
-            desiredX = target.position.x + _activeOffset.x;
+            goalX = _lockedX;
+        else if (_centerOnTarget)
+            goalX = target.position.x;
+        else if (clampX)
+            goalX = Mathf.Clamp(target.position.x, _windowCenter - halfWindow, _windowCenter + halfWindow);
         else
-            desiredX = Mathf.Clamp(target.position.x + _activeOffset.x, clampMinX, clampMaxX);
+            goalX = target.position.x;
 
-        Vector3 desiredPos = new Vector3(desiredX, target.position.y + _activeOffset.y, _activeOffset.z);
+        float tx = 1f - Mathf.Exp(-xFollowSpeed * dt);
+        _anchor.x = Mathf.Lerp(_anchor.x, goalX, tx);
 
-        float t = 1f - Mathf.Exp(-smoothSpeed * Time.deltaTime);
-        transform.position = Vector3.Lerp(transform.position, desiredPos, t);
+        if (followTargetY)
+        {
+            float ty = 1f - Mathf.Exp(-yFollowSpeed * dt);
+            _anchor.y = Mathf.Lerp(_anchor.y, target.position.y, ty);
+        }
+
+        if (followTargetZ)
+        {
+            float tz = 1f - Mathf.Exp(-zFollowSpeed * dt);
+            _anchor.z = Mathf.Lerp(_anchor.z, target.position.z, tz);
+        }
+
+        transform.eulerAngles = _activeRotation;
+        transform.position = _anchor + _activeOffset;
     }
 
-    public void SetOverride(Object owner, Vector3 overrideOffset, Vector3 overrideRotation, float speed, bool lockX = false, float lockedXPos = 0f)
+    private void updateRoom()
+    {
+        float halfW = roomWidth * 0.5f;
+        float x = target.position.x;
+
+        if (x > _roomCenterX + halfW + boundaryPadding || x < _roomCenterX - halfW - boundaryPadding)
+            _roomCenterX = roomCenterFromX(x);
+    }
+
+    private float roomCenterFromX(float x)
+    {
+        int index = Mathf.FloorToInt((x - firstRoomCenterX + roomWidth * 0.5f) / roomWidth);
+        return firstRoomCenterX + index * roomWidth;
+    }
+
+    public void SetOverride(Object owner, Vector3 overrideOffset, Vector3 overrideRotation, float speed, bool lockX = false, float lockedXPos = 0f, bool centerOnTarget = false)
     {
         _overrideOwner = owner;
-        _goalOffset = overrideOffset;
-        _goalRotation = overrideRotation;
+        _goalOffset = _baseOffset + overrideOffset;
+        _goalRotation = _baseRotation + overrideRotation;
         _blendSpeed = speed;
-        _hasOverride = true;
         _lockX = lockX;
         _lockedX = lockedXPos;
+        _centerOnTarget = centerOnTarget;
     }
 
     public void ClearOverride(Object owner, float speed)
@@ -80,11 +151,9 @@ public class CameraFollow : MonoBehaviour
         if (_overrideOwner != owner) return;
 
         _overrideOwner = null;
-        _goalOffset = offset;
-        _goalRotation = cameraRotation;
         _blendSpeed = speed;
-        _hasOverride = false;
         _lockX = false;
+        _centerOnTarget = false;
     }
 
     public void SetTarget(Transform newTarget)
@@ -92,61 +161,26 @@ public class CameraFollow : MonoBehaviour
         target = newTarget;
     }
 
-    public void RecalculateClampLimits()
-    {
-        if (!autoCalculateBounds)
-        {
-            clampMinX = roomMinX;
-            clampMaxX = roomMaxX;
-            return;
-        }
-
-        Camera cam = GetComponent<Camera>();
-        if (cam == null)
-        {
-            clampMinX = roomMinX;
-            clampMaxX = roomMaxX;
-            return;
-        }
-
-        float distToGameplay = Mathf.Abs(offset.z);
-        float visibleHalfWidth;
-
-        if (cam.orthographic)
-        {
-            visibleHalfWidth = cam.orthographicSize * cam.aspect;
-        }
-        else
-        {
-            float halfFovRad = cam.fieldOfView * 0.5f * Mathf.Deg2Rad;
-            visibleHalfWidth = distToGameplay * Mathf.Tan(halfFovRad) * cam.aspect;
-        }
-
-        clampMinX = roomMinX + visibleHalfWidth;
-        clampMaxX = roomMaxX - visibleHalfWidth;
-
-        if (clampMinX > clampMaxX)
-        {
-            float center = (roomMinX + roomMaxX) * 0.5f;
-            clampMinX = center;
-            clampMaxX = center;
-        }
-    }
-
     private void OnDrawGizmosSelected()
     {
-        float y = offset.y;
-        float z = offset.z;
-
-        RecalculateClampLimits();
+        float y = target != null ? target.position.y : 0f;
+        float z = target != null ? target.position.z : 0f;
+        float halfW = roomWidth * 0.5f;
 
         Gizmos.color = new Color(1f, 0.9f, 0.2f, 0.6f);
-        Gizmos.DrawLine(new Vector3(clampMinX, y - 3f, z), new Vector3(clampMinX, y + 3f, z));
-        Gizmos.DrawLine(new Vector3(clampMaxX, y - 3f, z), new Vector3(clampMaxX, y + 3f, z));
-        Gizmos.DrawLine(new Vector3(clampMinX, y, z), new Vector3(clampMaxX, y, z));
+        for (int i = -4; i <= 5; i++)
+        {
+            float boundaryX = firstRoomCenterX - halfW + i * roomWidth;
+            Gizmos.DrawLine(new Vector3(boundaryX, y - 3f, z), new Vector3(boundaryX, y + 3f, z));
+        }
 
-        Gizmos.color = new Color(0f, 0.8f, 1f, 0.3f);
-        Gizmos.DrawLine(new Vector3(roomMinX, y - 4f, z), new Vector3(roomMinX, y + 4f, z));
-        Gizmos.DrawLine(new Vector3(roomMaxX, y - 4f, z), new Vector3(roomMaxX, y + 4f, z));
+        if (!clampX) return;
+
+        float halfWindow = Mathf.Max(0f, halfW - clampMargin);
+        float center = Application.isPlaying ? _windowCenter : firstRoomCenterX;
+
+        Gizmos.color = new Color(0f, 0.8f, 1f, 0.6f);
+        Gizmos.DrawLine(new Vector3(center - halfWindow, y - 3f, z), new Vector3(center - halfWindow, y + 3f, z));
+        Gizmos.DrawLine(new Vector3(center + halfWindow, y - 3f, z), new Vector3(center + halfWindow, y + 3f, z));
     }
 }
