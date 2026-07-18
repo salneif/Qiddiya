@@ -8,9 +8,10 @@ public class A_WaterEnemySystem : MonoBehaviour
     [Header("Water System")]
     [SerializeField] private float timeAboveWater;
     [SerializeField] private float timeUnderWater;
-    [SerializeField] private bool isUnderWater;
     [SerializeField] private float _CountDown;
-    
+
+    public bool isUnderWater;
+
 
 
     private Animator animator;
