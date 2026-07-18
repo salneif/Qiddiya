@@ -5,7 +5,8 @@ public class A_PlayerDeath_WaterSection : MonoBehaviour
 
    [SerializeField] private Animator animator;
     private PlayerController playerController;
-
+    [SerializeField] private Material deathMatrial;
+    [SerializeField] private GameObject mesh;
 
 
     private void Start()
@@ -23,8 +24,16 @@ public class A_PlayerDeath_WaterSection : MonoBehaviour
 
     private void OnEnemySeeingPlayer()
     {
+        // death material
+        Renderer rend = mesh.GetComponent<Renderer>();
+        rend.material = deathMatrial;
+
+        // stop moving
+        animator.SetBool("InAir", false);
         playerController.CanMove = false;
+
+
         animator.SetTrigger("Death");
-        animator.SetBool("InAir" , false);
+        
     }
 }

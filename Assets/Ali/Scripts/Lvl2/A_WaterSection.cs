@@ -6,6 +6,7 @@ public class A_WaterSection : MonoBehaviour
     // Refrencees
     private A_CrouchAndJump a_CrouchAndJump;
    [SerializeField] private A_WaterEnemySystem a_WaterEnemySystem;
+   
 
     public static event Action OnEnemySeeingPlayer;
     private bool isFirstTime = true;

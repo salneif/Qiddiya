@@ -233,15 +233,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6058388785693120633, guid: 9c2203014148f4fb5bf9c498fc901c8a, type: 3}
       propertyPath: overrideOffset.x
-      value: -10
+      value: -2.12
       objectReference: {fileID: 0}
     - target: {fileID: 6058388785693120633, guid: 9c2203014148f4fb5bf9c498fc901c8a, type: 3}
       propertyPath: overrideOffset.y
-      value: 0
+      value: -3
       objectReference: {fileID: 0}
     - target: {fileID: 6058388785693120633, guid: 9c2203014148f4fb5bf9c498fc901c8a, type: 3}
       propertyPath: overrideOffset.z
-      value: 7.5
+      value: 7.2
       objectReference: {fileID: 0}
     - target: {fileID: 6058388785693120633, guid: 9c2203014148f4fb5bf9c498fc901c8a, type: 3}
       propertyPath: overrideRotation.y
@@ -51980,6 +51980,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::A_PlayerDeath_WaterSection
   animator: {fileID: 314165297407666648}
+  deathMatrial: {fileID: 2100000, guid: 8657998f7b8b5d440918823f90df3b18, type: 2}
+  mesh: {fileID: 443265849358582413}
 --- !u!1 &9102499798612807669
 GameObject:
   m_ObjectHideFlags: 0
