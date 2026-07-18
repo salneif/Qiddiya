@@ -8,6 +8,8 @@ public class A_PlayerDeath_WaterSection : MonoBehaviour
     [SerializeField] private Material deathMatrial;
     [SerializeField] private GameObject mesh;
 
+    private Renderer rend;
+
 
     private void Start()
     {
@@ -25,7 +27,7 @@ public class A_PlayerDeath_WaterSection : MonoBehaviour
     private void OnEnemySeeingPlayer()
     {
         // death material
-        Renderer rend = mesh.GetComponent<Renderer>();
+         rend = mesh.GetComponent<Renderer>();
         rend.material = deathMatrial;
 
         // stop moving
@@ -35,5 +37,11 @@ public class A_PlayerDeath_WaterSection : MonoBehaviour
 
         animator.SetTrigger("Death");
         
+    }
+
+
+    private void Update()
+    {
+       
     }
 }
