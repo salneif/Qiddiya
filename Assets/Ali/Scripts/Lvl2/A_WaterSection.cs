@@ -8,16 +8,18 @@ public class A_WaterSection : MonoBehaviour
    [SerializeField] private A_WaterEnemySystem a_WaterEnemySystem;
 
     public static event Action OnEnemySeeingPlayer;
+    private bool isFirstTime = true;
 
     private void Start()
     {
         a_CrouchAndJump = A_CrouchAndJump.instance;
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerStay(Collider other)
     {
-        if (other.gameObject.CompareTag("Player") && !a_WaterEnemySystem.isUnderWater)
+        if (other.gameObject.CompareTag("Player") && !a_WaterEnemySystem.isUnderWater && isFirstTime)
         {
+            isFirstTime = false;
             OnEnemySeeingPlayer?.Invoke();
         }
     }

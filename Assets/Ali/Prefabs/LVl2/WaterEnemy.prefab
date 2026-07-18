@@ -1,5 +1,72 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &442270646417754792
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1197647606721057057}
+  - component: {fileID: 4079586449993683635}
+  - component: {fileID: 1807839565250763547}
+  m_Layer: 0
+  m_Name: DeathZoneSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1197647606721057057
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 442270646417754792}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.011, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7988584415206817869}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &4079586449993683635
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 442270646417754792}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 17.099234, y: 1, z: 12.221361}
+  m_Center: {x: -3.482351, y: 0, z: -0.1482758}
+--- !u!114 &1807839565250763547
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 442270646417754792}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0220913bf141b0f48941e53f3d9c1a5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::A_WaterSection
+  a_WaterEnemySystem: {fileID: 2419788645249140961}
 --- !u!1 &1868550390042781683
 GameObject:
   m_ObjectHideFlags: 0
@@ -307,6 +374,9 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 48504d14ef5a147f5af2d57e3ec5f72d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1197647606721057057}
     - targetCorrespondingSourceObject: {fileID: 1875910922116443323, guid: 48504d14ef5a147f5af2d57e3ec5f72d, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1562697365690046249}
@@ -337,6 +407,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::A_WaterEnemySystem
   player: {fileID: 0}
   rotationSpeed: 2
+  timeAboveWater: 4
+  timeUnderWater: 4
+  _CountDown: 0
+  isUnderWater: 0
+--- !u!4 &7988584415206817869 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 48504d14ef5a147f5af2d57e3ec5f72d, type: 3}
+  m_PrefabInstance: {fileID: 7590709755742693286}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8313378028615109405 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1875910922116443323, guid: 48504d14ef5a147f5af2d57e3ec5f72d, type: 3}
