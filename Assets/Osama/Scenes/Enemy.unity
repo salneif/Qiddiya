@@ -15969,9 +15969,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlagZoneSize
   flag: {fileID: 253425063}
-  groundRadius: 3
+  groundRadius: 5
   heldRadius: 6
-  growDuration: 4.53
+  growDuration: 0
   curve:
     serializedVersion: 2
     m_Curve:
@@ -51937,7 +51937,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WorldChangeSequence
   bw: {fileID: 921462128}
   coloredZone: {fileID: 253425062}
-  duration: 3.04
+  duration: 3.43
   curve:
     serializedVersion: 2
     m_Curve:
@@ -51962,7 +51962,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  normalRadius: 0
+  normalRadius: 2.62
   changedRadius: 7.5
   cameraShake: {fileID: 0}
   sfxSource: {fileID: 0}
@@ -101217,10 +101217,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WorldFlagDirector
   flag: {fileID: 253425063}
   sequence: {fileID: 921462132}
-  flagColorsTheWorld: 0
+  flagColorsTheWorld: 1
   soundtrack: {fileID: 1816470270}
   heldPitch: 0.55
   heldCutoff: 690.4
+  groundPitch: 0.55
+  groundCutoff: 700
   musicFadeTime: 1.2
   lightTag: LightObject
   darkTag: DarkObject
