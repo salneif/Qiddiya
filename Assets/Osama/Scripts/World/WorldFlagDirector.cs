@@ -22,6 +22,9 @@ public class WorldFlagDirector : MonoBehaviour
     [Header("تحوّل العالم (الشيدر)")]
     [Tooltip("قائد التحوّل — يقلب الأبيض/الأسود والدائرة الملوّنة بتوقيت موحّد")]
     [SerializeField] private WorldChangeSequence sequence;
+    [Tooltip("لو مفعّل: العالم يبدأ أبيض/أسود، وأخذ العلم يلوّنه (والعكس عند الإرجاع). " +
+             "لو مطفي: العالم يبدأ ملوّنًا، وأخذ العلم يقلبه أبيض/أسود.")]
+    [SerializeField] private bool flagColorsTheWorld = true;
 
     [Header("الموسيقى")]
     [SerializeField] private AudioSource soundtrack;
@@ -89,7 +92,8 @@ public class WorldFlagDirector : MonoBehaviour
     private void HandleFlagTaken()
     {
         // 1) العالم يقلب أبيض/أسود (الشيدر + الدائرة بتوقيت موحّد)
-        if (sequence != null) sequence.Play(true);
+        // أخذ العلم: يلوّن (Play false) أو يقلب أبيض/أسود (Play true) حسب الإعداد
+        if (sequence != null) sequence.Play(!flagColorsTheWorld);
 
         // 2) كائنات عالم الظل تظهر والطبيعية تختفي
         SwapWorldObjects(held: true);
@@ -102,7 +106,8 @@ public class WorldFlagDirector : MonoBehaviour
 
     private void HandleFlagReturned()
     {
-        if (sequence != null) sequence.Play(false);
+        // إرجاع العلم: عكس حالة الأخذ
+        if (sequence != null) sequence.Play(flagColorsTheWorld);
         SwapWorldObjects(held: false);
         BlendMusic(normalPitch, 22000f);
         onFlagReturned?.Invoke();

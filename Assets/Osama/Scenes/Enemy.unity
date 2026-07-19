@@ -15819,6 +15819,7 @@ GameObject:
   - component: {fileID: 253425064}
   - component: {fileID: 253425063}
   - component: {fileID: 253425062}
+  - component: {fileID: 253425068}
   m_Layer: 0
   m_Name: Flag
   m_TagString: Untagged
@@ -15838,7 +15839,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9eaf49a458b3a3348a37141056d75c51, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorldInteractor
-  Radius: 2.5
+  Radius: 1.94
   Scale: {x: 1, y: 1, z: 1}
   Rotation: {x: 0, y: 0, z: 0}
   TextureIndex: 0
@@ -15955,6 +15956,46 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &253425068
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 253425061}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cca52fb93f133c34aaf8d25cbaa36598, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlagZoneSize
+  flag: {fileID: 253425063}
+  groundRadius: 3
+  heldRadius: 6
+  growDuration: 4.53
+  curve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1001 &253841301
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -19604,6 +19645,7 @@ GameObject:
   - component: {fileID: 315088406}
   - component: {fileID: 315088405}
   - component: {fileID: 315088404}
+  - component: {fileID: 315088408}
   m_Layer: 0
   m_Name: Sphere
   m_TagString: Untagged
@@ -19704,6 +19746,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &315088408
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 315088402}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9eaf49a458b3a3348a37141056d75c51, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldInteractor
+  Radius: 2.2
+  Scale: {x: 1, y: 1, z: 1}
+  Rotation: {x: 0, y: 0, z: 0}
+  TextureIndex: 0
 --- !u!1 &315441592
 GameObject:
   m_ObjectHideFlags: 0
@@ -51879,7 +51937,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WorldChangeSequence
   bw: {fileID: 921462128}
   coloredZone: {fileID: 253425062}
-  duration: 2
+  duration: 3.04
   curve:
     serializedVersion: 2
     m_Curve:
@@ -51905,11 +51963,11 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   normalRadius: 0
-  changedRadius: 10
+  changedRadius: 7.5
   cameraShake: {fileID: 0}
   sfxSource: {fileID: 0}
   changeSound: {fileID: 0}
-  startChanged: 0
+  startChanged: 1
   testToggleKey: 0
   onChanged:
     m_PersistentCalls:
@@ -101159,6 +101217,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WorldFlagDirector
   flag: {fileID: 253425063}
   sequence: {fileID: 921462132}
+  flagColorsTheWorld: 0
   soundtrack: {fileID: 1816470270}
   heldPitch: 0.55
   heldCutoff: 690.4
