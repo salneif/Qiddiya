@@ -16,7 +16,7 @@ public class A_CrouchAndJump : MonoBehaviour
     // we need to send some data with it 
     [Header("Crouch Numbers")]
     [SerializeField] private float crouchWalkSpeed;
-    [SerializeField] private bool isCrouching = false;
+     public bool isCrouching = false;
 
     [Header("Jump Numbers")]
     [SerializeField] private float jumpForce;
