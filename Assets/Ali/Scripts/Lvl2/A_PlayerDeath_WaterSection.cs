@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class A_PlayerDeath_WaterSection : MonoBehaviour
@@ -13,6 +14,10 @@ public class A_PlayerDeath_WaterSection : MonoBehaviour
 
     // ref for death triggers 
     [SerializeField] private A_WaterDeathZone waterDeathZone;
+    [SerializeField] private ParticleSystem waterSplash;
+    public  event Action OnPlayerFall;
+
+    
 
     private void Start()
     {
@@ -41,6 +46,12 @@ public class A_PlayerDeath_WaterSection : MonoBehaviour
         // death material
         rend = mesh.GetComponent<Renderer>();
         rend.material = deathMatrial;
+
+
+       // waterSplash.Play();
+        Instantiate(waterSplash, transform.position ,transform.rotation);
+        OnPlayerFall?.Invoke();
+
 
         // stop moving
         animator.SetBool("InAir", false);

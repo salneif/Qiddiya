@@ -53,6 +53,10 @@ public class PlayerController : MonoBehaviour
     // Ali - Conections
     [SerializeField] private A_CrouchAndJump crouchAndJumpSystem;
 
+    // ref 
+    [SerializeField] private A_PlayerDeath_WaterSection a_PlayerDeath;
+    
+
 
     private void Awake()
     {
@@ -75,6 +79,20 @@ public class PlayerController : MonoBehaviour
 
         crouchAndJumpSystem.OnCrouch += OnCrouch;
         crouchAndJumpSystem.OnJump += OnJump;
+    }
+
+    private void OnEnable()
+    {
+        a_PlayerDeath.OnPlayerFall += OnPlayerFall;
+    }
+    private void OnDisable()
+    {
+        a_PlayerDeath.OnPlayerFall -= OnPlayerFall;
+    }
+
+    private void OnPlayerFall()
+    {
+        characterController.Move(new Vector3(0,gravity,0));
     }
 
     private void OnJump(float jumpForce , bool canDoubleJump)
