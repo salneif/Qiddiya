@@ -91,7 +91,7 @@ public class PlayerController : MonoBehaviour
         else if(!characterController.isGrounded && canDoubleJump && !alreadyDoubleJumped)
         {
             _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
-            animator.SetTrigger("Jump");
+            animator.SetTrigger("Jump2");
             alreadyDoubleJumped = true;
         }   
 
@@ -223,14 +223,10 @@ public class PlayerController : MonoBehaviour
          animator.SetFloat("MovementBlend", _blendSpeed);
 
 
-        if(!IsGrounded)
+        bool isCurrentlyInAir = animator.GetBool("InAir");
+        if (isCurrentlyInAir != !IsGrounded)
         {
-            animator.SetBool("InAir" , true);
-        }
-        else
-        {
-            animator.SetBool("InAir", false);
-
+            animator.SetBool("InAir", !IsGrounded);
         }
         //Ali
 
