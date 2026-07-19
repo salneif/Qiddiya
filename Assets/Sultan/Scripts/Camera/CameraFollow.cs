@@ -31,6 +31,7 @@ public class CameraFollow : MonoBehaviour
     private float _lockedX;
     private bool _centerOnTarget;
     private Object _overrideOwner;
+    private bool _followTargetY;
 
     private void Start()
     {
@@ -135,7 +136,7 @@ public class CameraFollow : MonoBehaviour
         return firstRoomCenterX + index * roomWidth;
     }
 
-    public void SetOverride(Object owner, Vector3 overrideOffset, Vector3 overrideRotation, float speed, bool lockX = false, float lockedXPos = 0f, bool centerOnTarget = false)
+    public void SetOverride(Object owner, Vector3 overrideOffset, Vector3 overrideRotation, float speed, bool lockX = false, float lockedXPos = 0f, bool centerOnTarget = false, bool followPlayerY = false)
     {
         _overrideOwner = owner;
         _goalOffset = _baseOffset + overrideOffset;
@@ -144,6 +145,7 @@ public class CameraFollow : MonoBehaviour
         _lockX = lockX;
         _lockedX = lockedXPos;
         _centerOnTarget = centerOnTarget;
+        _followTargetY = followPlayerY;
     }
 
     public void ClearOverride(Object owner, float speed)

@@ -149,13 +149,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f15083339fc64f07865cd398dc26ad8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraZoneTrigger
-  overrideOffset: {x: -4.5, y: 12, z: -18}
-  overrideRotation: {x: 45, y: 45, z: 0}
+  overrideOffset: {x: -20, y: 15, z: 15}
+  overrideRotation: {x: 15, y: 55, z: 0}
   transitionSpeed: 1
   lockXPosition: 0
   lockedX: 0
-  centerOnPlayer: 0
+  centerOnPlayer: 1
   playerTag: Player
+  followPlayerY: 0
 --- !u!65 &5743097
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -175,8 +176,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2.7288294, y: 1, z: 100.000656}
-  m_Center: {x: -1.6355968, y: -3.1617908e-10, z: -0.0000000031669019}
+  m_Size: {x: 2.5766764, y: 3.953396, z: 100.00232}
+  m_Center: {x: -1.2981454, y: 1.4767425, z: 0.0000000032858711}
 --- !u!4 &5743098
 Transform:
   m_ObjectHideFlags: 0
@@ -186,7 +187,7 @@ Transform:
   m_GameObject: {fileID: 5743095}
   serializedVersion: 2
   m_LocalRotation: {x: 0.019175759, y: 0.025721438, z: -0.0004934822, w: 0.99948514}
-  m_LocalPosition: {x: -12.81, y: 5.26, z: -4.11}
+  m_LocalPosition: {x: -13, y: 5.26, z: -4.1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -223,13 +224,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f15083339fc64f07865cd398dc26ad8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraZoneTrigger
-  overrideOffset: {x: 0, y: 17, z: -22}
-  overrideRotation: {x: 45, y: 0, z: 0}
+  overrideOffset: {x: 0, y: 22, z: 0}
+  overrideRotation: {x: 20, y: 0, z: 0}
   transitionSpeed: 1
   lockXPosition: 0
   lockedX: 0
   centerOnPlayer: 0
   playerTag: Player
+  followPlayerY: 0
 --- !u!65 &7162115
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -249,8 +251,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 39.4725, y: 6.65, z: 10.990291}
-  m_Center: {x: -1.3637524, y: 0, z: 3.0398705}
+  m_Size: {x: 39.668266, y: 6.65, z: 10.990291}
+  m_Center: {x: -2.223196, y: 0, z: 3.0398712}
 --- !u!4 &7162116
 Transform:
   m_ObjectHideFlags: 0
@@ -260,7 +262,7 @@ Transform:
   m_GameObject: {fileID: 7162113}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.025726171, z: -0, w: 0.999669}
-  m_LocalPosition: {x: -33.1, y: 7.23321, z: -2.8}
+  m_LocalPosition: {x: -33.12, y: 7.23321, z: -3.26}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10533,11 +10535,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 303.41907, y: 223.52971, z: 9.210698}
   m_Center: {x: -8958.051, y: 2952.7896, z: -1077.8132}
---- !u!1 &128354630 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5134557923520140822, guid: 03c648aef1cc7014f81a17e58fc59d03, type: 3}
-  m_PrefabInstance: {fileID: 789263376}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &128354631 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 363143065368806537, guid: 03c648aef1cc7014f81a17e58fc59d03, type: 3}
@@ -16119,13 +16116,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f15083339fc64f07865cd398dc26ad8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraZoneTrigger
-  overrideOffset: {x: 0, y: 9, z: -20}
+  overrideOffset: {x: 0, y: 12, z: -10}
   overrideRotation: {x: 35, y: 0, z: 0}
   transitionSpeed: 1
   lockXPosition: 0
   lockedX: 0
   centerOnPlayer: 0
   playerTag: Player
+  followPlayerY: 0
 --- !u!65 &244549841
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -66128,6 +66126,7 @@ MonoBehaviour:
   zMoveSpeed: 2.5
   gravity: -20
   pushSpeedScale: 0.6
+  cameraRelative: 0
   blendTimeMovement: 0
   crouchAndJumpSystem: {fileID: 0}
 --- !u!95 &498513453
@@ -66241,6 +66240,7 @@ MonoBehaviour:
   lockedX: 0
   centerOnPlayer: 0
   playerTag: Player
+  followPlayerY: 0
 --- !u!65 &512796856
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -66667,6 +66667,80 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 5, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &561275300
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 561275303}
+  - component: {fileID: 561275302}
+  - component: {fileID: 561275301}
+  m_Layer: 0
+  m_Name: 1stRoomCameraTrigger
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!65 &561275301
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 561275300}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 9.679802, y: 8.235583, z: 5.8390684}
+  m_Center: {x: 3.790821, y: -0.73544264, z: 1.5693936}
+--- !u!114 &561275302
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 561275300}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f15083339fc64f07865cd398dc26ad8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraZoneTrigger
+  overrideOffset: {x: 0, y: 0, z: 0}
+  overrideRotation: {x: 0, y: 0, z: 0}
+  transitionSpeed: 3
+  lockXPosition: 1
+  lockedX: 0
+  centerOnPlayer: 0
+  playerTag: Player
+  followPlayerY: 0
+--- !u!4 &561275303
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 561275300}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -72.57169, y: -6.02073, z: -14.73099}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &562313561
 GameObject:
   m_ObjectHideFlags: 0
@@ -66704,6 +66778,7 @@ MonoBehaviour:
   lockedX: 0
   centerOnPlayer: 0
   playerTag: Player
+  followPlayerY: 0
 --- !u!65 &562313563
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -97144,7 +97219,7 @@ Transform:
   m_GameObject: {fileID: 773706768}
   serializedVersion: 2
   m_LocalRotation: {x: 0.1148909, y: 0.028169869, z: -0.0032593643, w: 0.9929733}
-  m_LocalPosition: {x: -68, y: -3.6, z: -26.22}
+  m_LocalPosition: {x: -68, y: -3.91, z: -24.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -97211,12 +97286,12 @@ MonoBehaviour:
   cameraRotation: {x: 0, y: 0, z: 0}
   xFollowSpeed: 7
   clampX: 1
-  roomWidth: 5
+  roomWidth: 8
   firstRoomCenterX: 0
   boundaryPadding: 0.3
   roomTransitionSpeed: 3
-  clampMargin: 4
-  followTargetY: 1
+  clampMargin: 8
+  followTargetY: 0
   yFollowSpeed: 5
   followTargetZ: 1
   zFollowSpeed: 7
@@ -97708,7 +97783,6 @@ GameObject:
   - component: {fileID: 835858160}
   - component: {fileID: 835858159}
   - component: {fileID: 835858161}
-  - component: {fileID: 835858162}
   - component: {fileID: 835858163}
   m_Layer: 0
   m_Name: Teleport
@@ -97769,20 +97843,6 @@ MonoBehaviour:
   doorOpenRotation: {x: 0, y: -90, z: 0}
   doorSpeed: 90
   playerTag: Player
---- !u!114 &835858162
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 835858157}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ed25622b9603c47ac9aad7832df60290, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TeleportZone
-  offset: {x: 0, y: 0.05, z: 0}
-  monster: {fileID: 128354630}
 --- !u!54 &835858163
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -103808,6 +103868,7 @@ MonoBehaviour:
   lockedX: 0
   centerOnPlayer: 0
   playerTag: Player
+  followPlayerY: 0
 --- !u!65 &941009194
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -114273,15 +114334,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8419201673582269653, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -98.13
+      value: -41.78
       objectReference: {fileID: 0}
     - target: {fileID: 8419201673582269653, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -4.193
+      value: 6.84
       objectReference: {fileID: 0}
     - target: {fileID: 8419201673582269653, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -21.4
+      value: -14.1
       objectReference: {fileID: 0}
     - target: {fileID: 8419201673582269653, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: m_LocalRotation.w
@@ -120053,6 +120114,7 @@ MonoBehaviour:
   lockedX: 0
   centerOnPlayer: 0
   playerTag: Player
+  followPlayerY: 0
 --- !u!65 &1076987941
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -135779,7 +135841,7 @@ Transform:
   m_GameObject: {fileID: 1199264893}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -12.37, y: 4.79554, z: -7.93}
+  m_LocalPosition: {x: -12.37, y: 4.79554, z: -8.23}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -155741,6 +155803,80 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 17.35938, y: 224.95183, z: 18.41065}
   m_Center: {x: -8473.2, y: 2893.9883, z: -1079.083}
+--- !u!1 &1356879732
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1356879735}
+  - component: {fileID: 1356879734}
+  - component: {fileID: 1356879733}
+  m_Layer: 0
+  m_Name: CameraTrigger (8)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1356879733
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1356879732}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f15083339fc64f07865cd398dc26ad8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraZoneTrigger
+  overrideOffset: {x: 0, y: 20, z: 0}
+  overrideRotation: {x: 15, y: 0, z: 0}
+  transitionSpeed: 1
+  lockXPosition: 0
+  lockedX: 0
+  centerOnPlayer: 0
+  playerTag: Player
+  followPlayerY: 0
+--- !u!65 &1356879734
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1356879732}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.7288294, y: 1, z: 100.000656}
+  m_Center: {x: -1.6355968, y: -3.1617908e-10, z: -0.0000000031669019}
+--- !u!4 &1356879735
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1356879732}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.019175759, y: 0.025721438, z: -0.0004934822, w: 0.99948514}
+  m_LocalPosition: {x: -54.6, y: 8.1, z: -1.8}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 2.198, y: 2.948, z: 0}
 --- !u!1 &1359540625
 GameObject:
   m_ObjectHideFlags: 0
@@ -161367,6 +161503,7 @@ MonoBehaviour:
   lockedX: 0
   centerOnPlayer: 0
   playerTag: Player
+  followPlayerY: 0
 --- !u!65 &1450124523
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -166416,6 +166553,7 @@ MonoBehaviour:
   lockedX: 0
   centerOnPlayer: 0
   playerTag: Player
+  followPlayerY: 0
 --- !u!65 &1483023092
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -167106,6 +167244,7 @@ MonoBehaviour:
   lockedX: 0
   centerOnPlayer: 0
   playerTag: Player
+  followPlayerY: 0
 --- !u!65 &1552060788
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -182399,7 +182538,7 @@ Transform:
   m_GameObject: {fileID: 1688870388}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -12.37, y: 4.79554, z: -14.21}
+  m_LocalPosition: {x: -12.37, y: 4.79554, z: -14.62}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -183740,6 +183879,7 @@ MonoBehaviour:
   lockedX: 0
   centerOnPlayer: 0
   playerTag: Player
+  followPlayerY: 0
 --- !u!65 &1853162787
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -188667,6 +188807,7 @@ MonoBehaviour:
   lockedX: 0
   centerOnPlayer: 0
   playerTag: Player
+  followPlayerY: 0
 --- !u!65 &1861313748
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -193725,13 +193866,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f15083339fc64f07865cd398dc26ad8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraZoneTrigger
-  overrideOffset: {x: 0, y: 6, z: -18.5}
-  overrideRotation: {x: 35, y: 0, z: 0}
-  transitionSpeed: 1
+  overrideOffset: {x: 0, y: 12.5, z: 10}
+  overrideRotation: {x: 0, y: 0, z: 0}
+  transitionSpeed: 5
   lockXPosition: 0
   lockedX: 0
-  centerOnPlayer: 0
+  centerOnPlayer: 1
   playerTag: Player
+  followPlayerY: 1
 --- !u!65 &1910639918
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -193751,8 +193893,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 7.1, y: 31.7, z: -17.07}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 9.020013, y: 17.280615, z: 8.685138}
+  m_Center: {x: 0.17712712, y: 5.281419, z: -4.192437}
 --- !u!4 &1910639919
 Transform:
   m_ObjectHideFlags: 0
@@ -193762,7 +193904,7 @@ Transform:
   m_GameObject: {fileID: 1910639915}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.025726171, z: -0, w: 0.999669}
-  m_LocalPosition: {x: -8.3, y: 7.23321, z: -7.1}
+  m_LocalPosition: {x: -8.1, y: 6.78, z: -7.11}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -213410,6 +213552,7 @@ MonoBehaviour:
   lockedX: 0
   centerOnPlayer: 0
   playerTag: Player
+  followPlayerY: 0
 --- !u!65 &1966500223
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -262223,10 +262366,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 35370b2cd2f38cf45b3ad9eaf4f4fdb6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorldBWController
+  mode: 1
   bwVolume: {fileID: 4403094050258720146}
-  transitionDuration: 0.6
   coloredSaturation: 0
   bwSaturation: -85.8
+  transitionDuration: 0.6
   startBlackAndWhite: 0
 --- !u!33 &1291716250276875414
 MeshFilter:
@@ -359306,6 +359450,7 @@ MonoBehaviour:
   lockedX: 0
   centerOnPlayer: 0
   playerTag: Player
+  followPlayerY: 0
 --- !u!1 &5777102906331247161
 GameObject:
   m_ObjectHideFlags: 0
@@ -433948,7 +434093,7 @@ Transform:
   m_GameObject: {fileID: 7055446967476641575}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.0000000047683715, y: 8.834604e-12, z: 0}
+  m_LocalPosition: {x: -0.0002, y: 0.00154, z: -0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -452698,6 +452843,7 @@ MonoBehaviour:
   lockedX: 0
   centerOnPlayer: 1
   playerTag: Player
+  followPlayerY: 0
 --- !u!4 &9126274940863724147
 Transform:
   m_ObjectHideFlags: 0
@@ -453644,6 +453790,7 @@ SceneRoots:
   - {fileID: 1853162788}
   - {fileID: 1076987942}
   - {fileID: 1483023093}
+  - {fileID: 1356879735}
   - {fileID: 5743098}
   - {fileID: 562313564}
   - {fileID: 214880152}
@@ -453663,3 +453810,4 @@ SceneRoots:
   - {fileID: 913821628}
   - {fileID: 789263376}
   - {fileID: 1030804431}
+  - {fileID: 561275303}
