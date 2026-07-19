@@ -10,7 +10,7 @@ public class A_CrouchAndJump : MonoBehaviour
     // we will do that by event system 
     // here we will fire the event and tell movement code about it with the required varlibals
     public event Action<bool, float> OnCrouch;
-    public event Action<float> OnJump;
+    public event Action<float, bool> OnJump;
 
 
     // we need to send some data with it 
@@ -21,7 +21,13 @@ public class A_CrouchAndJump : MonoBehaviour
     [Header("Jump Numbers")]
     [SerializeField] private float jumpForce;
 
+    [Header("Ref")]
+    [SerializeField] private A_Ballon a_Ballon;
+
+
+
     private CharacterController characterController;
+    private bool canDoubleJump = false;
 
 
     private void Awake()
@@ -31,6 +37,12 @@ public class A_CrouchAndJump : MonoBehaviour
     private void Start()
     {
         characterController = GetComponent<CharacterController>();
+        a_Ballon.OnBaloonPick += OnBaloonPick;
+    }
+
+    private void OnBaloonPick()
+    {
+        canDoubleJump = true;
     }
 
     public void OnInputCrouch(InputAction.CallbackContext context)
@@ -46,18 +58,18 @@ public class A_CrouchAndJump : MonoBehaviour
             {
                 isCrouching = true;
             }
-           
+
         }
-       
+
     }
 
     public void OnInputJump(InputAction.CallbackContext context)
     {
-        
 
-        if(context.performed && !isCrouching && characterController.isGrounded)
+
+        if (context.performed && !isCrouching && (characterController.isGrounded || canDoubleJump))
         {
-            OnJump?.Invoke(jumpForce);
+            OnJump?.Invoke(jumpForce , canDoubleJump);
         }
 
 

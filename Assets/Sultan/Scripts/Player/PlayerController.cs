@@ -47,6 +47,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float blendTimeMovement;
     private float _blendSpeed;
 
+    // double jump 
+    private bool alreadyDoubleJumped = false;
+
     // Ali - Conections
     [SerializeField] private A_CrouchAndJump crouchAndJumpSystem;
 
@@ -74,16 +77,23 @@ public class PlayerController : MonoBehaviour
         crouchAndJumpSystem.OnJump += OnJump;
     }
 
-    private void OnJump(float jumpForce)
+    private void OnJump(float jumpForce , bool canDoubleJump)
     {
         if (!CanMove)
         {
             return ;
         }
-       
-        _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
-        animator.SetTrigger("Jump");
-            
+        if (characterController.isGrounded)
+        {
+            _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
+            animator.SetTrigger("Jump");
+        }
+        else if(!characterController.isGrounded && canDoubleJump && !alreadyDoubleJumped)
+        {
+            _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
+            animator.SetTrigger("Jump");
+            alreadyDoubleJumped = true;
+        }   
 
         
     }
@@ -123,6 +133,11 @@ public class PlayerController : MonoBehaviour
             move();
             flip();
             updateAnimator();
+        }
+
+        if (IsGrounded)
+        {
+            alreadyDoubleJumped = false;
         }
     }
 
