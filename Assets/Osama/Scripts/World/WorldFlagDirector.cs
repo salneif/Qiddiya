@@ -40,10 +40,14 @@ public class WorldFlagDirector : MonoBehaviour
     [SerializeField] private float musicFadeTime = 1.2f;
 
     [Header("كائنات العالمين (بالوسوم)")]
-    [Tooltip("وسم كائنات العالم الطبيعي — تختفي أثناء حمل العلم")]
+    [Tooltip("وسم كائنات العالم المضيء/الملوّن")]
     [SerializeField] private string lightTag = "LightObject";
-    [Tooltip("وسم كائنات عالم الظل (ممرات/جسور...) — تظهر أثناء حمل العلم")]
+    [Tooltip("وسم كائنات العالم المظلم/الظل (ممرات/جسور...)")]
     [SerializeField] private string darkTag = "DarkObject";
+    [Tooltip("لو مفعّل: LightObject تظهر عند حمل العلم و DarkObject بدونه " +
+             "(يطابق: بدون علم = عالم مظلم، أخذ العلم = ينوّر). " +
+             "لو مطفي: العكس.")]
+    [SerializeField] private bool lightObjectsShowWhenHeld = true;
 
     [Header("أحداث")]
     [Tooltip("عند أخذ العلم (افتح البوابة هنا)")]
@@ -62,8 +66,8 @@ public class WorldFlagDirector : MonoBehaviour
         lightObjects.AddRange(GameObject.FindGameObjectsWithTag(lightTag));
         darkObjects.AddRange(GameObject.FindGameObjectsWithTag(darkTag));
 
-        // الحالة الطبيعية: كائنات الظل مخفية
-        foreach (var go in darkObjects) go.SetActive(false);
+        // الحالة الابتدائية حسب مكان العلم (بدون علم افتراضيًا)
+        SwapWorldObjects(flag != null && flag.IsHeld);
 
         if (soundtrack != null)
         {
@@ -122,10 +126,13 @@ public class WorldFlagDirector : MonoBehaviour
 
     private void SwapWorldObjects(bool held)
     {
+        // من يظهر عند حمل العلم يحدده الخيار (المضيء أو المظلم)
+        bool lightVisible = lightObjectsShowWhenHeld ? held : !held;
+
         foreach (var go in lightObjects)
-            if (go != null) go.SetActive(!held);
+            if (go != null) go.SetActive(lightVisible);
         foreach (var go in darkObjects)
-            if (go != null) go.SetActive(held);
+            if (go != null) go.SetActive(!lightVisible);
     }
 
     private void BlendMusic(float targetPitch, float targetCutoff)
