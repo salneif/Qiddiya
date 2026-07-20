@@ -8,6 +8,8 @@ public class CameraZoneTrigger : MonoBehaviour
     [SerializeField] private bool lockXPosition;
     [SerializeField] private float lockedX;
     [SerializeField] private bool centerOnPlayer;
+    [SerializeField] private bool freezeX;
+    [SerializeField] private bool freezeZ;
     [SerializeField] private string playerTag = "Player";
     [SerializeField] private bool followPlayerY;
     private CameraFollow _cameraFollow;
@@ -22,7 +24,7 @@ public class CameraZoneTrigger : MonoBehaviour
         if (!other.CompareTag(playerTag)) return;
         if (_cameraFollow == null) return;
 
-        _cameraFollow.SetOverride(this, overrideOffset, overrideRotation, transitionSpeed, lockXPosition, lockedX, centerOnPlayer, followPlayerY);
+        _cameraFollow.SetOverride(this, overrideOffset, overrideRotation, transitionSpeed, lockXPosition, lockedX, centerOnPlayer, followPlayerY, freezeX, freezeZ);
     }
 
     private void OnTriggerExit(Collider other)
