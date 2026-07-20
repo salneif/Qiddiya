@@ -30,11 +30,13 @@ public class CameraFollow : MonoBehaviour
     private bool _lockX;
     private float _lockedX;
     private bool _centerOnTarget;
+    private bool _followY;
     private Object _overrideOwner;
-    private bool _followTargetY;
 
     private void Start()
     {
+        _followY = followTargetY;
+
         _roomCenterX = firstRoomCenterX;
 
         if (target != null)
@@ -76,12 +78,13 @@ public class CameraFollow : MonoBehaviour
         {
             _goalOffset = _baseOffset + offset;
             _goalRotation = _baseRotation + cameraRotation;
+            _followY = followTargetY;
         }
 
         float dt = Time.deltaTime;
 
         float bt = 1f - Mathf.Exp(-_blendSpeed * dt);
-        _activeOffset = Vector3.Lerp(_activeOffset, _goalOffset, bt);
+        _activeOffset = Vector3.Slerp(_activeOffset, _goalOffset, bt);
         _activeRotation = Vector3.Lerp(_activeRotation, _goalRotation, bt);
 
         float halfWindow = Mathf.Max(0f, roomWidth * 0.5f - clampMargin);
@@ -105,7 +108,7 @@ public class CameraFollow : MonoBehaviour
         float tx = 1f - Mathf.Exp(-xFollowSpeed * dt);
         _anchor.x = Mathf.Lerp(_anchor.x, goalX, tx);
 
-        if (followTargetY)
+        if (_followY)
         {
             float ty = 1f - Mathf.Exp(-yFollowSpeed * dt);
             _anchor.y = Mathf.Lerp(_anchor.y, target.position.y, ty);
@@ -145,7 +148,7 @@ public class CameraFollow : MonoBehaviour
         _lockX = lockX;
         _lockedX = lockedXPos;
         _centerOnTarget = centerOnTarget;
-        _followTargetY = followPlayerY;
+        _followY = followPlayerY;
     }
 
     public void ClearOverride(Object owner, float speed)
@@ -156,6 +159,7 @@ public class CameraFollow : MonoBehaviour
         _blendSpeed = speed;
         _lockX = false;
         _centerOnTarget = false;
+        _followY = followTargetY;
     }
 
     public void SetTarget(Transform newTarget)
