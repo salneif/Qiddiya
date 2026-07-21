@@ -47,8 +47,15 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float blendTimeMovement;
     private float _blendSpeed;
 
+    // double jump 
+    private bool alreadyDoubleJumped = false;
+
     // Ali - Conections
     [SerializeField] private A_CrouchAndJump crouchAndJumpSystem;
+
+    // ref 
+    [SerializeField] private A_PlayerDeath_WaterSection a_PlayerDeath;
+    
 
 
     private void Awake()
@@ -74,16 +81,37 @@ public class PlayerController : MonoBehaviour
         crouchAndJumpSystem.OnJump += OnJump;
     }
 
-    private void OnJump(float jumpForce)
+    private void OnEnable()
+    {
+        a_PlayerDeath.OnPlayerFall += OnPlayerFall;
+    }
+    private void OnDisable()
+    {
+        a_PlayerDeath.OnPlayerFall -= OnPlayerFall;
+    }
+
+    private void OnPlayerFall()
+    {
+        characterController.Move(new Vector3(0,gravity,0));
+    }
+
+    private void OnJump(float jumpForce , bool canDoubleJump)
     {
         if (!CanMove)
         {
             return ;
         }
-       
-        _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
-        animator.SetTrigger("Jump");
-            
+        if (characterController.isGrounded)
+        {
+            _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
+            animator.SetTrigger("Jump");
+        }
+        else if(!characterController.isGrounded && canDoubleJump && !alreadyDoubleJumped)
+        {
+            _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
+            animator.SetTrigger("Jump2");
+            alreadyDoubleJumped = true;
+        }   
 
         
     }
@@ -123,6 +151,11 @@ public class PlayerController : MonoBehaviour
             move();
             flip();
             updateAnimator();
+        }
+
+        if (IsGrounded)
+        {
+            alreadyDoubleJumped = false;
         }
     }
 
@@ -208,14 +241,10 @@ public class PlayerController : MonoBehaviour
          animator.SetFloat("MovementBlend", _blendSpeed);
 
 
-        if(!IsGrounded)
+        bool isCurrentlyInAir = animator.GetBool("InAir");
+        if (isCurrentlyInAir != !IsGrounded)
         {
-            animator.SetBool("InAir" , true);
-        }
-        else
-        {
-            animator.SetBool("InAir", false);
-
+            animator.SetBool("InAir", !IsGrounded);
         }
         //Ali
 

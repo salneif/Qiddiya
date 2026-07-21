@@ -22,20 +22,13 @@ public class WorldFlagDirector : MonoBehaviour
     [Header("تحوّل العالم (الشيدر)")]
     [Tooltip("قائد التحوّل — يقلب الأبيض/الأسود والدائرة الملوّنة بتوقيت موحّد")]
     [SerializeField] private WorldChangeSequence sequence;
-    [Tooltip("لو مفعّل: العالم يبدأ أبيض/أسود، وأخذ العلم يلوّنه (والعكس عند الإرجاع). " +
-             "لو مطفي: العالم يبدأ ملوّنًا، وأخذ العلم يقلبه أبيض/أسود.")]
-    [SerializeField] private bool flagColorsTheWorld = true;
 
     [Header("الموسيقى")]
     [SerializeField] private AudioSource soundtrack;
-    [Tooltip("سرعة الأغنية أثناء حمل العلم (1 = طبيعية ناعمة)")]
-    [SerializeField] private float heldPitch = 1f;
-    [Tooltip("تردد الكتم أثناء الحمل (22000 = صافية بلا كتم)")]
-    [SerializeField] private float heldCutoff = 22000f;
-    [Tooltip("سرعة الأغنية والعلم في الأرض (أبطأ = أثقل)")]
-    [SerializeField] private float groundPitch = 0.55f;
-    [Tooltip("تردد الكتم والعلم في الأرض (أصغر = مكتومة/مضخّمة أكثر)")]
-    [SerializeField] private float groundCutoff = 700f;
+    [Tooltip("سرعة الأغنية أثناء حمل العلم (أبطأ)")]
+    [SerializeField] private float heldPitch = 0.55f;
+    [Tooltip("تردد الكتم أثناء الحمل (أصغر = مكتومة/مضخّمة أكثر)")]
+    [SerializeField] private float heldCutoff = 700f;
     [Tooltip("مدة الانتقال الصوتي (ثواني)")]
     [SerializeField] private float musicFadeTime = 1.2f;
 
@@ -58,6 +51,7 @@ public class WorldFlagDirector : MonoBehaviour
     private readonly List<GameObject> lightObjects = new();
     private readonly List<GameObject> darkObjects = new();
     private AudioLowPassFilter lowPass;
+    private float normalPitch = 1f;
     private Coroutine musicRoutine;
 
     private void Start()
@@ -71,14 +65,10 @@ public class WorldFlagDirector : MonoBehaviour
 
         if (soundtrack != null)
         {
+            normalPitch = soundtrack.pitch;
             lowPass = soundtrack.GetComponent<AudioLowPassFilter>();
             if (lowPass == null) lowPass = soundtrack.gameObject.AddComponent<AudioLowPassFilter>();
-
-            // الحالة الابتدائية فورًا حسب مكان العلم:
-            // في الأرض = مكتومة وبطيئة، محمول = ناعمة وصافية
-            bool held = flag != null && flag.IsHeld;
-            soundtrack.pitch = held ? heldPitch : groundPitch;
-            lowPass.cutoffFrequency = held ? heldCutoff : groundCutoff;
+            lowPass.cutoffFrequency = 22000f;
         }
     }
 
@@ -103,8 +93,7 @@ public class WorldFlagDirector : MonoBehaviour
     private void HandleFlagTaken()
     {
         // 1) العالم يقلب أبيض/أسود (الشيدر + الدائرة بتوقيت موحّد)
-        // أخذ العلم: يلوّن (Play false) أو يقلب أبيض/أسود (Play true) حسب الإعداد
-        if (sequence != null) sequence.Play(!flagColorsTheWorld);
+        if (sequence != null) sequence.Play(true);
 
         // 2) كائنات عالم الظل تظهر والطبيعية تختفي
         SwapWorldObjects(held: true);
@@ -117,10 +106,9 @@ public class WorldFlagDirector : MonoBehaviour
 
     private void HandleFlagReturned()
     {
-        // إرجاع العلم: عكس حالة الأخذ
-        if (sequence != null) sequence.Play(flagColorsTheWorld);
+        if (sequence != null) sequence.Play(false);
         SwapWorldObjects(held: false);
-        BlendMusic(groundPitch, groundCutoff); // ترجع مكتومة وبطيئة
+        BlendMusic(normalPitch, 22000f);
         onFlagReturned?.Invoke();
     }
 
