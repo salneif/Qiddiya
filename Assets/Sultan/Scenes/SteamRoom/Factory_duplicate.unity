@@ -149,7 +149,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f15083339fc64f07865cd398dc26ad8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraZoneTrigger
-  overrideOffset: {x: -3, y: 15, z: 0}
+  overrideOffset: {x: -3, y: 0, z: -2.5}
   overrideRotation: {x: 0, y: 0, z: 0}
   transitionSpeed: 1
   lockXPosition: 0
@@ -158,7 +158,7 @@ MonoBehaviour:
   freezeX: 1
   freezeZ: 0
   playerTag: Player
-  followPlayerY: 0
+  followPlayerY: 1
 --- !u!65 &5743097
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -16240,8 +16240,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 5.100265, y: 15.8721485, z: 17.200277}
-  m_Center: {x: 1.4168367, y: -8.320682, z: -0.050138477}
+  m_Size: {x: 5.100265, y: 15.8721485, z: 24.896618}
+  m_Center: {x: 1.4168372, y: -8.320682, z: 3.7980342}
 --- !u!4 &244549842
 Transform:
   m_ObjectHideFlags: 0
@@ -66226,6 +66226,7 @@ MonoBehaviour:
   cameraRelative: 0
   blendTimeMovement: 0
   crouchAndJumpSystem: {fileID: 0}
+  a_PlayerDeath: {fileID: 0}
 --- !u!95 &498513453
 Animator:
   serializedVersion: 7
@@ -114612,15 +114613,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8419201673582269653, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -47.7
+      value: -99.4
       objectReference: {fileID: 0}
     - target: {fileID: 8419201673582269653, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 9.38
+      value: -4.235
       objectReference: {fileID: 0}
     - target: {fileID: 8419201673582269653, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -10.572
+      value: -21.5
       objectReference: {fileID: 0}
     - target: {fileID: 8419201673582269653, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: m_LocalRotation.w
@@ -184423,82 +184424,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1849505454}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1853162785
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1853162788}
-  - component: {fileID: 1853162787}
-  - component: {fileID: 1853162786}
-  m_Layer: 0
-  m_Name: CameraTrigger (6)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1853162786
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1853162785}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0f15083339fc64f07865cd398dc26ad8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CameraZoneTrigger
-  overrideOffset: {x: 2, y: 0.5, z: 1}
-  overrideRotation: {x: 0, y: 0, z: 0}
-  transitionSpeed: 1
-  lockXPosition: 0
-  lockedX: 0
-  centerOnPlayer: 0
-  freezeX: 0
-  freezeZ: 0
-  playerTag: Player
-  followPlayerY: 0
---- !u!65 &1853162787
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1853162785}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 3.7344615, y: 31.7, z: 9.9}
-  m_Center: {x: -0.8522314, y: 0, z: 3.713385e-11}
---- !u!4 &1853162788
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1853162785}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.025726171, z: -0, w: 0.999669}
-  m_LocalPosition: {x: -61.37, y: 5.7, z: 5.66}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 2.948, z: 0}
 --- !u!1 &1857323898
 GameObject:
   m_ObjectHideFlags: 0
@@ -194451,7 +194376,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f15083339fc64f07865cd398dc26ad8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraZoneTrigger
-  overrideOffset: {x: 0, y: 15, z: 10}
+  overrideOffset: {x: 0, y: 1, z: 1}
   overrideRotation: {x: 0, y: 0, z: 0}
   transitionSpeed: 5
   lockXPosition: 0
@@ -454386,7 +454311,6 @@ SceneRoots:
   - {fileID: 7162116}
   - {fileID: 1910639919}
   - {fileID: 244549842}
-  - {fileID: 1853162788}
   - {fileID: 1076987942}
   - {fileID: 1483023093}
   - {fileID: 1356879735}
