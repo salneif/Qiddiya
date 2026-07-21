@@ -37,6 +37,7 @@ public class A_CrouchAndJump : MonoBehaviour
     private void Start()
     {
         characterController = GetComponent<CharacterController>();
+        if(a_Ballon != null )
         a_Ballon.OnBaloonPick += OnBaloonPick;
     }
 

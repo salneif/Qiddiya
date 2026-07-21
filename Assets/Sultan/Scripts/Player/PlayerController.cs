@@ -83,10 +83,12 @@ public class PlayerController : MonoBehaviour
 
     private void OnEnable()
     {
+        if(a_PlayerDeath != null)
         a_PlayerDeath.OnPlayerFall += OnPlayerFall;
     }
     private void OnDisable()
     {
+        if(a_PlayerDeath != null)
         a_PlayerDeath.OnPlayerFall -= OnPlayerFall;
     }
 
