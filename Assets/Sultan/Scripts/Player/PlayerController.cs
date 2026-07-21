@@ -85,11 +85,19 @@ public class PlayerController : MonoBehaviour
     {
         if(a_PlayerDeath != null)
         a_PlayerDeath.OnPlayerFall += OnPlayerFall;
+
+        A_Jumppad.OnJumppad += OnJumppad;
+
     }
+
+  
+
     private void OnDisable()
     {
         if(a_PlayerDeath != null)
         a_PlayerDeath.OnPlayerFall -= OnPlayerFall;
+
+        A_Jumppad.OnJumppad -= OnJumppad;
     }
 
     private void OnPlayerFall()
@@ -116,6 +124,11 @@ public class PlayerController : MonoBehaviour
         }   
 
         
+    }
+    private void OnJumppad(float jumpForce)
+    {
+        _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
+        animator.SetTrigger("Jump");
     }
 
     private void OnCrouch(bool isCrouching, float CrouchMoveSpeed)
