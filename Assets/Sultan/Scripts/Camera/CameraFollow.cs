@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class CameraFollow : MonoBehaviour
 {
@@ -17,6 +18,24 @@ public class CameraFollow : MonoBehaviour
     [SerializeField] private bool followTargetZ = false;
     [SerializeField] private float zFollowSpeed = 7f;
 
+    private class ZoneSettings
+    {
+        public Object owner;
+        public Vector3 offset;
+        public Vector3 rotation;
+        public float speed;
+        public bool lockX;
+        public float lockedX;
+        public bool centerOnTarget;
+        public bool followY;
+        public bool freezeX;
+        public bool freezeZ;
+        public float frozenX;
+        public float frozenZ;
+    }
+
+    private readonly List<ZoneSettings> _zones = new List<ZoneSettings>();
+
     private float _roomCenterX;
     private float _windowCenter;
     private Vector3 _baseOffset;
@@ -30,10 +49,16 @@ public class CameraFollow : MonoBehaviour
     private bool _lockX;
     private float _lockedX;
     private bool _centerOnTarget;
-    private Object _overrideOwner;
+    private bool _freezeX;
+    private bool _freezeZ;
+    private float _frozenX;
+    private float _frozenZ;
+    private bool _followY;
 
     private void Start()
     {
+        _followY = followTargetY;
+
         _roomCenterX = firstRoomCenterX;
 
         if (target != null)
@@ -69,18 +94,20 @@ public class CameraFollow : MonoBehaviour
     {
         if (target == null) return;
 
+        pruneDeadZones();
         updateRoom();
 
-        if (_overrideOwner == null)
+        if (_zones.Count == 0)
         {
             _goalOffset = _baseOffset + offset;
             _goalRotation = _baseRotation + cameraRotation;
+            _followY = followTargetY;
         }
 
         float dt = Time.deltaTime;
 
         float bt = 1f - Mathf.Exp(-_blendSpeed * dt);
-        _activeOffset = Vector3.Lerp(_activeOffset, _goalOffset, bt);
+        _activeOffset = Vector3.Slerp(_activeOffset, _goalOffset, bt);
         _activeRotation = Vector3.Lerp(_activeRotation, _goalRotation, bt);
 
         float halfWindow = Mathf.Max(0f, roomWidth * 0.5f - clampMargin);
@@ -91,20 +118,28 @@ public class CameraFollow : MonoBehaviour
             _windowCenter = Mathf.Lerp(_windowCenter, _roomCenterX, tw);
         }
 
-        float goalX;
-        if (_lockX)
-            goalX = _lockedX;
-        else if (_centerOnTarget)
-            goalX = target.position.x;
-        else if (clampX)
-            goalX = Mathf.Clamp(target.position.x, _windowCenter - halfWindow, _windowCenter + halfWindow);
+        if (_freezeX)
+        {
+            float tf = 1f - Mathf.Exp(-_blendSpeed * dt);
+            _anchor.x = Mathf.Lerp(_anchor.x, _frozenX, tf);
+        }
         else
-            goalX = target.position.x;
+        {
+            float goalX;
+            if (_lockX)
+                goalX = _lockedX;
+            else if (_centerOnTarget)
+                goalX = target.position.x;
+            else if (clampX)
+                goalX = Mathf.Clamp(target.position.x, _windowCenter - halfWindow, _windowCenter + halfWindow);
+            else
+                goalX = target.position.x;
 
-        float tx = 1f - Mathf.Exp(-xFollowSpeed * dt);
-        _anchor.x = Mathf.Lerp(_anchor.x, goalX, tx);
+            float tx = 1f - Mathf.Exp(-xFollowSpeed * dt);
+            _anchor.x = Mathf.Lerp(_anchor.x, goalX, tx);
+        }
 
-        if (followTargetY)
+        if (_followY)
         {
             float ty = 1f - Mathf.Exp(-yFollowSpeed * dt);
             _anchor.y = Mathf.Lerp(_anchor.y, target.position.y, ty);
@@ -113,7 +148,10 @@ public class CameraFollow : MonoBehaviour
         if (followTargetZ)
         {
             float tz = 1f - Mathf.Exp(-zFollowSpeed * dt);
-            _anchor.z = Mathf.Lerp(_anchor.z, target.position.z, tz);
+            if (_freezeZ)
+                _anchor.z = Mathf.Lerp(_anchor.z, _frozenZ, tz);
+            else
+                _anchor.z = Mathf.Lerp(_anchor.z, target.position.z, tz);
         }
 
         transform.eulerAngles = _activeRotation;
@@ -135,25 +173,117 @@ public class CameraFollow : MonoBehaviour
         return firstRoomCenterX + index * roomWidth;
     }
 
-    public void SetOverride(Object owner, Vector3 overrideOffset, Vector3 overrideRotation, float speed, bool lockX = false, float lockedXPos = 0f, bool centerOnTarget = false)
+    public void SetOverride(Object owner, Vector3 overrideOffset, Vector3 overrideRotation, float speed, bool lockX = false, float lockedXPos = 0f, bool centerOnTarget = false, bool followPlayerY = false, bool freezeX = false, bool freezeZ = false)
     {
-        _overrideOwner = owner;
-        _goalOffset = _baseOffset + overrideOffset;
-        _goalRotation = _baseRotation + overrideRotation;
-        _blendSpeed = speed;
-        _lockX = lockX;
-        _lockedX = lockedXPos;
-        _centerOnTarget = centerOnTarget;
+        ZoneSettings z = findZone(owner);
+        if (z != null)
+            _zones.Remove(z);
+        else
+            z = new ZoneSettings();
+
+        z.owner = owner;
+        z.offset = overrideOffset;
+        z.rotation = overrideRotation;
+        z.speed = speed;
+        z.lockX = lockX;
+        z.lockedX = lockedXPos;
+        z.centerOnTarget = centerOnTarget;
+        z.followY = followPlayerY;
+        z.freezeX = freezeX;
+        z.freezeZ = freezeZ;
+
+        if (z.freezeX)
+            z.frozenX = captureFreezeX(z);
+        if (z.freezeZ)
+            z.frozenZ = target != null ? target.position.z : _anchor.z;
+
+        _zones.Add(z);
+        applyTop();
     }
 
     public void ClearOverride(Object owner, float speed)
     {
-        if (_overrideOwner != owner) return;
+        ZoneSettings z = findZone(owner);
+        if (z == null) return;
 
-        _overrideOwner = null;
+        bool wasTop = _zones[_zones.Count - 1] == z;
+        _zones.Remove(z);
+
+        if (!wasTop) return;
+
+        if (_zones.Count > 0)
+            applyTop();
+        else
+            revertToBase(speed);
+    }
+
+    private ZoneSettings findZone(Object owner)
+    {
+        for (int i = 0; i < _zones.Count; i++)
+            if (_zones[i].owner == owner) return _zones[i];
+        return null;
+    }
+
+    private void applyTop()
+    {
+        ZoneSettings z = _zones[_zones.Count - 1];
+        _goalOffset = _baseOffset + z.offset;
+        _goalRotation = _baseRotation + z.rotation;
+        _blendSpeed = z.speed;
+        _lockX = z.lockX;
+        _lockedX = z.lockedX;
+        _centerOnTarget = z.centerOnTarget;
+        _followY = z.followY;
+        _freezeX = z.freezeX;
+        _freezeZ = z.freezeZ;
+
+        if (z.freezeX)
+            _frozenX = z.frozenX;
+        if (z.freezeZ)
+            _frozenZ = z.frozenZ;
+    }
+
+    private float captureFreezeX(ZoneSettings z)
+    {
+        if (target == null) return _anchor.x;
+        if (z.lockX) return z.lockedX;
+        if (z.centerOnTarget) return target.position.x;
+
+        if (clampX)
+        {
+            float halfWindow = Mathf.Max(0f, roomWidth * 0.5f - clampMargin);
+            return Mathf.Clamp(target.position.x, _windowCenter - halfWindow, _windowCenter + halfWindow);
+        }
+
+        return target.position.x;
+    }
+
+    private void revertToBase(float speed)
+    {
         _blendSpeed = speed;
         _lockX = false;
         _centerOnTarget = false;
+        _freezeX = false;
+        _freezeZ = false;
+        _followY = followTargetY;
+    }
+
+    private void pruneDeadZones()
+    {
+        bool removedTop = false;
+        for (int i = _zones.Count - 1; i >= 0; i--)
+        {
+            if (_zones[i].owner != null) continue;
+            if (i == _zones.Count - 1) removedTop = true;
+            _zones.RemoveAt(i);
+        }
+
+        if (!removedTop) return;
+
+        if (_zones.Count > 0)
+            applyTop();
+        else
+            revertToBase(_blendSpeed);
     }
 
     public void SetTarget(Transform newTarget)
