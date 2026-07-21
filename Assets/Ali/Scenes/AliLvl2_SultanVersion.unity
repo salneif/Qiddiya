@@ -35504,7 +35504,8 @@ PrefabInstance:
       propertyPath: m_Name
       value: Boat
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 5841879094419579132, guid: 03199b73db850884ca5279f8ad431d13, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -38795,8 +38796,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7107623163237716645}
+  - component: {fileID: 7107623163237716646}
   m_Layer: 0
-  m_Name: lot-new
+  m_Name: Jumppad
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -103740,13 +103742,34 @@ Transform:
   m_GameObject: {fileID: 2498329438232166645}
   serializedVersion: 2
   m_LocalRotation: {x: 1, y: -0, z: -0, w: 0.0000000754979}
-  m_LocalPosition: {x: 8.739289, y: -3.88377, z: 23.317093}
+  m_LocalPosition: {x: 39.097, y: -2.74, z: 64.732}
   m_LocalScale: {x: 1.1079702, y: -12.640157, z: 1.1079704}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8172952155885680862}
   m_Father: {fileID: 7244425135663018964}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &7107623163237716646
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2498329438232166645}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.06
+  m_Center: {x: 0, y: 0.3, z: 0}
 --- !u!1 &7109979868898873592
 GameObject:
   m_ObjectHideFlags: 0
