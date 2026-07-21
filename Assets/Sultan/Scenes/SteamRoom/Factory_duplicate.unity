@@ -130,6 +130,7 @@ GameObject:
   - component: {fileID: 5743098}
   - component: {fileID: 5743097}
   - component: {fileID: 5743096}
+  - component: {fileID: 5743099}
   m_Layer: 0
   m_Name: CameraTrigger (7)
   m_TagString: Untagged
@@ -195,6 +196,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 2.198, y: 2.948, z: 0}
+--- !u!114 &5743099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5743095}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3eecc6993ebd641b4bb4931a807ea0cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MonsterOff
+  scriptOne: {fileID: 8532125158913312372}
+  scriptTwo: {fileID: 8532125158913312372}
+  playerTag: Player
 --- !u!1 &7162113
 GameObject:
   m_ObjectHideFlags: 0
@@ -207,6 +223,7 @@ GameObject:
   - component: {fileID: 7162115}
   - component: {fileID: 7162114}
   - component: {fileID: 7162117}
+  - component: {fileID: 7162118}
   m_Layer: 0
   m_Name: CameraTrigger
   m_TagString: Untagged
@@ -285,6 +302,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ForceCrouchZone
   crouchMoveSpeed: 2.5
+--- !u!114 &7162118
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7162113}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f715c54c7e1a0413cb86d58f18a675cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MonsterOn
+  scriptOne: {fileID: 8532125158913312372}
+  scriptTwo: {fileID: 8532125158913312372}
+  playerTag: Player
+  postProcessVolume: {fileID: 95764152}
+  targetSaturation: -78
 --- !u!1 &15559675
 GameObject:
   m_ObjectHideFlags: 0
@@ -16181,7 +16215,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f15083339fc64f07865cd398dc26ad8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraZoneTrigger
-  overrideOffset: {x: 1.5, y: 2.5, z: 2.5}
+  overrideOffset: {x: 2.75, y: -2, z: 7}
   overrideRotation: {x: 15, y: 0, z: 0}
   transitionSpeed: 1
   lockXPosition: 0
@@ -135909,6 +135943,59 @@ Transform:
   - {fileID: 936344072}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1171324052
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1171324053}
+  - component: {fileID: 1171324054}
+  m_Layer: 0
+  m_Name: Dethlava (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1171324053
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1171324052}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.111439936, y: -0.69827014, z: -0.69827014, w: 0.11143993}
+  m_LocalPosition: {x: 0.0214, y: -0.0223, z: 0.0069}
+  m_LocalScale: {x: 0.003333333, y: 0.0033333332, z: 0.0033333332}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 363143064916553881}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1171324054
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1171324052}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1190965067
 GameObject:
   m_ObjectHideFlags: 0
@@ -234172,6 +234259,7 @@ Transform:
   - {fileID: 1519644048}
   - {fileID: 217041626714245823}
   - {fileID: 7665123505575473292}
+  - {fileID: 1171324053}
   - {fileID: 7968576937041018051}
   m_Father: {fileID: 8838649335611667127}
   m_LocalEulerAnglesHint: {x: -89.98, y: 0, z: 161.865}
@@ -413358,7 +413446,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5134557923034194438}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef46e72268a400c4eac1f43d7c7c0089, type: 3}
   m_Name: 
@@ -482840,7 +482928,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5134557923034194438}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c57a796f20890104f85845af209aa23b, type: 3}
   m_Name: 
