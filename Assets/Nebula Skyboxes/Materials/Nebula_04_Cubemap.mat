@@ -7,9 +7,9 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: WaterObjectsScene_Skybox
-  m_Shader: {fileID: 4800000, guid: e32cae2a5bbfb41888ef2ba8391ab87d, type: 3}
-  m_Parent: {fileID: 2100000, guid: b65268c31d6774586a6417af2bc03dde, type: 2}
+  m_Name: Nebula_04_Cubemap
+  m_Shader: {fileID: 103, guid: 0000000000000000f000000000000000, type: 0}
+  m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords: []
@@ -22,15 +22,16 @@ Material:
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
-    m_TexEnvs: []
+    m_TexEnvs:
+    - _Tex:
+        m_Texture: {fileID: 8900000, guid: f2534a0c318d54f4b92555b9e652ad36, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _DirectionPitch: 101
-    - _DirectionYaw: 0
-    - _Exponent: 2.57
+    - _Exposure: 1
+    - _Rotation: 0
     m_Colors:
-    - _Color1: {r: 0.23077878, g: 0.20879315, b: 0.4339623, a: 1}
-    - _Color2: {r: 0.4641509, g: 0, b: 0.45087433, a: 1}
-    - _Direction: {r: 0, g: -0.19080903, b: 0.98162717, a: 0}
+    - _Tint: {r: 0.5, g: 0.5, b: 0.5, a: 0.5}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
