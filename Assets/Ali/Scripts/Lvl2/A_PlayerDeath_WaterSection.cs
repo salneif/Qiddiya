@@ -78,7 +78,7 @@ public class A_PlayerDeath_WaterSection : MonoBehaviour
 
         animator.SetTrigger("Death");
 
-        Invoke("StartPlayerDeathSystem", 2);
+        Invoke("StartPlayerDeathSystem", 5);
         
     }
     private void StartPlayerDeathSystem()
