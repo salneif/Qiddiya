@@ -16,6 +16,7 @@ public class A_PlayerDeath_WaterSection : MonoBehaviour
     [SerializeField] private A_WaterDeathZone waterDeathZone;
     [SerializeField] private ParticleSystem waterSplash;
     public  event Action OnPlayerFall;
+    public event Action OnPlayerDeath;
 
     
 
@@ -60,6 +61,8 @@ public class A_PlayerDeath_WaterSection : MonoBehaviour
 
         animator.SetTrigger("Death");
 
+        
+        StartPlayerDeathSystem();
     }
 
     private void OnEnemySeeingPlayer()
@@ -74,9 +77,14 @@ public class A_PlayerDeath_WaterSection : MonoBehaviour
 
 
         animator.SetTrigger("Death");
+
+        Invoke("StartPlayerDeathSystem", 2);
         
     }
-
+    private void StartPlayerDeathSystem()
+    {
+        OnPlayerDeath?.Invoke();
+    }
 
     private void Update()
     {
