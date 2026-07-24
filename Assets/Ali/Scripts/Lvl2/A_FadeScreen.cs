@@ -7,6 +7,7 @@ public class A_FadeScreen : MonoBehaviour
     [SerializeField] private RawImage FadeScreen;
     [SerializeField] private float fadeSpeed;
     [SerializeField] private float unFadeSpeed;
+    [SerializeField] private A_CheckPoint checkPoint;
 
 
 
@@ -14,6 +15,21 @@ public class A_FadeScreen : MonoBehaviour
     private float _currentUnFadeSpeedTime;
    [SerializeField] private bool _isFading = false;
     private bool _isUnFading;
+
+
+    private void OnEnable()
+    {
+        checkPoint.OnFadeStar += OnFadeStar;
+    }
+    private void OnDisable()
+    {
+        checkPoint.OnFadeStar -= OnFadeStar;
+    }
+
+    private void OnFadeStar()
+    {
+        _isFading = true;
+    }
 
     private void Update()
     {
@@ -49,4 +65,5 @@ public class A_FadeScreen : MonoBehaviour
     {
         _isUnFading = true;
     }
+   
 }

@@ -1,3 +1,4 @@
+using System;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -20,6 +21,8 @@ public class A_CheckPoint : MonoBehaviour
     private CharacterController characterController;
     private PlayerController playerController;
 
+
+    public event Action OnFadeStar;
 
     private void Start()
     {
@@ -48,6 +51,8 @@ public class A_CheckPoint : MonoBehaviour
 
         animator.SetTrigger("ReActivePlayer");
         Invoke("AfterPlayerDeath", 2);
+
+        OnFadeStar?.Invoke();
     }
 
     private void AfterPlayerDeath()
