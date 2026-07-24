@@ -71,9 +71,12 @@ Shader "Osama/BWMultiZoneFullscreen"
                     float3 diff = worldPos - _InteractorData[i].xyz;
                     diff.y *= (1.0 - _FlatOnGround);
                     float dist = length(diff);
-                    float z = 1.0 - smoothstep(radius, radius + max(_Softness, 1e-4), dist);
+
+                    // المنطقة الملوّنة تنتهي عند radius (الحافة الصلبة)، والنعومة للداخل فقط
+                    float z = 1.0 - smoothstep(radius - max(_Softness, 1e-4), radius, dist);
                     zone = max(zone, z);
 
+                    // الخط المتوهّج عند نفس نصف القطر تمامًا → ينطبق على حافة اللون
                     float e = 1.0 - saturate(abs(dist - radius) / max(_EdgeWidth, 1e-4));
                     edge = max(edge, e);
                 }
