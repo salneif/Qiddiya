@@ -5,6 +5,10 @@ public class A_CheckPoint : MonoBehaviour
 {
     [SerializeField] private int checkPointNumber;
     private bool _isFirstTime = true;
+
+    [SerializeField] private ParticleSystem particleBeforeCheckPoint;
+    [SerializeField] private ParticleSystem particleAfterCheckPoint;
+    [SerializeField] private ParticleSystem particleLooping;
     
 
     public static event Action<int> OnCheckPoint;
@@ -14,6 +18,14 @@ public class A_CheckPoint : MonoBehaviour
         {
             _isFirstTime = false;
             OnCheckPoint?.Invoke(checkPointNumber);
+            particleBeforeCheckPoint.Stop();
+            particleAfterCheckPoint.Play();
+            Invoke("HandleLoopingPartical", 1);
         }
+    }
+
+    private void HandleLoopingPartical()
+    {
+        particleLooping.Play();
     }
 }
