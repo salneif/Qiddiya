@@ -1,67 +1,19 @@
 using System;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class A_CheckPoint : MonoBehaviour
 {
-    [Header("CheckPoint")]
-    [SerializeField] private Transform checkPoint1;
-    [SerializeField] private Transform checkPoint2;
-    [SerializeField] private Transform checkPoint3;
-
-    [Header("Ref")]
-    [SerializeField] private A_PlayerDeath_WaterSection playerDeath;
-    [SerializeField] private GameObject player;
-    [SerializeField] private Animator animator;
-   
-
-
-    private Transform _currentCheckPoint;
-    private Transform playerTransform;
-    private CharacterController characterController;
-    private PlayerController playerController;
-
-
-    public event Action OnFadeStar;
-
-    private void Start()
-    {
-        playerTransform = player.transform;
-        characterController = player.GetComponent<CharacterController>();
-        playerController = player.GetComponent<PlayerController>();
-    }
-    private void Update()
-    {
-        _currentCheckPoint = checkPoint1;
-    }
-    private void OnEnable()
-    {
-        playerDeath.OnPlayerDeath += OnPlayerDeath;
-    }
-    private void OnDisable()
-    {
-        playerDeath.OnPlayerDeath -= OnPlayerDeath;
-    }
-
+    [SerializeField] private int checkPointNumber;
+    private bool _isFirstTime = true;
     
-    
-    private void OnPlayerDeath()
+
+    public static event Action<int> OnCheckPoint;
+    private void OnTriggerEnter(Collider other)
     {
-        characterController.enabled = false;
-
-        animator.SetTrigger("ReActivePlayer");
-        Invoke("AfterPlayerDeath", 2);
-
-        OnFadeStar?.Invoke();
-    }
-
-    private void AfterPlayerDeath()
-    {
-        playerTransform.position = _currentCheckPoint.transform.position;
-
-        characterController.enabled = true;
-        playerController.CanMove = true;
-
-        animator.ResetTrigger("ReActivePlayer");
+        if(other.gameObject.CompareTag("Player") && _isFirstTime)
+        {
+            _isFirstTime = false;
+            OnCheckPoint?.Invoke(checkPointNumber);
+        }
     }
 }

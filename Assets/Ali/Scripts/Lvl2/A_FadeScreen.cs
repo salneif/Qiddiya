@@ -7,7 +7,7 @@ public class A_FadeScreen : MonoBehaviour
     [SerializeField] private RawImage FadeScreen;
     [SerializeField] private float fadeSpeed;
     [SerializeField] private float unFadeSpeed;
-    [SerializeField] private A_CheckPoint checkPoint;
+    [SerializeField] private A_CheckPointSystem checkPoint;
 
 
 
