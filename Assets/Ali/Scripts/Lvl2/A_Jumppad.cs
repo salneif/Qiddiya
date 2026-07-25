@@ -47,4 +47,13 @@ public class A_Jumppad : MonoBehaviour
         }
         transform.localScale = orignalScale;
     }
+    private void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        if (hit.gameObject.CompareTag("Player"))
+        {
+            OnJumppad?.Invoke(jumppadForce);
+            StartCoroutine(HandleScaling());
+            jumpPadSound.Play();
+        }
+    }
 }
