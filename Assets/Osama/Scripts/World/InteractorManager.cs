@@ -15,7 +15,12 @@ using UnityEngine;
 /// ملاحظة: حجم المصفوفات ثابت (MAX_INTERACTORS = 100) لأن يونتي يثبّت حجم
 /// مصفوفة الشيدر من أول إرسال — لا ترسل مصفوفة أصغر لاحقًا.
 /// إذا أنشأت Interactor جديدًا وقت اللعب نادِ <see cref="Refresh"/>.
+///
+/// [ExecuteAlways] ضرورية: بدونها لا يعمل LateUpdate في وضع التحرير، فتبقى
+/// بيانات الدوائر مجمّدة على آخر جلسة Play — وتحريك الكائن أو تغيير نصف قطره
+/// لا يظهر له أي أثر في نافذة Scene.
 /// </summary>
+[ExecuteAlways]
 public class InteractorManager : MonoBehaviour
 {
     /// <summary>الحد الأقصى — يجب أن يطابق MAX_INTERACTORS في ملف الـ HLSL.</summary>
@@ -51,6 +56,9 @@ public class InteractorManager : MonoBehaviour
 
     private void LateUpdate()
     {
+        // في وضع التحرير نعيد الجمع كل إطار حتى يظهر أي Interactor تضيفه أو تحذفه فورًا
+        if (!Application.isPlaying) Refresh();
+
         int count = 0;
 
         for (int i = 0; i < interactors.Length && count < MaxInteractors; i++)
