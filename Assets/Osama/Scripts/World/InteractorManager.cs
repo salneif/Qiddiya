@@ -56,8 +56,17 @@ public class InteractorManager : MonoBehaviour
 
     private void LateUpdate()
     {
-        // في وضع التحرير نعيد الجمع كل إطار حتى يظهر أي Interactor تضيفه أو تحذفه فورًا
-        if (!Application.isPlaying) Refresh();
+#if UNITY_EDITOR
+        // في وضع التحرير نعيد الجمع حتى يظهر أي Interactor تضيفه أو تحذفه فورًا،
+        // لكن ليس أثناء الترجمة أو إعادة تحميل الدومين — البحث عن كائنات هناك
+        // يسبب خطأ "Objects are trying to be loaded during a domain backup".
+        if (!Application.isPlaying)
+        {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating) return;
+            Refresh();
+        }
+#endif
 
         int count = 0;
 

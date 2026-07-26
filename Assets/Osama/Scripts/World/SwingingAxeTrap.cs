@@ -47,6 +47,12 @@ public class SwingingAxeTrap : MonoBehaviour
     [SerializeField] private AudioSource audioSource;
     [Tooltip("صوت 'شووش' يُشغَّل كل ما عبر الفاس منتصف تأرجحه (أسرع نقطة) — تنبيه سمعي للاعب")]
     [SerializeField] private AudioClip whooshSound;
+    [Tooltip("صرير مستمر (سلسلة/خشب) يدور بلا توقف — يعلو مع قوة التأرجح ويسكت لما يهدأ الفاس. " +
+             "يشتغل على نفس الـ AudioSource مع الشووش.")]
+    [SerializeField] private AudioClip creakLoop;
+    [Tooltip("أقصى مستوى للصرير عند التأرجح الكامل")]
+    [Range(0f, 1f)]
+    [SerializeField] private float creakVolume = 0.5f;
 
     [Header("تصحيح (Scene فقط)")]
     [Tooltip("طول الذراع التقريبي لرسم قوس التأرجح في نافذة Scene — لا يؤثر على اللعب")]
@@ -72,6 +78,20 @@ public class SwingingAxeTrap : MonoBehaviour
         amplitudeScale = startRunning ? 1f : 0f;
         lastAngle = CurrentAngle();
         SyncKillComponent();
+        StartCreakLoop();
+    }
+
+    /// <summary>
+    /// يشغّل الصرير كحلقة دائمة على نفس الـ AudioSource. الشووش يُشغَّل فوقه
+    /// بـ PlayOneShot فيمتزجان بلا أن يقطع أحدهما الآخر.
+    /// </summary>
+    private void StartCreakLoop()
+    {
+        if (audioSource == null || creakLoop == null) return;
+        audioSource.clip = creakLoop;
+        audioSource.loop = true;
+        audioSource.volume = creakVolume * amplitudeScale;
+        audioSource.Play();
     }
 
     /// <summary>يطفئ الفاس: يفقد تأرجحه تدريجيًا حتى يسكن — اربطه بـ WorldLever.onActivated.</summary>
@@ -120,6 +140,10 @@ public class SwingingAxeTrap : MonoBehaviour
 
         lastAngle = angle;
         SyncKillComponent();
+
+        // الصرير يخفت مع فقدان التأرجح حتى يسكت تمامًا عند سكون الفاس
+        if (audioSource != null && creakLoop != null)
+            audioSource.volume = creakVolume * amplitudeScale;
     }
 
     /// <summary>
