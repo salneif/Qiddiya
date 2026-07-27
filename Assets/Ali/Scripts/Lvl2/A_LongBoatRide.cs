@@ -5,7 +5,6 @@ public class A_LongBoatRide : MonoBehaviour
 {
     [SerializeField] private Transform endPoint;
     [SerializeField] private float speed;
-    [SerializeField] private BoxCollider BoatCllider;
 
     [SerializeField]private bool StartMoving = false;
 
@@ -14,7 +13,6 @@ public class A_LongBoatRide : MonoBehaviour
         if (other.gameObject.CompareTag("Player"))
         {
             StartMoving = true;
-            BoatCllider.enabled = true;
         }
     }
     private void Awake()
