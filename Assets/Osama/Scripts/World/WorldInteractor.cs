@@ -23,9 +23,26 @@ public class WorldInteractor : MonoBehaviour
     [Range(0, 15)]
     public int TextureIndex = 0;
 
+    private void OnValidate()
+    {
+        // نصف قطر سالب أو صفر يجعل الشيدر يتخطى المنطقة تمامًا (continue)
+        if (Radius < 0f) Radius = 0f;
+    }
+
     private void OnDrawGizmosSelected()
     {
-        Gizmos.color = new Color(1f, 0.6f, 0.15f, 0.9f);
+        // الأخضر = حدود المنطقة الملوّنة الفعلية.
+        // الشيدر الفولسكرين يقرأ الموقع ونصف القطر فقط ويتجاهل Scale و Rotation،
+        // فهذي الدائرة هي الحد الحقيقي الذي يفصل الملوّن عن الأبيض/الأسود.
+        Gizmos.color = Radius > 0.0001f
+            ? new Color(0.2f, 1f, 0.6f, 0.9f)
+            : new Color(1f, 0.2f, 0.2f, 0.9f); // أحمر = معطّلة (نصف القطر صفر/سالب)
+        Gizmos.matrix = Matrix4x4.TRS(transform.position, Quaternion.identity,
+                                      new Vector3(1f, 0.02f, 1f));
+        Gizmos.DrawWireSphere(Vector3.zero, Mathf.Max(Radius, 0.0001f));
+
+        // البرتقالي = بصمة ماتيريال WorldChange (هذي وحدها تتأثر بـ Scale و Rotation)
+        Gizmos.color = new Color(1f, 0.6f, 0.15f, 0.6f);
         Gizmos.matrix = Matrix4x4.TRS(transform.position, Quaternion.Euler(Rotation),
                                       Scale * Mathf.Max(Radius, 0.0001f));
         Gizmos.DrawWireCube(Vector3.zero, new Vector3(1f, 0.05f, 1f));
