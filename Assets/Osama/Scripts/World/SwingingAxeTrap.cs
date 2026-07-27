@@ -43,6 +43,12 @@ public class SwingingAxeTrap : MonoBehaviour
              "الساكن مجرّد ديكور تعدي من جنبه. اتركه فارغًا ليُلتقط LavaKill من الأبناء تلقائيًا.")]
     [SerializeField] private Behaviour killComponent;
 
+    [Header("الظهور")]
+    [Tooltip("مجسم الفاس نفسه (ابن الـ Pivot). لو اختفى — مثلاً مع تبديل عالمَي العلم " +
+             "عبر وسوم LightObject/DarkObject — يسكت الصوت تلقائيًا. " +
+             "يُلتقط أول ابن تلقائيًا إذا تُرك فارغًا.")]
+    [SerializeField] private GameObject axeVisual;
+
     [Header("الصوت")]
     [SerializeField] private AudioSource audioSource;
     [Tooltip("صوت 'شووش' يُشغَّل كل ما عبر الفاس منتصف تأرجحه (أسرع نقطة) — تنبيه سمعي للاعب")]
@@ -74,6 +80,8 @@ public class SwingingAxeTrap : MonoBehaviour
         baseRotation = transform.localRotation;
         // الفاس القاتل ابن للـ Pivot، فنلتقط مكوّن القتل منه بلا ربط يدوي
         if (killComponent == null) killComponent = GetComponentInChildren<LavaKill>(true);
+        if (axeVisual == null && transform.childCount > 0)
+            axeVisual = transform.GetChild(0).gameObject;
         IsRunning = startRunning;
         amplitudeScale = startRunning ? 1f : 0f;
         lastAngle = CurrentAngle();
@@ -133,18 +141,25 @@ public class SwingingAxeTrap : MonoBehaviour
         float angle = CurrentAngle();
         transform.localRotation = baseRotation * Quaternion.AngleAxis(angle, NormalizedAxis());
 
+        // الفاس المخفي لا يُسمع — الـ Pivot يظل شغّالًا (تحتاجه الرافعة) لكن الصوت يسكت
+        bool visible = AxeVisible;
+
         // عبور منتصف التأرجح (الزاوية تغيّر إشارتها) = أسرع نقطة بالحركة → شغّل صوت الهسهسة
-        if (whooshSound != null && audioSource != null && amplitudeScale > DeadlyThreshold &&
+        if (whooshSound != null && audioSource != null && visible &&
+            amplitudeScale > DeadlyThreshold &&
             Mathf.Sign(angle) != Mathf.Sign(lastAngle))
             audioSource.PlayOneShot(whooshSound);
 
         lastAngle = angle;
         SyncKillComponent();
 
-        // الصرير يخفت مع فقدان التأرجح حتى يسكت تمامًا عند سكون الفاس
+        // الصرير يخفت مع فقدان التأرجح حتى يسكت تمامًا عند سكون الفاس أو اختفائه
         if (audioSource != null && creakLoop != null)
-            audioSource.volume = creakVolume * amplitudeScale;
+            audioSource.volume = visible ? creakVolume * amplitudeScale : 0f;
     }
+
+    /// <summary>هل مجسم الفاس ظاهر الآن؟ (يتبع تفعيل/تعطيل الكائن في الهيرآركي)</summary>
+    private bool AxeVisible => axeVisual == null || axeVisual.activeInHierarchy;
 
     /// <summary>
     /// القتل مربوط بقوة التأرجح لا بالزر: الفاس يظل قاتلًا وهو يتباطأ، ولا يصير
