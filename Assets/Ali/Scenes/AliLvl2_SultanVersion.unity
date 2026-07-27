@@ -5449,6 +5449,9 @@ PrefabInstance:
       addedObject: {fileID: 1662034855}
     - targetCorrespondingSourceObject: {fileID: 4498299836917419102, guid: 9c2203014148f4fb5bf9c498fc901c8a, type: 3}
       insertIndex: 3
+      addedObject: {fileID: 207585624}
+    - targetCorrespondingSourceObject: {fileID: 4498299836917419102, guid: 9c2203014148f4fb5bf9c498fc901c8a, type: 3}
+      insertIndex: 4
       addedObject: {fileID: 349051492}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9c2203014148f4fb5bf9c498fc901c8a, type: 3}
@@ -22439,6 +22442,78 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 207342047}
   m_Mesh: {fileID: -6582452904384680951, guid: 12dbc43f894bbca449b08429c92d1049, type: 3}
+--- !u!1 &207585623
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 207585624}
+  - component: {fileID: 207585626}
+  - component: {fileID: 207585625}
+  m_Layer: 0
+  m_Name: GameObject (4)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &207585624
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 207585623}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 163.6, y: -1, z: 36.24}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 904742274}
+  m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
+--- !u!114 &207585625
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 207585623}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 756be3e8a1bfa4312808abe1905f2b62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopDownCameraZone
+  overrideOffset: {x: -6.76, y: 0, z: 7.2}
+  overrideRotation: {x: 10, y: 90, z: 0}
+  transitionSpeed: 3
+  followPlayerY: 0
+  cameraYaw: 0
+  playerTag: Player
+--- !u!65 &207585626
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 207585623}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 109.22555, y: 10, z: 21.220394}
+  m_Center: {x: 46.559803, y: 0, z: 1.5704651}
 --- !u!1 &208146916
 GameObject:
   m_ObjectHideFlags: 0
@@ -132891,7 +132966,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4575354430943270, guid: 86a063313e6f317449f26a10de490268, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 66.769066
+      value: 67.78906
       objectReference: {fileID: 0}
     - target: {fileID: 4575354430943270, guid: 86a063313e6f317449f26a10de490268, type: 3}
       propertyPath: m_LocalPosition.y
@@ -265834,18 +265909,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 3019851811727588229, guid: 7d85a44817228fd4990feb03a45c813d, type: 3}
-      propertyPath: speed
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 3019851811727588229, guid: 7d85a44817228fd4990feb03a45c813d, type: 3}
-      propertyPath: zMoveSpeed
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 3019851811727588229, guid: 7d85a44817228fd4990feb03a45c813d, type: 3}
-      propertyPath: normalWalkSpeed
-      value: 3
-      objectReference: {fileID: 0}
     - target: {fileID: 3630480257147788570, guid: 7d85a44817228fd4990feb03a45c813d, type: 3}
       propertyPath: m_LocalPosition.x
       value: 60.979065
