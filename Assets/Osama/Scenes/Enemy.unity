@@ -6582,6 +6582,64 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 116168524}
   m_Mesh: {fileID: 3616098254887249958, guid: 94fc7f9e5b64dc14dab9610a8d60d616, type: 3}
+--- !u!1 &117699396
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 117699398}
+  - component: {fileID: 117699397}
+  m_Layer: 0
+  m_Name: Rats
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &117699397
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 117699396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f6cda8184a20a84cb0c3f8c2201371b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RatSwarm
+  ratPrefab: {fileID: 0}
+  count: 30
+  territoryRadius: 8
+  wanderSpeed: 1.5
+  fleeSpeed: 7
+  lightMargin: 0.6
+  turnSpeed: 12
+  playerTag: Player
+  killRadius: 0.7
+  audioSource: {fileID: 0}
+  squeakLoop: {fileID: 0}
+  onPlayerKilled:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!4 &117699398
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 117699396}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -147.59, y: 0, z: -11.6}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &122734077
 GameObject:
   m_ObjectHideFlags: 0
@@ -107049,3 +107107,4 @@ SceneRoots:
   - {fileID: 1020163590}
   - {fileID: 3911618560003553366}
   - {fileID: 329800566}
+  - {fileID: 117699398}
