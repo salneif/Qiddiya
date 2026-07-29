@@ -11,9 +11,8 @@ public class A_Ballon : MonoBehaviour
 
         if (other.gameObject.CompareTag("Player"))
         {
-            this.transform.SetParent(ballon_Place);
-            this.transform.localPosition = Vector3.zero+ new Vector3 (0.004f, 1.075f, -0.29f);
-            this.transform.localRotation = Quaternion.identity;
+            this.transform.parent = ballon_Place;
+            this.transform.localPosition = new Vector3(0.238f, -0.059f, -0.176f);
             this.transform.localScale = Vector3.one;
 
             OnBaloonPick?.Invoke();
