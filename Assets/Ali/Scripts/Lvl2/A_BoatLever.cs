@@ -1,0 +1,44 @@
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+public class A_BoatLever : MonoBehaviour
+{
+    [SerializeField] private GameObject rightSideWood;
+    [SerializeField] private GameObject leftSideWood;
+
+    [SerializeField] private int state = 0;
+
+
+    private bool _canInterAct = false;
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (other.gameObject.CompareTag("Player"))
+        {
+            _canInterAct = true;
+        }
+    }
+    private void Update()
+    {
+        
+    }
+
+    public void OnInteract(InputAction.CallbackContext context)
+    {
+        if(context.started && _canInterAct)
+        {
+            if(state == 0)
+            {
+                state = 1;
+            }
+            else if(state == 1)
+            {
+                state = 0;
+            }
+        }
+    }
+    
+        
+    
+}
+
