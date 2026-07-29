@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
+
 
 public class LongBoatSectionManager : MonoBehaviour
 {
@@ -73,25 +75,34 @@ public class LongBoatSectionManager : MonoBehaviour
                 _currentTime = timeToTurnAround;
             }
         }
-        switch (_currentWoodBlockNum)
+        if (_inDangerZone)
         {
-            case -1:
-                // invoke death
-                break;
+            switch (_currentWoodBlockNum)
+            {
+
+                case -1:
+                    // invoke death
+                    Debug.Log("die");
+                    break;
 
                 case 0:
-                if(CurrentTurnNum != 0)
-                {
-                    // invoke death
-                }
-                break;
+                    if (CurrentTurnNum != 0)
+                    {
+                        // invoke death
+                        Debug.Log("die000000");
+
+                    }
+                    break;
 
                 case 1:
-                if(CurrentTurnNum != 1)
-                {
-                    // invoke death
-                }
-                break;
+                    if (CurrentTurnNum != 1)
+                    {
+                        // invoke death
+                        Debug.Log("die1");
+
+                    }
+                    break;
+            }
         }
 
         

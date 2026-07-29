@@ -36,7 +36,13 @@ public class A_BoatLever : MonoBehaviour
     {
         if(context.started && _canInterAct)
         {
-            if(state == 0)
+            if (state == -1)
+            {
+                state = 0;
+
+                OnLeverSwitch?.Invoke(state);
+            }
+           else if(state == 0)
             {
                 state = 1;
 
