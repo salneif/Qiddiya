@@ -74,10 +74,6 @@ public class FlagGlitchEnemy : MonoBehaviour
     [Tooltip("يقتل اللاعب عند التلامس أثناء المطاردة")]
     [SerializeField] private bool killOnContact = true;
 
-    [Header("مناطق الأمان")]
-    [Tooltip("لا يدخل SafeZone مشتعلة ولا يقدر يمسك اللاعب داخلها — يقف برّا ويراقبه")]
-    [SerializeField] private bool respectSafeZones = true;
-
     private Transform player;
     private State state;
     private int speedHash;
@@ -203,26 +199,6 @@ public class FlagGlitchEnemy : MonoBehaviour
         Vector3 to = Flatten(player.position - transform.position);
         float dist = to.magnitude;
 
-        if (respectSafeZones)
-        {
-            // لو اشتعل ملجأ فوق العدو نفسه → يطلع منه فورًا
-            var here = SafeZone.ZoneAt(transform.position);
-            if (here != null)
-            {
-                Vector3 away = Flatten(transform.position - here.transform.position);
-                if (away.sqrMagnitude < 0.0001f) away = -to; // واقف في المركز تمامًا
-                Move(away.normalized, huntSpeed);
-                return huntSpeed;
-            }
-
-            // اللاعب داخل الضوء → يقف برّا ويراقبه بدل ما يلحقه
-            if (SafeZone.IsSafe(player.position))
-            {
-                FaceDir(to.normalized);
-                return 0f;
-            }
-        }
-
         if (dist <= contactRange)
         {
             if (killOnContact)
@@ -265,8 +241,6 @@ public class FlagGlitchEnemy : MonoBehaviour
 
         // يقفز نحو اللاعب (بدون تجاوزه)
         float step = Mathf.Min(blinkStep, Mathf.Max(0f, distToPlayer - contactRange * 0.9f));
-        if (respectSafeZones && SafeZone.IsSafe(transform.position + dir * step))
-            step = 0f; // لا يومض إلى داخل ملجأ مشتعل
         transform.position += dir * step;
         if (lockToGroundY)
         {
