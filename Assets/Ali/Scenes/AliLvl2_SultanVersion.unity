@@ -111626,6 +111626,7 @@ GameObject:
   m_Component:
   - component: {fileID: 853433140}
   - component: {fileID: 853433139}
+  - component: {fileID: 853433141}
   m_Layer: 0
   m_Name: LongBoatSection
   m_TagString: Untagged
@@ -111648,6 +111649,7 @@ MonoBehaviour:
   timeToTurnAround: 5
   _currentTime: 0
   CurrentTurnNum: 0
+  a_BoatLever: {fileID: 0}
 --- !u!4 &853433140
 Transform:
   m_ObjectHideFlags: 0
@@ -111665,6 +111667,27 @@ Transform:
   - {fileID: 7563001468976962849}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &853433141
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 853433138}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 10.938416, y: 3.7403197, z: 62.12008}
+  m_Center: {x: 4.969208, y: 1.3701599, z: 30.09851}
 --- !u!1001 &853925346
 PrefabInstance:
   m_ObjectHideFlags: 0
