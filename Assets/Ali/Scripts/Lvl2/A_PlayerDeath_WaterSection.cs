@@ -7,6 +7,7 @@ public class A_PlayerDeath_WaterSection : MonoBehaviour
    [SerializeField] private Animator animator;
     private PlayerController playerController;
     [SerializeField] private Material deathMatrial;
+    [SerializeField] private Material OringanlMatrerial;
     [SerializeField] private GameObject mesh;
 
     private Renderer rend;
@@ -16,9 +17,14 @@ public class A_PlayerDeath_WaterSection : MonoBehaviour
     [SerializeField] private A_WaterDeathZone waterDeathZone;
     [SerializeField] private ParticleSystem waterSplash;
     public  event Action OnPlayerFall;
+    public event Action OnPlayerDeath;
 
-    
+   
 
+    private void Awake()
+    {
+        
+    }
     private void Start()
     {
         playerController = PlayerController.instance;
@@ -60,6 +66,8 @@ public class A_PlayerDeath_WaterSection : MonoBehaviour
 
         animator.SetTrigger("Death");
 
+        
+        StartPlayerDeathSystem();
     }
 
     private void OnEnemySeeingPlayer()
@@ -74,10 +82,15 @@ public class A_PlayerDeath_WaterSection : MonoBehaviour
 
 
         animator.SetTrigger("Death");
+
+        Invoke("StartPlayerDeathSystem", 5);
         
     }
-
-
+    private void StartPlayerDeathSystem()
+    {
+        OnPlayerDeath?.Invoke();
+        rend.material = OringanlMatrerial;
+    }
     private void Update()
     {
        
