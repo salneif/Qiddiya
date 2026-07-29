@@ -14,12 +14,14 @@ public class LongBoatSectionManager : MonoBehaviour
     
 
     public event Action<int> OnturnAround;
+    public event Action OnDeathInLongBoat;
 
     private int _currentWoodBlockNum;
 
-    private bool _inDangerZone = false;
+   [SerializeField] private bool _inDangerZone = false;
     //ref
     [SerializeField] private A_BoatLever a_BoatLever;
+    [SerializeField] private A_PlayerDeath_WaterSection a_PlayerDeath;
 
 
     private void OnTriggerStay(Collider other)
@@ -43,10 +45,19 @@ public class LongBoatSectionManager : MonoBehaviour
     private void OnEnable()
     {
         a_BoatLever.OnLeverSwitch += OnLeverSwitch;
+        a_PlayerDeath.OnPlayerDeath += OnPlayerDeath;
     }
+
+   
+
     private void OnDisable()
     {
         a_BoatLever.OnLeverSwitch -= OnLeverSwitch;
+        a_PlayerDeath.OnPlayerDeath -= OnPlayerDeath;
+    }
+    private void OnPlayerDeath()
+    {
+        _inDangerZone = false ;
     }
 
     private void OnLeverSwitch(int currentWoodBlockNum)
@@ -82,13 +93,13 @@ public class LongBoatSectionManager : MonoBehaviour
 
                 case -1:
                     // invoke death
-                    Debug.Log("die");
+                    OnDeathInLongBoat?.Invoke();
                     break;
 
                 case 0:
                     if (CurrentTurnNum != 0)
                     {
-                        // invoke death
+                        OnDeathInLongBoat?.Invoke();
                         Debug.Log("die000000");
 
                     }
@@ -97,7 +108,7 @@ public class LongBoatSectionManager : MonoBehaviour
                 case 1:
                     if (CurrentTurnNum != 1)
                     {
-                        // invoke death
+                        OnDeathInLongBoat?.Invoke();
                         Debug.Log("die1");
 
                     }
