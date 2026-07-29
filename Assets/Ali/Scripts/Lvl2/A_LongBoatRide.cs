@@ -6,6 +6,8 @@ public class A_LongBoatRide : MonoBehaviour
     [SerializeField] private Transform endPoint;
     [SerializeField] private float speed;
 
+
+
     [SerializeField]private bool StartMoving = false;
 
     private void OnTriggerEnter(Collider other)
