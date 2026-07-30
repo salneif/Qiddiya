@@ -29,8 +29,13 @@ public class JumpScareBox : MonoBehaviour
     [Header("القفزة")]
     [Tooltip("مجسم المهرج الذي ينط لأعلى")]
     [SerializeField] private Transform popTarget;
-    [Tooltip("مقدار القفزة (محلي) — عادة لأعلى")]
-    [SerializeField] private Vector3 popOffset = new Vector3(0f, 1.2f, 0f);
+    [Tooltip("مقدار القفزة واتجاهها (محلي). يُستخدم طوله فقط عند تفعيل الاندفاع نحو اللاعب.")]
+    [SerializeField] private Vector3 popOffset = new Vector3(0f, 0f, 1.2f);
+    [Tooltip("ينقضّ نحو اللاعب أفقيًا بدل الاتجاه الثابت — أفزع بكثير لأنه يجي في وجهك " +
+             "مهما كان دوران الصندوق أو من أي جهة جئت")]
+    [SerializeField] private bool popTowardPlayer = true;
+    [Tooltip("يستدير ليواجه اللاعب لحظة القفزة")]
+    [SerializeField] private bool facePlayer = true;
     [Tooltip("زمن الخروج (ثواني) — اجعله قصيرًا جدًا، السرعة هي مصدر الفزع")]
     [SerializeField] private float popTime = 0.07f;
     [Tooltip("كم يبقى بالخارج قبل أن ينكمش")]
@@ -105,7 +110,7 @@ public class JumpScareBox : MonoBehaviour
         if (cameraShake != null) cameraShake.Shake();
         onPopped?.Invoke();
 
-        Vector3 outPosition = restPosition + popOffset;
+        Vector3 outPosition = restPosition + ResolvePopOffset();
 
         // الخروج: سريع جدًا مع ارتداد نابضي
         yield return Move(restPosition, outPosition, popTime, true);
@@ -127,6 +132,31 @@ public class JumpScareBox : MonoBehaviour
 
         IsOut = false;
         nextAllowedTime = Time.time + rearmDelay;
+    }
+
+    /// <summary>
+    /// اتجاه الاندفاع: نحو اللاعب أفقيًا إن كان مفعّلًا، وإلا الإزاحة الثابتة.
+    /// يُحسب لحظة القفزة لا مسبقًا، فينقضّ من أي جهة جاء منها اللاعب.
+    /// </summary>
+    private Vector3 ResolvePopOffset()
+    {
+        if (!popTowardPlayer || player == null) return popOffset;
+
+        Vector3 toPlayer = player.position - popTarget.position;
+        toPlayer.y = 0f; // أفقي بحت — الانقضاض للأمام لا للأعلى
+        if (toPlayer.sqrMagnitude < 0.0001f) return popOffset;
+
+        Vector3 dir = toPlayer.normalized;
+
+        if (facePlayer)
+            popTarget.rotation = Quaternion.LookRotation(dir, Vector3.up);
+
+        // نحوّل الاتجاه لفضاء الأب لأن الحركة تتم على localPosition
+        Vector3 local = popTarget.parent != null
+            ? popTarget.parent.InverseTransformDirection(dir)
+            : dir;
+
+        return local * popOffset.magnitude;
     }
 
     private IEnumerator Move(Vector3 from, Vector3 to, float duration, bool spin)

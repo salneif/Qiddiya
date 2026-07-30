@@ -15,6 +15,9 @@ public class FlagGlitchEnemy : MonoBehaviour
 
     [Header("الربط بالعلم")]
     [SerializeField] private FlagItem flag;
+    [Tooltip("يعكس علاقته بالعلم: يطارد وأنت <b>حامله</b> ويهدأ لما تتركه. " +
+             "لمشاهد الهروب — تأخذ العلم فيستيقظ ويلاحقك حتى المخرج.")]
+    [SerializeField] private bool huntsWhenFlagHeld = false;
 
     [Header("الهدف")]
     [SerializeField] private string playerTag = "Player";
@@ -120,12 +123,13 @@ public class FlagGlitchEnemy : MonoBehaviour
 
     private void Start()
     {
-        // الحالة الابتدائية حسب العلم (بالأرض = مطاردة)
-        SetState(flag != null && flag.IsHeld ? State.Retreating : State.Hunting);
+        // الحالة الابتدائية حسب العلم — والعكس عند تفعيل huntsWhenFlagHeld
+        bool held = flag != null && flag.IsHeld;
+        SetState(held == huntsWhenFlagHeld ? State.Hunting : State.Retreating);
     }
 
-    private void OnFlagTaken() => SetState(State.Retreating);
-    private void OnFlagDown() => SetState(State.Hunting);
+    private void OnFlagTaken() => SetState(huntsWhenFlagHeld ? State.Hunting : State.Retreating);
+    private void OnFlagDown() => SetState(huntsWhenFlagHeld ? State.Retreating : State.Hunting);
 
     private void SetState(State s)
     {
