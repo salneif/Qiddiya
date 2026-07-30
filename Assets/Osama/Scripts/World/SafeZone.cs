@@ -25,10 +25,21 @@ using UnityEngine.Events;
 /// </summary>
 public class SafeZone : MonoBehaviour
 {
+    /// <summary>من تطرده المنطقة. قابل للجمع، فمنطقة واحدة تقدر تطرد نوعًا أو الاثنين.</summary>
+    [System.Flags]
+    public enum Targets
+    {
+        [InspectorName("الفئران")] Rats = 1 << 0,
+        [InspectorName("الوحوش")] Monsters = 1 << 1
+    }
+
     /// <summary>كل المناطق الموجودة في المشهد (المفعّلة وغير المفعّلة).</summary>
     private static readonly List<SafeZone> zones = new List<SafeZone>();
 
     [Header("المنطقة")]
+    [Tooltip("من تطرده هذه المنطقة؟ مثال: ضوء العلم يطرد الفئران فقط، فيبقى المهرج " +
+             "قادرًا على مطاردتك رغم حملك العلم. وملاجئ الغرف تطرد الاثنين.")]
+    [SerializeField] private Targets repels = Targets.Rats | Targets.Monsters;
     [Tooltip("نصف قطر الأمان (متر) — الأعداء لا يدخلونه")]
     [SerializeField] private float radius = 4f;
     [Tooltip("تجاهل فرق الارتفاع (أسطوانة بدل كرة) — يطابق Flat On Ground في الشيدر")]
@@ -87,19 +98,24 @@ public class SafeZone : MonoBehaviour
         return d.sqrMagnitude <= radius * radius;
     }
 
-    /// <summary>الملجأ الشغّال الذي يغطي هذه النقطة، أو null إذا كانت مكشوفة.</summary>
-    public static SafeZone ZoneAt(Vector3 point)
+    /// <summary>هل تطرد هذه المنطقة النوع المطلوب؟</summary>
+    public bool Repels(Targets target) => (repels & target) != 0;
+
+    /// <summary>
+    /// الملجأ الشغّال الذي يغطي هذه النقطة <b>ويطرد النوع المطلوب</b>، أو null.
+    /// </summary>
+    public static SafeZone ZoneAt(Vector3 point, Targets target)
     {
         for (int i = 0; i < zones.Count; i++)
         {
             var z = zones[i];
-            if (z != null && z.IsActive && z.Contains(point)) return z;
+            if (z != null && z.IsActive && z.Repels(target) && z.Contains(point)) return z;
         }
         return null;
     }
 
-    /// <summary>هل هذه النقطة محميّة بأي ملجأ شغّال؟ — يستخدمها الأعداء.</summary>
-    public static bool IsSafe(Vector3 point) => ZoneAt(point) != null;
+    /// <summary>هل هذه النقطة محميّة من النوع المطلوب؟ — يستخدمها الأعداء والفئران.</summary>
+    public static bool IsSafe(Vector3 point, Targets target) => ZoneAt(point, target) != null;
 
     /// <summary>يشغّل الملجأ — اربطه بـ WorldLever.onActivated أو PuzzleButton.onPressed.</summary>
     public void Activate() => SetOn(true);
