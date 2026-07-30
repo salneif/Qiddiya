@@ -17,6 +17,7 @@ public class LongBoatSectionManager : MonoBehaviour
     public event Action OnDeathInLongBoat;
 
     private int _currentWoodBlockNum;
+    private bool _hasDiedBefore = false;
 
    [SerializeField] private bool _inDangerZone = false;
     //ref
@@ -75,12 +76,17 @@ public class LongBoatSectionManager : MonoBehaviour
                 if (CurrentTurnNum == 0)
                 {
                     CurrentTurnNum = 1;
-                    OnturnAround?.Invoke(CurrentTurnNum);
+                    OnturnAround?.Invoke(1);
+                   // CurrentTurnNum = -2;
+                    Invoke("HandleActiveDeathFromZero", 5f);
                 }
                 else if(CurrentTurnNum == 1)
                 {
                     CurrentTurnNum = 0;
-                    OnturnAround?.Invoke(CurrentTurnNum);
+                    OnturnAround?.Invoke(0);
+                   //CurrentTurnNum = -2;
+                    Invoke("HandleActiveDeathFromZero", 5f);
+
 
                 }
                 _currentTime = timeToTurnAround;
@@ -93,13 +99,13 @@ public class LongBoatSectionManager : MonoBehaviour
 
                 case -1:
                     // invoke death
-                    OnDeathInLongBoat?.Invoke();
+                    ActiveDeath();
                     break;
 
                 case 0:
                     if (CurrentTurnNum != 0)
                     {
-                        OnDeathInLongBoat?.Invoke();
+                        ActiveDeath();
                         Debug.Log("die000000");
 
                     }
@@ -108,7 +114,7 @@ public class LongBoatSectionManager : MonoBehaviour
                 case 1:
                     if (CurrentTurnNum != 1)
                     {
-                        OnDeathInLongBoat?.Invoke();
+                        ActiveDeath();
                         Debug.Log("die1");
 
                     }
@@ -117,5 +123,30 @@ public class LongBoatSectionManager : MonoBehaviour
         }
 
         
+    }
+
+    private void HandleActiveDeathFromZero()
+    {
+        CurrentTurnNum = 1;
+    }
+    private void HandleActiveDeathFromOne()
+    {
+        CurrentTurnNum = 0;
+    }
+
+    private void ActiveDeath()
+    {
+        if(_hasDiedBefore)return;
+
+
+        _hasDiedBefore = true;
+        OnDeathInLongBoat?.Invoke();
+        Invoke("RestetDeath" , 5);
+    }
+
+
+    private void RestetDeath()
+    {
+        _hasDiedBefore = false;
     }
 }

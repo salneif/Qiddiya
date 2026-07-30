@@ -99011,6 +99011,7 @@ Transform:
   - {fileID: 213906504}
   - {fileID: 1538845532}
   - {fileID: 346493311}
+  - {fileID: 748828683}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!82 &729746972
@@ -100557,6 +100558,37 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1750761158}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &748828682
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 748828683}
+  m_Layer: 0
+  m_Name: StartPoint_LongRideSection
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &748828683
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 748828682}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.03415301, z: -0, w: 0.99941665}
+  m_LocalPosition: {x: 76.63311, y: -0.069600105, z: 4.997531}
+  m_LocalScale: {x: 1.5684003, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 729746971}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &749491575
 GameObject:
@@ -111649,7 +111681,9 @@ MonoBehaviour:
   timeToTurnAround: 5
   _currentTime: 0
   CurrentTurnNum: 0
+  _inDangerZone: 0
   a_BoatLever: {fileID: 3801608533131764002}
+  a_PlayerDeath: {fileID: 9100159816652169183}
 --- !u!4 &853433140
 Transform:
   m_ObjectHideFlags: 0
@@ -161945,7 +161979,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7988584415206817869, guid: bfba7b65b242bb644bbc404b3a097ba1, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 160.05
+      value: 157.51
       objectReference: {fileID: 0}
     - target: {fileID: 7988584415206817869, guid: bfba7b65b242bb644bbc404b3a097ba1, type: 3}
       propertyPath: m_LocalPosition.y
@@ -161953,7 +161987,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7988584415206817869, guid: bfba7b65b242bb644bbc404b3a097ba1, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 80.47
+      value: 139.76
       objectReference: {fileID: 0}
     - target: {fileID: 7988584415206817869, guid: bfba7b65b242bb644bbc404b3a097ba1, type: 3}
       propertyPath: m_LocalRotation.w
@@ -259146,8 +259180,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::A_LongBoatRide
   endPoint: {fileID: 346493311}
+  startPoint: {fileID: 748828683}
   speed: 1
   StartMoving: 0
+  a_PlayerDeath_WaterSection: {fileID: 9100159816652169183}
 --- !u!65 &2083753453
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -266009,6 +266045,10 @@ PrefabInstance:
       propertyPath: waterDeathZone
       value: 
       objectReference: {fileID: 384372527}
+    - target: {fileID: 6186865914064073448, guid: 7d85a44817228fd4990feb03a45c813d, type: 3}
+      propertyPath: longBoatSectionManager
+      value: 
+      objectReference: {fileID: 853433139}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
