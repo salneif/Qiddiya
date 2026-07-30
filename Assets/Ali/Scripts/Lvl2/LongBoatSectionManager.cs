@@ -17,7 +17,8 @@ public class LongBoatSectionManager : MonoBehaviour
     public event Action OnDeathInLongBoat;
 
     private int _currentWoodBlockNum;
-    private bool _hasDiedBefore = false;
+   [SerializeField] private bool _hasDiedBefore = false;
+   [SerializeField] private bool _inCahngeState = false;
 
    [SerializeField] private bool _inDangerZone = false;
     //ref
@@ -77,14 +78,14 @@ public class LongBoatSectionManager : MonoBehaviour
                 {
                     CurrentTurnNum = 1;
                     OnturnAround?.Invoke(1);
-                   // CurrentTurnNum = -2;
+                    _inCahngeState = true;
                     Invoke("HandleActiveDeathFromZero", 5f);
                 }
                 else if(CurrentTurnNum == 1)
                 {
                     CurrentTurnNum = 0;
                     OnturnAround?.Invoke(0);
-                   //CurrentTurnNum = -2;
+                    _inCahngeState = true;
                     Invoke("HandleActiveDeathFromZero", 5f);
 
 
@@ -98,12 +99,13 @@ public class LongBoatSectionManager : MonoBehaviour
             {
 
                 case -1:
+                    
                     // invoke death
                     ActiveDeath();
                     break;
 
                 case 0:
-                    if (CurrentTurnNum != 0)
+                    if (CurrentTurnNum != 0 && !_inCahngeState)
                     {
                         ActiveDeath();
                         Debug.Log("die000000");
@@ -112,7 +114,7 @@ public class LongBoatSectionManager : MonoBehaviour
                     break;
 
                 case 1:
-                    if (CurrentTurnNum != 1)
+                    if (CurrentTurnNum != 1 &&  !_inCahngeState)
                     {
                         ActiveDeath();
                         Debug.Log("die1");
@@ -127,11 +129,11 @@ public class LongBoatSectionManager : MonoBehaviour
 
     private void HandleActiveDeathFromZero()
     {
-        CurrentTurnNum = 1;
+        _inCahngeState = false;
     }
     private void HandleActiveDeathFromOne()
     {
-        CurrentTurnNum = 0;
+        _inCahngeState = false;
     }
 
     private void ActiveDeath()
