@@ -9,6 +9,9 @@ public class A_BoatLever : MonoBehaviour
 
     [SerializeField] private int state = -1;
 
+    // Animtor ref
+    private Animator rightSideWoodAnimation;
+    private Animator leftSideWoodAnimation;
 
     public event Action<int> OnLeverSwitch;
 
@@ -25,7 +28,8 @@ public class A_BoatLever : MonoBehaviour
 
     private void Start()
     {
-        
+        rightSideWoodAnimation = rightSideWood.GetComponent<Animator>();
+        leftSideWoodAnimation = leftSideWood.GetComponent<Animator>();
     }
     private void Update()
     {
@@ -36,15 +40,26 @@ public class A_BoatLever : MonoBehaviour
     {
         if(context.started && _canInterAct)
         {
-            if(state == 0)
+            if (state == -1)
+            {
+                state = 0;
+                rightSideWoodAnimation.SetBool("RightIsUp" , true);
+
+                OnLeverSwitch?.Invoke(state);
+            }
+          else if(state == 0)
             {
                 state = 1;
+                rightSideWoodAnimation.SetBool("RightIsUp", false);
+                leftSideWoodAnimation.SetBool("LeftIsUp" , true );
 
                 OnLeverSwitch?.Invoke(state);
             }
             else if(state == 1)
             {
                 state = 0;
+                rightSideWoodAnimation.SetBool("RightIsUp", true);
+                leftSideWoodAnimation.SetBool("LeftIsUp", false);
 
                 OnLeverSwitch?.Invoke(state);
             }

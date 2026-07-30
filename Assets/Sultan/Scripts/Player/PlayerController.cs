@@ -218,7 +218,10 @@ public class PlayerController : MonoBehaviour
 
         Vector3 planar = _moveRight * _currentSpeed + _moveForward * _currentZSpeed;
         Vector3 finalMove = new Vector3(planar.x, _verticalVelocity, planar.z);
-        characterController.Move(finalMove * Time.deltaTime);
+        if (characterController.enabled == true)
+        {
+            characterController.Move(finalMove * Time.deltaTime);
+        }
         _isGrounded = characterController.isGrounded;
     }
 
