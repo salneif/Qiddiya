@@ -210,7 +210,7 @@ public class FlagGlitchEnemy : MonoBehaviour
         if (respectSafeZones)
         {
             // لو اشتعل ملجأ فوق العدو نفسه → يطلع منه فورًا
-            var here = SafeZone.ZoneAt(transform.position);
+            var here = SafeZone.ZoneAt(transform.position, SafeZone.Targets.Monsters);
             if (here != null)
             {
                 Vector3 away = Flatten(transform.position - here.transform.position);
@@ -220,7 +220,7 @@ public class FlagGlitchEnemy : MonoBehaviour
             }
 
             // اللاعب داخل الضوء → يقف برّا ويراقبه بدل ما يلحقه
-            if (SafeZone.IsSafe(player.position))
+            if (SafeZone.IsSafe(player.position, SafeZone.Targets.Monsters))
             {
                 FaceDir(to.normalized);
                 return 0f;
@@ -269,7 +269,8 @@ public class FlagGlitchEnemy : MonoBehaviour
 
         // يقفز نحو اللاعب (بدون تجاوزه)
         float step = Mathf.Min(blinkStep, Mathf.Max(0f, distToPlayer - contactRange * 0.9f));
-        if (respectSafeZones && SafeZone.IsSafe(transform.position + dir * step))
+        if (respectSafeZones &&
+            SafeZone.IsSafe(transform.position + dir * step, SafeZone.Targets.Monsters))
             step = 0f; // لا يومض إلى داخل ملجأ مشتعل
         transform.position += dir * step;
         if (lockToGroundY)
