@@ -11145,13 +11145,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1459118692709510661}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.15797605, y: 0.6831384, z: -0.15507248, w: 0.69592965}
-  m_LocalPosition: {x: -4.3008757, y: -1.0437813, z: 2.0334244}
-  m_LocalScale: {x: 1.1908001, y: 1.3905958, z: 1.1781}
+  m_LocalRotation: {x: 0.03182123, y: -0.00045087936, z: -0.001983283, w: 0.9994916}
+  m_LocalPosition: {x: -0.004350942, y: -1.1583, z: 0.091104805}
+  m_LocalScale: {x: 1.1908, y: 1.5310459, z: 1.1781}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 6366567094897715272}
-  m_LocalEulerAnglesHint: {x: 25.579, y: 0, z: 0}
+  m_Father: {fileID: 6681471914736366820}
+  m_LocalEulerAnglesHint: {x: 3.647, y: -0.059, z: -0.229}
 --- !u!33 &7120849511760144830
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -26995,12 +26995,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3656982379238396787}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.71359664, y: -0.007229812, z: -0.7004809, w: -0.0073651862}
-  m_LocalPosition: {x: -4.5218377, y: -0.37277985, z: 2.0293198}
+  m_LocalRotation: {x: 0.9999467, y: 9.3132246e-10, z: -0.0000001490116, w: -0.010320666}
+  m_LocalPosition: {x: 0, y: 1.0909996, z: -0.53699774}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 6366567094897715272}
+  m_Father: {fileID: 6681471914736366820}
   m_LocalEulerAnglesHint: {x: 181.183, y: 0, z: 0}
 --- !u!33 &8248247518277855708
 MeshFilter:
@@ -34660,8 +34660,6 @@ Transform:
   - {fileID: 4374955464539328530}
   - {fileID: 6565572494731140082}
   - {fileID: 6681471914736366820}
-  - {fileID: 1152873064920530875}
-  - {fileID: 4977242051757394255}
   - {fileID: 25102487321498404}
   - {fileID: 4453321053652985550}
   - {fileID: 5099015141208537325}
@@ -53278,8 +53276,9 @@ GameObject:
   - component: {fileID: 8290851276849875268}
   - component: {fileID: 3192566592905047071}
   - component: {fileID: 3480195446387735861}
+  - component: {fileID: 5420112684349058679}
   m_Layer: 0
-  m_Name: SM_Prop_Clown_Box_01
+  m_Name: Scarybox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -53294,11 +53293,13 @@ Transform:
   m_GameObject: {fileID: 6925587699604768645}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.700518, z: -0, w: 0.7136347}
-  m_LocalPosition: {x: -3.98493, y: -1.4637794, z: 2.0392838}
+  m_LocalPosition: {x: -4.33, y: -1.4637794, z: 2.84}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8489727345774460752}
+  - {fileID: 4977242051757394255}
+  - {fileID: 1152873064920530875}
   m_Father: {fileID: 6366567094897715272}
   m_LocalEulerAnglesHint: {x: 0, y: 88.937, z: 0}
 --- !u!33 &8290851276849875268
@@ -53380,6 +53381,69 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 747464414974368589, guid: 2f37db3e489f60342ab056c169b7f2b2, type: 2}
+--- !u!114 &5420112684349058679
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6925587699604768645}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17a381a6c315fec4f90a7266963a7430, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::JumpScareBox
+  playerTag: Player
+  triggerRange: 4.19
+  rearmDelay: 3
+  popTarget: {fileID: 4977242051757394255}
+  popOffset: {x: 0, y: 0, z: 1.2}
+  popTowardPlayer: 1
+  facePlayer: 1
+  upwardLift: 0.7
+  popTime: 0.07
+  stayTime: 1.3
+  retractTime: 0.7
+  popCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.7
+      value: 1.15
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spinSpeed: 220
+  audioSource: {fileID: 0}
+  popSound: {fileID: 0}
+  cameraShake: {fileID: 0}
+  onPopped:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &6928544632058443143
 GameObject:
   m_ObjectHideFlags: 0
