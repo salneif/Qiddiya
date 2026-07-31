@@ -14,9 +14,6 @@ public class RotaryPillar : MonoBehaviour
     [SerializeField] private int faceCount = 3;
     [Tooltip("الوجه الذي يبدأ عليه (0 حتى عدد الوجوه-1)")]
     [SerializeField] private int startFace = 0;
-    [Tooltip("أسماء الوجوه بالترتيب (ترس / فطر / سرك) — للتوضيح فقط، تظهر فوق العمود " +
-             "في نافذة Scene أثناء اللعب فتعرف أي رقم يقابل أي صورة بلا تخمين")]
-    [SerializeField] private string[] faceNames;
 
     [Header("عرض الوجوه (بديل للدوران)")]
     [Tooltip("كائن لكل وجه بالترتيب — يظهر واحد فقط حسب الوجه الحالي. " +
@@ -113,25 +110,6 @@ public class RotaryPillar : MonoBehaviour
         IsRotating = false;
         onRotated?.Invoke();
     }
-
-#if UNITY_EDITOR
-    /// <summary>
-    /// يكتب الوجه الحالي فوق العمود في نافذة Scene أثناء اللعب.
-    /// اضغط الدوّاسة وشوف الاسم يتغيّر — فتعرف أي رقم يقابل أي صورة مباشرة
-    /// بدل ما تحسبها من زوايا الدوران.
-    /// </summary>
-    private void OnDrawGizmos()
-    {
-        if (!Application.isPlaying) return;
-
-        string label = (faceNames != null && CurrentFace < faceNames.Length &&
-                        !string.IsNullOrEmpty(faceNames[CurrentFace]))
-            ? $"{CurrentFace} — {faceNames[CurrentFace]}"
-            : $"وجه {CurrentFace}";
-
-        UnityEditor.Handles.Label(transform.position + Vector3.up * 2f, label);
-    }
-#endif
 
     /// <summary>زاوية الدوران المقابلة لوجه معيّن.</summary>
     private Quaternion RotationForFace(int face)
