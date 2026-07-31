@@ -15,7 +15,12 @@ using UnityEngine.Rendering.Universal;
 ///
 /// الواجهة نفسها في الوضعين (SetBlackAndWhite / Toggle / SetInstant)،
 /// فسكربت LampSwitch يعمل بدون أي تعديل.
+///
+/// [ExecuteAlways] تجعل التأثير يظهر في نافذة Scene بلا حاجة لضغط Play،
+/// فتقدر تضبط مواقع الدوائر وأنصاف أقطارها وأنت شايف النتيجة مباشرة.
+/// (الانتقال التدريجي يحتاج Coroutine ولا يعمل في التحرير، فيُطبَّق فورًا هناك.)
 /// </summary>
+[ExecuteAlways]
 public class WorldBWController : MonoBehaviour
 {
     public enum BWMode
@@ -86,6 +91,9 @@ public class WorldBWController : MonoBehaviour
     /// <summary>يحوّل إلى أبيض/أسود (on=true) أو يرجّع الألوان (on=false) بنعومة.</summary>
     public void SetBlackAndWhite(bool on)
     {
+        // الكوروتينات لا تعمل في وضع التحرير — نطبّق فورًا بدل ما لا يحدث شيء
+        if (!Application.isPlaying) { SetInstant(on); return; }
+
         targetBW = on;
         if (routine != null) StopCoroutine(routine);
         routine = StartCoroutine(Blend(on ? 1f : 0f));

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -32,22 +33,107 @@ public class SwingingAxeTrap : MonoBehaviour
              "مثال لثلاث فاسات متبادلة: 0 / 120 / 240.")]
     [SerializeField] private float phaseOffsetDegrees = 0f;
 
+    [Header("التشغيل والإطفاء (الرافعة)")]
+    [Tooltip("الفاس يبدأ شغّالًا؟")]
+    [SerializeField] private bool startRunning = true;
+    [Tooltip("مدة فقدان التأرجح حتى يسكن الفاس معلّقًا (ثواني). " +
+             "غيّرها بين الفاسات الثلاث (1 / 1.5 / 2) فتسكن واحدًا بعد الآخر بدل دفعة وحدة.")]
+    [SerializeField] private float stopDuration = 1.5f;
+    [Tooltip("مكوّن القتل على الفاس — يتعطّل تلقائيًا عندما يهدأ التأرجح، فيصير الفاس " +
+             "الساكن مجرّد ديكور تعدي من جنبه. اتركه فارغًا ليُلتقط LavaKill من الأبناء تلقائيًا.")]
+    [SerializeField] private Behaviour killComponent;
+
+    [Header("الظهور")]
+    [Tooltip("مجسم الفاس نفسه (ابن الـ Pivot). لو اختفى — مثلاً مع تبديل عالمَي العلم " +
+             "عبر وسوم LightObject/DarkObject — يسكت الصوت تلقائيًا. " +
+             "يُلتقط أول ابن تلقائيًا إذا تُرك فارغًا.")]
+    [SerializeField] private GameObject axeVisual;
+
     [Header("الصوت")]
     [SerializeField] private AudioSource audioSource;
     [Tooltip("صوت 'شووش' يُشغَّل كل ما عبر الفاس منتصف تأرجحه (أسرع نقطة) — تنبيه سمعي للاعب")]
     [SerializeField] private AudioClip whooshSound;
+    [Tooltip("صرير مستمر (سلسلة/خشب) يدور بلا توقف — يعلو مع قوة التأرجح ويسكت لما يهدأ الفاس. " +
+             "يشتغل على نفس الـ AudioSource مع الشووش.")]
+    [SerializeField] private AudioClip creakLoop;
+    [Tooltip("أقصى مستوى للصرير عند التأرجح الكامل")]
+    [Range(0f, 1f)]
+    [SerializeField] private float creakVolume = 0.5f;
 
     [Header("تصحيح (Scene فقط)")]
     [Tooltip("طول الذراع التقريبي لرسم قوس التأرجح في نافذة Scene — لا يؤثر على اللعب")]
     [SerializeField] private float gizmoArmLength = 2f;
 
+    /// <summary>أقل مدى تأرجح يظل الفاس عنده قاتلًا — تحته يُعتبر ساكنًا وغير مؤذٍ.</summary>
+    private const float DeadlyThreshold = 0.2f;
+
     private Quaternion baseRotation;
     private float lastAngle;
+    private float amplitudeScale;   // 1 = تأرجح كامل، 0 = ساكن معلّق للأسفل
+    private Coroutine damping;
+
+    /// <summary>هل الفاس شغّال (يتأرجح)؟</summary>
+    public bool IsRunning { get; private set; }
 
     private void Awake()
     {
         baseRotation = transform.localRotation;
+        // الفاس القاتل ابن للـ Pivot، فنلتقط مكوّن القتل منه بلا ربط يدوي
+        if (killComponent == null) killComponent = GetComponentInChildren<LavaKill>(true);
+        if (axeVisual == null && transform.childCount > 0)
+            axeVisual = transform.GetChild(0).gameObject;
+        IsRunning = startRunning;
+        amplitudeScale = startRunning ? 1f : 0f;
         lastAngle = CurrentAngle();
+        SyncKillComponent();
+        StartCreakLoop();
+    }
+
+    /// <summary>
+    /// يشغّل الصرير كحلقة دائمة على نفس الـ AudioSource. الشووش يُشغَّل فوقه
+    /// بـ PlayOneShot فيمتزجان بلا أن يقطع أحدهما الآخر.
+    /// </summary>
+    private void StartCreakLoop()
+    {
+        if (audioSource == null || creakLoop == null) return;
+        audioSource.clip = creakLoop;
+        audioSource.loop = true;
+        audioSource.volume = creakVolume * amplitudeScale;
+        audioSource.Play();
+    }
+
+    /// <summary>يطفئ الفاس: يفقد تأرجحه تدريجيًا حتى يسكن — اربطه بـ WorldLever.onActivated.</summary>
+    public void TurnOff() => SetRunning(false);
+
+    /// <summary>يعيد تشغيل الفاس تدريجيًا.</summary>
+    public void TurnOn() => SetRunning(true);
+
+    /// <summary>يبدّل حالة الفاس.</summary>
+    public void Toggle() => SetRunning(!IsRunning);
+
+    /// <summary>يضبط حالة الفاس صراحةً.</summary>
+    public void SetRunning(bool on)
+    {
+        if (IsRunning == on) return;
+        IsRunning = on;
+
+        if (damping != null) StopCoroutine(damping);
+        damping = StartCoroutine(DampTo(on ? 1f : 0f));
+    }
+
+    private IEnumerator DampTo(float target)
+    {
+        float start = amplitudeScale;
+        float t = 0f;
+        while (t < stopDuration)
+        {
+            t += Time.deltaTime;
+            float k = stopDuration > 0f ? Mathf.Clamp01(t / stopDuration) : 1f;
+            amplitudeScale = Mathf.Lerp(start, target, k);
+            yield return null;
+        }
+        amplitudeScale = target;
+        damping = null;
     }
 
     private void Update()
@@ -55,17 +141,41 @@ public class SwingingAxeTrap : MonoBehaviour
         float angle = CurrentAngle();
         transform.localRotation = baseRotation * Quaternion.AngleAxis(angle, NormalizedAxis());
 
+        // الفاس المخفي لا يُسمع — الـ Pivot يظل شغّالًا (تحتاجه الرافعة) لكن الصوت يسكت
+        bool visible = AxeVisible;
+
         // عبور منتصف التأرجح (الزاوية تغيّر إشارتها) = أسرع نقطة بالحركة → شغّل صوت الهسهسة
-        if (whooshSound != null && audioSource != null && Mathf.Sign(angle) != Mathf.Sign(lastAngle))
+        if (whooshSound != null && audioSource != null && visible &&
+            amplitudeScale > DeadlyThreshold &&
+            Mathf.Sign(angle) != Mathf.Sign(lastAngle))
             audioSource.PlayOneShot(whooshSound);
 
         lastAngle = angle;
+        SyncKillComponent();
+
+        // الصرير يخفت مع فقدان التأرجح حتى يسكت تمامًا عند سكون الفاس أو اختفائه
+        if (audioSource != null && creakLoop != null)
+            audioSource.volume = visible ? creakVolume * amplitudeScale : 0f;
+    }
+
+    /// <summary>هل مجسم الفاس ظاهر الآن؟ (يتبع تفعيل/تعطيل الكائن في الهيرآركي)</summary>
+    private bool AxeVisible => axeVisual == null || axeVisual.activeInHierarchy;
+
+    /// <summary>
+    /// القتل مربوط بقوة التأرجح لا بالزر: الفاس يظل قاتلًا وهو يتباطأ، ولا يصير
+    /// آمنًا إلا بعد ما يهدأ فعلًا — فلا يقدر اللاعب يخترقه لحظة سحب الرافعة.
+    /// </summary>
+    private void SyncKillComponent()
+    {
+        if (killComponent == null) return;
+        bool deadly = amplitudeScale > DeadlyThreshold;
+        if (killComponent.enabled != deadly) killComponent.enabled = deadly;
     }
 
     private float CurrentAngle()
     {
         float phase = (Time.time / Mathf.Max(0.01f, cycleDuration)) * 360f + phaseOffsetDegrees;
-        return swingAmplitude * Mathf.Sin(phase * Mathf.Deg2Rad);
+        return swingAmplitude * amplitudeScale * Mathf.Sin(phase * Mathf.Deg2Rad);
     }
 
     private Vector3 NormalizedAxis() =>
