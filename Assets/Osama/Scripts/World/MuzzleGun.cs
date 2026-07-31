@@ -17,16 +17,21 @@ using UnityEngine.Events;
 public class MuzzleGun : MonoBehaviour
 {
     [Header("الفوهة")]
-    [Tooltip("نقطة خروج الطلقة — كائن فارغ عند طرف الماسورة، محوره Z للأمام")]
+    [Tooltip("نقطة خروج الطلقة — كائن فارغ عند طرف الماسورة")]
     [SerializeField] private Transform muzzlePoint;
+    [Tooltip("المحور المحلي الخارج من الفوهة. إن لم يكن الأزرق (Z) متجهًا للأمام فلا " +
+             "تتعب في تدوير الكائن — غيّره هنا: (1,0,0) للأحمر، (0,1,0) للأخضر، " +
+             "وسالبًا للاتجاه المعاكس مثل (0,0,-1). راقب السهم في نافذة Scene حتى يضبط.")]
+    [SerializeField] private Vector3 forwardAxis = Vector3.forward;
 
     [Header("ومضة النار")]
     [Tooltip("مؤثر النار — يُنسخ عند الفوهة ويُحذف فورًا")]
     [SerializeField] private GameObject muzzleFlashPrefab;
     [Tooltip("تصغير المؤثر ليناسب فوهة بندقية بدل نار كبيرة")]
     [SerializeField] private float flashScale = 0.25f;
-    [Tooltip("مدة بقاء الومضة (ثواني) — قصيرة جدًا، الومضة الحقيقية أقل من عُشر ثانية")]
-    [SerializeField] private float flashDuration = 0.08f;
+    [Tooltip("مدة بقاء الومضة (ثواني). لا تنزلها كثيرًا: أنظمة الجسيمات تحتاج عدة إطارات " +
+             "لتُخرج جسيماتها، وتحت 0.1 تُحذف قبل أن تظهر أصلًا.")]
+    [SerializeField] private float flashDuration = 0.18f;
 
     [Header("الإطلاق")]
     [Tooltip("يطلق تلقائيًا بفاصل زمني. أطفئه إذا كانت رافعة أو دوّاسة تشغّله")]
@@ -71,6 +76,10 @@ public class MuzzleGun : MonoBehaviour
 
     private Transform Muzzle => muzzlePoint != null ? muzzlePoint : transform;
 
+    /// <summary>الاتجاه الحقيقي الخارج من الفوهة — لا يعتمد على دوران الكائن.</summary>
+    private Vector3 MuzzleForward => Muzzle.TransformDirection(
+        forwardAxis.sqrMagnitude > 0.0001f ? forwardAxis.normalized : Vector3.forward);
+
     private void Awake()
     {
         if (gunVisual != null) gunRest = gunVisual.localPosition;
@@ -108,8 +117,16 @@ public class MuzzleGun : MonoBehaviour
     {
         if (muzzleFlashPrefab == null) return;
 
-        var flash = Instantiate(muzzleFlashPrefab, Muzzle.position, Muzzle.rotation, Muzzle);
+        // نوجّه الومضة على اتجاه الفوهة الحقيقي لا على دوران الكائن
+        Quaternion look = Quaternion.LookRotation(MuzzleForward, Muzzle.up);
+        var flash = Instantiate(muzzleFlashPrefab, Muzzle.position, look, Muzzle);
         flash.transform.localScale = Vector3.one * flashScale;
+        flash.SetActive(true); // البريفاب قد يكون محفوظًا مطفأً
+
+        // كثير من مؤثرات الحزم الجاهزة مطفأ عندها Play On Awake، فنشغّلها صراحةً
+        foreach (var ps in flash.GetComponentsInChildren<ParticleSystem>(true))
+            ps.Play(true);
+
         Destroy(flash, flashDuration);
     }
 
@@ -122,7 +139,7 @@ public class MuzzleGun : MonoBehaviour
 
     private void FireRay()
     {
-        if (!Physics.Raycast(Muzzle.position, Muzzle.forward, out var hit, range,
+        if (!Physics.Raycast(Muzzle.position, MuzzleForward, out var hit, range,
                              hitMask, QueryTriggerInteraction.Ignore))
             return;
 
@@ -134,16 +151,20 @@ public class MuzzleGun : MonoBehaviour
 
     private IEnumerator RecoilRoutine()
     {
-        // الارتداد فوري ثم رجوع تدريجي — هذا التباين هو ما يعطي إحساس الطلقة
-        gunVisual.localPosition = gunRest + Vector3.back * recoilDistance;
+        // الارتداد عكس اتجاه الفوهة نفسه — لا على محور Z الثابت، وإلا خرج جانبيًا
+        // إذا كانت محاور المجسّم ملفوفة
+        Vector3 back = -forwardAxis.normalized * recoilDistance;
+        Vector3 kicked = gunRest + back;
+
+        // فوري ثم رجوع تدريجي — هذا التباين هو ما يعطي إحساس الطلقة
+        gunVisual.localPosition = kicked;
 
         float t = 0f;
         while (t < recoilRecover)
         {
             t += Time.deltaTime;
             float k = recoilRecover > 0f ? Mathf.Clamp01(t / recoilRecover) : 1f;
-            gunVisual.localPosition = Vector3.Lerp(gunRest + Vector3.back * recoilDistance,
-                                                   gunRest, k);
+            gunVisual.localPosition = Vector3.Lerp(kicked, gunRest, k);
             yield return null;
         }
 
@@ -156,7 +177,7 @@ public class MuzzleGun : MonoBehaviour
         var m = Muzzle;
         Gizmos.color = damaging ? new Color(1f, 0.3f, 0.2f, 0.9f)
                                 : new Color(1f, 0.85f, 0.3f, 0.7f);
-        Gizmos.DrawRay(m.position, m.forward * (damaging ? range : 2f));
+        Gizmos.DrawRay(m.position, MuzzleForward * (damaging ? range : 2f));
         Gizmos.DrawWireSphere(m.position, 0.06f);
     }
 }
