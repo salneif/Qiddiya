@@ -196,7 +196,7 @@ public class RatSwarm : MonoBehaviour
     private void UpdateRat(int index, Transform rat)
     {
         // الضوء أولًا: إن كان الفأر داخل ملجأ مشتعل يهرب منه فورًا
-        var zone = SafeZone.ZoneAt(rat.position, SafeZone.Targets.Rats);
+        var zone = SafeZone.ZoneAt(rat.position);
         if (zone != null)
         {
             Vector3 away = Flatten(rat.position - zone.transform.position);
@@ -286,8 +286,8 @@ public class RatSwarm : MonoBehaviour
     {
         if (player == null || killable == null || killable.IsDead) return;
 
-        // اللاعب داخل ضوء طارد للفئران = آمن مهما اقتربت (الضوء أقوى من العدد)
-        if (SafeZone.IsSafe(player.position, SafeZone.Targets.Rats)) return;
+        // اللاعب داخل ضوء = آمن مهما اقتربت الفئران (الضوء أقوى من العدد)
+        if (SafeZone.IsSafe(player.position)) return;
 
         float sqrKill = killRadius * killRadius;
         foreach (var rat in rats)
