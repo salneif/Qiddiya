@@ -15,6 +15,13 @@ using UnityEngine.InputSystem;
 /// </summary>
 public class RemoteSlideControl : MonoBehaviour
 {
+    /// <summary>شكل حركة المقبض.</summary>
+    public enum HandleMode
+    {
+        [InspectorName("رافعة تميل")] Tilt,
+        [InspectorName("مرفاع يلف")] Crank
+    }
+
     [Header("التفاعل")]
     [Tooltip("وسم اللاعب")]
     [SerializeField] private string playerTag = "Player";
@@ -46,11 +53,28 @@ public class RemoteSlideControl : MonoBehaviour
     [SerializeField] private Key rightKey = Key.D;
 
     [Header("المقبض (بصري، اختياري)")]
-    [Tooltip("محوّل المقبض الذي يميل مع اتجاه التحريك")]
+    [Tooltip("محوّل المقبض")]
     [SerializeField] private Transform handle;
-    [Tooltip("أقصى ميلان للمقبض عند الدفع لجهة (Euler محلي)")]
+    [Tooltip("Tilt = رافعة تميل لجهة الحركة وترجع. Crank = مرفاع يلف باستمرار ما دمت تحرّك.")]
+    [SerializeField] private HandleMode handleMode = HandleMode.Tilt;
+
+    [Tooltip("[Tilt] أقصى ميلان للمقبض عند الدفع لجهة (Euler محلي)")]
     [SerializeField] private Vector3 maxTilt = new Vector3(0f, 0f, 25f);
     [SerializeField] private float handleSpeed = 8f;
+
+    [Tooltip("[Crank] محور لفّ المرفاع المحلي")]
+    [SerializeField] private Vector3 crankAxis = Vector3.forward;
+    [Tooltip("[Crank] سرعة اللفّ (درجة/ثانية)")]
+    [SerializeField] private float crankSpeed = 220f;
+
+    [Header("الكاميرا أثناء الاستخدام")]
+    [Tooltip("كائن فارغ تقف عنده الكاميرا أثناء الإمساك — وجّهه ليُظهر اللمبة والمنطقة " +
+             "التي تحرّكها إليها معًا. اتركه فارغًا لتبقى الكاميرا مكانها.")]
+    [SerializeField] private Transform cameraViewPoint;
+    [Tooltip("الكاميرا المتحرّكة — تُلتقط Camera.main تلقائيًا إذا تُركت فارغة")]
+    [SerializeField] private Camera controlledCamera;
+    [Tooltip("سرعة انتقال الكاميرا لنقطة العرض")]
+    [SerializeField] private float cameraBlendSpeed = 3f;
 
     [Header("الصوت")]
     [SerializeField] private AudioSource audioSource;
@@ -175,8 +199,24 @@ public class RemoteSlideControl : MonoBehaviour
     private void SetScriptsEnabled(bool enabled)
     {
         if (disableWhileUsing == null) return;
+
         foreach (var b in disableWhileUsing)
-            if (b != null) b.enabled = enabled;
+        {
+            if (b == null) continue;
+
+            // تعطيل مكوّن Camera يطفئ الشاشة كلها ("No cameras rendering").
+            // المقصود سكربت متابعة الكاميرا لا الكاميرا نفسها — نتجاهله ونوضّح السبب.
+            if (b is Camera)
+            {
+                Debug.LogWarning(
+                    $"[RemoteSlideControl] على '{name}': تجاهلت مكوّن Camera في " +
+                    "Disable While Using، لأن تعطيله يطفئ الشاشة. " +
+                    "ضع سكربت متابعة الكاميرا (TopDownCameraFollow) بدله.", this);
+                continue;
+            }
+
+            b.enabled = enabled;
+        }
     }
 
     /// <summary>-1 يسار، +1 يمين، 0 وقوف.</summary>
@@ -201,9 +241,41 @@ public class RemoteSlideControl : MonoBehaviour
     private void UpdateHandle(float direction)
     {
         if (handle == null) return;
+
+        if (handleMode == HandleMode.Crank)
+        {
+            // يلف ما دام اللاعب يحرّك، ويتجمّد فور توقفه — كمرفاع حقيقي.
+            // لا يرجع لوضع البداية، فاللفّة تتراكم كما هو متوقع.
+            if (!Mathf.Approximately(direction, 0f))
+                handle.Rotate(crankAxis.normalized,
+                              direction * crankSpeed * Time.deltaTime, Space.Self);
+            return;
+        }
+
         Quaternion wanted = handleRest * Quaternion.Euler(maxTilt * direction);
         handle.localRotation = Quaternion.Slerp(handle.localRotation, wanted,
                                                 Time.deltaTime * handleSpeed);
+    }
+
+    /// <summary>
+    /// ينقل الكاميرا لنقطة العرض أثناء الإمساك. في LateUpdate ليأتي بعد سكربت
+    /// متابعة الكاميرا لا قبله.
+    ///
+    /// عند الترك لا نعيدها يدويًا — يكفي أن يعود سكربت المتابعة للعمل فيسحبها
+    /// للاعب بنعومة بنفسه (Follow Speed)، فلا نكتب منطق رجوع ولا يتنازع اثنان عليها.
+    /// </summary>
+    private void LateUpdate()
+    {
+        if (!IsEngaged || cameraViewPoint == null) return;
+
+        var cam = controlledCamera != null ? controlledCamera : Camera.main;
+        if (cam == null) return;
+
+        float k = Time.deltaTime * cameraBlendSpeed;
+        cam.transform.position = Vector3.Lerp(cam.transform.position,
+                                              cameraViewPoint.position, k);
+        cam.transform.rotation = Quaternion.Slerp(cam.transform.rotation,
+                                                  cameraViewPoint.rotation, k);
     }
 
     private void UpdateSound(float direction)
