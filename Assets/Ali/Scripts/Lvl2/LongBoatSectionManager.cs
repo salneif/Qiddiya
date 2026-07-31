@@ -17,6 +17,8 @@ public class LongBoatSectionManager : MonoBehaviour
     public event Action OnDeathInLongBoat;
 
     private int _currentWoodBlockNum;
+   [SerializeField] private bool _hasDiedBefore = false;
+   [SerializeField] private bool _inCahngeState = false;
 
    [SerializeField] private bool _inDangerZone = false;
     //ref
@@ -75,12 +77,17 @@ public class LongBoatSectionManager : MonoBehaviour
                 if (CurrentTurnNum == 0)
                 {
                     CurrentTurnNum = 1;
-                    OnturnAround?.Invoke(CurrentTurnNum);
+                    OnturnAround?.Invoke(1);
+                    _inCahngeState = true;
+                    Invoke("HandleActiveDeathFromZero", 5f);
                 }
                 else if(CurrentTurnNum == 1)
                 {
                     CurrentTurnNum = 0;
-                    OnturnAround?.Invoke(CurrentTurnNum);
+                    OnturnAround?.Invoke(0);
+                    _inCahngeState = true;
+                    Invoke("HandleActiveDeathFromZero", 5f);
+
 
                 }
                 _currentTime = timeToTurnAround;
@@ -92,23 +99,24 @@ public class LongBoatSectionManager : MonoBehaviour
             {
 
                 case -1:
+                    
                     // invoke death
-                    OnDeathInLongBoat?.Invoke();
+                    ActiveDeath();
                     break;
 
                 case 0:
-                    if (CurrentTurnNum != 0)
+                    if (CurrentTurnNum != 0 && !_inCahngeState)
                     {
-                        OnDeathInLongBoat?.Invoke();
+                        ActiveDeath();
                         Debug.Log("die000000");
 
                     }
                     break;
 
                 case 1:
-                    if (CurrentTurnNum != 1)
+                    if (CurrentTurnNum != 1 &&  !_inCahngeState)
                     {
-                        OnDeathInLongBoat?.Invoke();
+                        ActiveDeath();
                         Debug.Log("die1");
 
                     }
@@ -117,5 +125,30 @@ public class LongBoatSectionManager : MonoBehaviour
         }
 
         
+    }
+
+    private void HandleActiveDeathFromZero()
+    {
+        _inCahngeState = false;
+    }
+    private void HandleActiveDeathFromOne()
+    {
+        _inCahngeState = false;
+    }
+
+    private void ActiveDeath()
+    {
+        if(_hasDiedBefore)return;
+
+
+        _hasDiedBefore = true;
+        OnDeathInLongBoat?.Invoke();
+        Invoke("RestetDeath" , 5);
+    }
+
+
+    private void RestetDeath()
+    {
+        _hasDiedBefore = false;
     }
 }
