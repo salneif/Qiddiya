@@ -11,7 +11,10 @@ public class LongBoatSectionManager : MonoBehaviour
     [SerializeField] private float timeToTurnAround;
     [SerializeField] private float _currentTime;
     [SerializeField] private int CurrentTurnNum = 0;
-    
+    [SerializeField] private GameObject lightRight;
+    [SerializeField] private GameObject lightLeft;
+
+
 
     public event Action<int> OnturnAround;
     public event Action OnDeathInLongBoat;
@@ -74,18 +77,24 @@ public class LongBoatSectionManager : MonoBehaviour
             _currentTime -= Time.deltaTime;
             if(_currentTime <= 0)
             {
+                // this means we are turing left 
                 if (CurrentTurnNum == 0)
                 {
                     CurrentTurnNum = 1;
                     OnturnAround?.Invoke(1);
                     _inCahngeState = true;
+                    lightLeft.SetActive(true);
+                    lightRight.SetActive(false);
                     Invoke("HandleActiveDeathFromZero", 5f);
                 }
-                else if(CurrentTurnNum == 1)
+                // this means we are turing right 
+                else if (CurrentTurnNum == 1)
                 {
                     CurrentTurnNum = 0;
                     OnturnAround?.Invoke(0);
                     _inCahngeState = true;
+                    lightLeft.SetActive(false);
+                    lightRight.SetActive(true);
                     Invoke("HandleActiveDeathFromZero", 5f);
 
 
