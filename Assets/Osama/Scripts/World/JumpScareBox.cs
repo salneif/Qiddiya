@@ -36,6 +36,10 @@ public class JumpScareBox : MonoBehaviour
     [SerializeField] private bool popTowardPlayer = true;
     [Tooltip("يستدير ليواجه اللاعب لحظة القفزة")]
     [SerializeField] private bool facePlayer = true;
+    [Tooltip("ميل القفزة لأعلى. ارفعه إذا كان المهرج مخبّأ داخل صندوق ليخرج من فتحته " +
+             "قبل أن ينقضّ، بدل أن يخترق جداره. 0 = انقضاض أفقي بحت.")]
+    [Range(0f, 3f)]
+    [SerializeField] private float upwardLift = 0.7f;
     [Tooltip("زمن الخروج (ثواني) — اجعله قصيرًا جدًا، السرعة هي مصدر الفزع")]
     [SerializeField] private float popTime = 0.07f;
     [Tooltip("كم يبقى بالخارج قبل أن ينكمش")]
@@ -146,10 +150,13 @@ public class JumpScareBox : MonoBehaviour
         toPlayer.y = 0f; // أفقي بحت — الانقضاض للأمام لا للأعلى
         if (toPlayer.sqrMagnitude < 0.0001f) return popOffset;
 
-        Vector3 dir = toPlayer.normalized;
+        Vector3 flatDir = toPlayer.normalized;
 
+        // الوجه يبقى أفقيًا نحو اللاعب حتى لو كانت القفزة مائلة لأعلى
         if (facePlayer)
-            popTarget.rotation = Quaternion.LookRotation(dir, Vector3.up);
+            popTarget.rotation = Quaternion.LookRotation(flatDir, Vector3.up);
+
+        Vector3 dir = (flatDir + Vector3.up * upwardLift).normalized;
 
         // نحوّل الاتجاه لفضاء الأب لأن الحركة تتم على localPosition
         Vector3 local = popTarget.parent != null
