@@ -74,6 +74,13 @@ public class RatSwarm : MonoBehaviour
     [Tooltip("مدى التفاوت العشوائي في سرعة أنميشن كل فأر — يكسر التزامن الآلي للسرب")]
     [SerializeField] private Vector2 animSpeedVariation = new Vector2(0.85f, 1.25f);
 
+    [Header("الاختفاء بالعلم")]
+    [Tooltip("العلم — أول ما يحمله اللاعب ينسحب السرب هاربًا ثم يتلاشى (ضوء العلم يطردهم). " +
+             "ويعود إذا غُرس العلم من جديد. اتركه فارغًا ليبقى السرب دائمًا.")]
+    [SerializeField] private FlagItem hideWhenFlagHeld;
+    [Tooltip("مدة الهرب قبل الاختفاء (ثواني) — لا تجعلها صفرًا وإلا اختفوا فجأة بشكل رخيص")]
+    [SerializeField] private float retreatTime = 1.6f;
+
     [Header("الأداء")]
     [Tooltip("إطفاء ظلال الفئران — أكبر توفير مفرد، لأن كل فأر يضيف تمريرة ظل كاملة. " +
              "الفئران صغيرة وملتصقة بالأرض فظلالها بالكاد تُرى.")]
@@ -107,6 +114,9 @@ public class RatSwarm : MonoBehaviour
     private Vector3[] chaseOffsets;
     private Vector3[] homes;          // نقطة خروج كل فأر — يتجوّل حولها فيبقى التوزيع
     private bool playerIntruding;     // يُحسب مرة كل إطار لا لكل فأر
+    private bool retreating;          // ينسحبون الآن بسبب العلم
+    private float retreatTimer;
+    private bool hidden;
     private Transform player;
     private PlayerKillable killable;
     private float groundY;
@@ -216,13 +226,62 @@ public class RatSwarm : MonoBehaviour
             return Flatten(point - transform.position).sqrMagnitude
                    <= territoryRadius * territoryRadius;
 
-        Vector3 flat = new Vector3(point.x, territoryArea.bounds.center.y, point.z);
-        return (territoryArea.ClosestPoint(flat) - flat).sqrMagnitude < 0.0001f;
+        // فحص أفقي على الصندوق المحيط بدل ClosestPoint: الأخير ينهار صامتًا مع
+        // المقياس السالب أو الكولايدر غير المحدّب، وهذا يطابق الـ Gizmo تمامًا
+        Bounds b = territoryArea.bounds;
+        return point.x >= b.min.x && point.x <= b.max.x &&
+               point.z >= b.min.z && point.z <= b.max.z;
+    }
+
+    private void OnEnable()
+    {
+        if (hideWhenFlagHeld == null) return;
+        hideWhenFlagHeld.PickedUp += OnFlagTaken;
+        hideWhenFlagHeld.Placed += OnFlagPlaced;
+    }
+
+    private void OnDisable()
+    {
+        if (hideWhenFlagHeld == null) return;
+        hideWhenFlagHeld.PickedUp -= OnFlagTaken;
+        hideWhenFlagHeld.Placed -= OnFlagPlaced;
+    }
+
+    /// <summary>حُمل العلم: يهربون مذعورين ثم يتلاشون.</summary>
+    private void OnFlagTaken()
+    {
+        retreating = true;
+        retreatTimer = retreatTime;
+        SetRatsHidden(false);
+    }
+
+    /// <summary>غُرس العلم: يرجع السرب لمنطقته.</summary>
+    private void OnFlagPlaced()
+    {
+        retreating = false;
+        SetRatsHidden(false);
+    }
+
+    private void SetRatsHidden(bool hide)
+    {
+        if (hidden == hide || rats == null) return;
+        hidden = hide;
+
+        foreach (var rat in rats)
+            if (rat != null) rat.gameObject.SetActive(!hide);
     }
 
     private void Update()
     {
         if (rats == null) return;
+
+        // انسحاب بسبب العلم: يهربون طوال المهلة ثم يختفون
+        if (retreating)
+        {
+            retreatTimer -= Time.deltaTime;
+            if (retreatTimer <= 0f) SetRatsHidden(true);
+        }
+        if (hidden) return;
 
         ResolvePlayer();
 
@@ -243,11 +302,16 @@ public class RatSwarm : MonoBehaviour
 
     private void ResolvePlayer()
     {
-        if (player != null) return;
-        var go = GameObject.FindGameObjectWithTag(playerTag);
-        if (go == null) return;
-        player = go.transform;
-        killable = player.GetComponentInParent<PlayerKillable>();
+        if (player == null)
+        {
+            var go = GameObject.FindGameObjectWithTag(playerTag);
+            if (go == null) return;
+            player = go.transform;
+        }
+
+        // نعيد المحاولة كل إطار ما دام مفقودًا: لو وُجد اللاعب بلا PlayerKillable
+        // (ترتيب مختلف في سين جديد) كان البحث يتوقف للأبد فلا يموت أبدًا
+        if (killable == null) killable = player.GetComponentInParent<PlayerKillable>();
     }
 
     private void UpdateRat(int index, Transform rat)
@@ -267,6 +331,17 @@ public class RatSwarm : MonoBehaviour
             MoveRat(rat, escape, fleeSpeed);
             SetAnimSpeed(index, fleeSpeed);
             wanderTargets[index] = escape; // لا يرجع لهدفه القديم داخل الضوء
+            return;
+        }
+
+        // انسحاب العلم يتغلّب على كل شيء: يهرب بعيدًا عن اللاعب بأقصى سرعة
+        if (retreating && player != null)
+        {
+            Vector3 away = Flatten(rat.position - player.position);
+            if (away.sqrMagnitude < 0.0001f) away = Flatten(Random.insideUnitSphere);
+
+            MoveRat(rat, rat.position + away.normalized * 4f, fleeSpeed);
+            SetAnimSpeed(index, fleeSpeed);
             return;
         }
 
@@ -348,10 +423,9 @@ public class RatSwarm : MonoBehaviour
     {
         if (territoryArea != null)
         {
-            // ClosestPoint يرجّع النقطة نفسها إن كانت داخلًا، وأقرب نقطة على السطح إن خرجت
-            Vector3 flat = new Vector3(point.x, territoryArea.bounds.center.y, point.z);
-            Vector3 inside = territoryArea.ClosestPoint(flat);
-            return new Vector3(inside.x, groundY, inside.z);
+            Bounds b = territoryArea.bounds;
+            return new Vector3(Mathf.Clamp(point.x, b.min.x, b.max.x), groundY,
+                               Mathf.Clamp(point.z, b.min.z, b.max.z));
         }
 
         Vector3 offset = Flatten(point - transform.position);
@@ -363,6 +437,9 @@ public class RatSwarm : MonoBehaviour
     private void TryKillPlayer()
     {
         if (player == null || killable == null || killable.IsDead) return;
+
+        // منسحبون بسبب العلم = غير مؤذين، وإلا قتلوه وهم هاربون منه
+        if (retreating) return;
 
         // اللاعب داخل ضوء طارد للفئران = آمن مهما اقتربت (الضوء أقوى من العدد)
         if (SafeZone.IsSafe(player.position, SafeZone.Targets.Rats)) return;
@@ -381,10 +458,16 @@ public class RatSwarm : MonoBehaviour
 
     private static Vector3 Flatten(Vector3 v) { v.y = 0f; return v; }
 
-    private void OnDrawGizmosSelected()
+    /// <summary>
+    /// حدود العش تُرسم دائمًا (بلا تحديد الكائن) لأنها أداة التشخيص الأولى:
+    /// أخضر = اللاعب مقتحم والهجوم مفعّل، أحمر = خارج المنطقة.
+    /// </summary>
+    private void OnDrawGizmos()
     {
-        // حدود العش — الشكل الحر إن وُجد، وإلا الدائرة
-        Gizmos.color = new Color(0.6f, 0.2f, 0.2f, 0.9f);
+        Gizmos.color = (Application.isPlaying && playerIntruding)
+            ? new Color(0.2f, 1f, 0.3f, 1f)
+            : new Color(0.6f, 0.2f, 0.2f, 0.9f);
+
         if (territoryArea != null)
         {
             Gizmos.DrawWireCube(territoryArea.bounds.center, territoryArea.bounds.size);
@@ -394,8 +477,12 @@ public class RatSwarm : MonoBehaviour
             Gizmos.matrix = Matrix4x4.TRS(transform.position, Quaternion.identity,
                                           new Vector3(1f, 0.02f, 1f));
             Gizmos.DrawWireSphere(Vector3.zero, territoryRadius);
+            Gizmos.matrix = Matrix4x4.identity;
         }
+    }
 
+    private void OnDrawGizmosSelected()
+    {
         Gizmos.matrix = Matrix4x4.identity;
 
         // نقاط الخروج ومدى تشتّت كل مجموعة حولها
