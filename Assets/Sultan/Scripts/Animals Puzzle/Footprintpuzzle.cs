@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Events;
 
 public class FootprintPuzzle : MonoBehaviour
 {
@@ -10,17 +9,12 @@ public class FootprintPuzzle : MonoBehaviour
     [SerializeField] private float settleDelay = 0.05f;
     [SerializeField] private Vector3 travelOffset = new Vector3(0f, 0f, -0.6f);
     [SerializeField] private bool swapOnOccupied = true;
-    [SerializeField] private float solveDelay = 0.5f;
-    [SerializeField] private UnityEvent onSolved;
     [SerializeField] private bool debug = true;
-    [SerializeField] private bool debugKeys;
+    [SerializeField] private bool debugKeys = true;
 
     private AnimalPlate.AnimalId[] _solution;
     private float _lockTimer;
-    private float _solveTimer;
     private bool _locked;
-    private bool _solved;
-    private bool _solvePending;
 
     void Start()
     {
@@ -42,12 +36,6 @@ public class FootprintPuzzle : MonoBehaviour
         {
             _lockTimer -= Time.deltaTime;
             if (_lockTimer <= 0f) onSettled();
-        }
-
-        if (_solvePending)
-        {
-            _solveTimer -= Time.deltaTime;
-            if (_solveTimer <= 0f) fireSolved();
         }
 
         if (debugKeys) readDebugKeys();
@@ -75,20 +63,6 @@ public class FootprintPuzzle : MonoBehaviour
     void onSettled()
     {
         if (debug) logState("settled");
-
-        if (_solved || _solvePending) return;
-        if (!arrangementMatchesSolution()) return;
-
-        _solved = true;
-        _locked = true;
-        _solvePending = true;
-        _solveTimer = solveDelay;
-    }
-
-    void fireSolved()
-    {
-        _solvePending = false;
-        onSolved?.Invoke();
     }
 
     void readDebugKeys()
@@ -215,5 +189,4 @@ public class FootprintPuzzle : MonoBehaviour
     public Transform Slot(int index) => slots[index];
     public bool IsMoving => _lockTimer > 0f;
     public bool IsLocked => _locked;
-    public bool IsSolved => _solved;
 }
