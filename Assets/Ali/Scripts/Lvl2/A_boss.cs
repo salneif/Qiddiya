@@ -9,6 +9,7 @@ public class A_boss : MonoBehaviour
 
     [Header("First Shift")]
     [SerializeField] private Transform firstPoint;
+    [SerializeField] private ParticleSystem firstSmokcBoom;
 
 
     private Transform _transFromPlaceLocation;
@@ -40,6 +41,7 @@ public class A_boss : MonoBehaviour
 
     private void OnTransformSpell()
     {
+        firstSmokcBoom.Play();
         transform.position = _transFromPlaceLocation.position;
         transform.rotation = _transFromPlaceLocation.rotation;
         OnShiftingWorldToDark?.Invoke();
