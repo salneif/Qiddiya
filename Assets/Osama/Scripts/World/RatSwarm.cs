@@ -18,20 +18,38 @@ using UnityEngine.Rendering;
 /// </summary>
 public class RatSwarm : MonoBehaviour
 {
+    /// <summary>متى يهاجم السرب؟</summary>
+    public enum Aggression
+    {
+        [InspectorName("دائمًا")] Always,
+        [InspectorName("عند دخول اللاعب منطقتهم")] WhenIntruded,
+        [InspectorName("لا يهاجمون")] Never
+    }
+
     [Header("السرب")]
     [Tooltip("مجسم الفأر — صغير جدًا. اتركه فارغًا لاختبار المنطق بلا مجسمات.")]
     [SerializeField] private GameObject ratPrefab;
     [Tooltip("عدد الفئران")]
     [SerializeField] private int count = 30;
-    [Tooltip("نصف قطر منطقة العش — حدود تحرّك الفئران")]
+    [Tooltip("منطقة العش بشكل حر — كولايدر (Is Trigger) يرسم الحدود. مثالي للممرات " +
+             "المستطيلة. يحترم دوران الكولايدر وحجمه. اتركه فارغًا ليُستخدم نصف القطر الدائري.")]
+    [SerializeField] private Collider territoryArea;
+    [Tooltip("نصف قطر منطقة العش — يُستخدم فقط إذا لم تحدد كولايدر أعلاه")]
     [SerializeField] private float territoryRadius = 8f;
-    [Tooltip("نصف قطر نقطة الخروج من العش — صغّره (0.5) ليطلعوا كلهم من الجحر " +
-             "ثم ينتشروا، أو كبّره ليكونوا موزّعين من البداية")]
+    [Tooltip("تشتّت الفئران حول نقطة خروجها")]
     [SerializeField] private float spawnRadius = 0.5f;
+    [Tooltip("نقاط الخروج — يُوزَّع السرب عليها بالتناوب فتتكوّن مجموعات متفرّقة في " +
+             "الأماكن التي تحددها، بدل كومة واحدة. اتركها فارغة ليخرجوا من مركز الكائن.")]
+    [SerializeField] private Transform[] spawnPoints;
 
     [Header("السلوك")]
-    [Tooltip("يطاردون اللاعب بدل التجوال العشوائي")]
-    [SerializeField] private bool chasePlayer = true;
+    [Tooltip("Always = يطاردون دائمًا. " +
+             "When Intruded = يتجوّلون بسلام حتى يدخل اللاعب منطقتهم فيهجمون. " +
+             "Never = تجوال فقط، لا يهاجمون أبدًا.")]
+    [SerializeField] private Aggression aggression = Aggression.WhenIntruded;
+    [Tooltip("مدى تجوال كل فأر حول نقطة خروجه — صغّره ليبقى السرب مجموعات متفرّقة، " +
+             "كبّره ليختلطوا في كل المنطقة")]
+    [SerializeField] private float wanderRadius = 3f;
     [Tooltip("سرعة المطاردة")]
     [SerializeField] private float chaseSpeed = 2.5f;
     [Tooltip("تباعد الفئران حول اللاعب — يمنعهم من التكدّس في نقطة واحدة فيبدون كفأر واحد")]
@@ -87,6 +105,8 @@ public class RatSwarm : MonoBehaviour
     private Animator[] ratAnimators;
     private float[] animVariation;
     private Vector3[] chaseOffsets;
+    private Vector3[] homes;          // نقطة خروج كل فأر — يتجوّل حولها فيبقى التوزيع
+    private bool playerIntruding;     // يُحسب مرة كل إطار لا لكل فأر
     private Transform player;
     private PlayerKillable killable;
     private float groundY;
@@ -114,12 +134,24 @@ public class RatSwarm : MonoBehaviour
         ratAnimators = new Animator[count];
         animVariation = new float[count];
         chaseOffsets = new Vector3[count];
+        homes = new Vector3[count];
 
         for (int i = 0; i < count; i++)
         {
-            // كلهم يخرجون من الجحر (نقطة الكائن) ثم ينتشرون بحركتهم
-            Vector3 pos = RandomPointAround(spawnRadius);
-            wanderTargets[i] = RandomPointAround(territoryRadius);
+            // يُوزَّعون على نقاط الخروج بالتناوب فتتكوّن مجموعات في أماكنك المحددة
+            Vector3 origin = transform.position;
+            if (spawnPoints != null && spawnPoints.Length > 0)
+            {
+                var p = spawnPoints[i % spawnPoints.Length];
+                if (p != null) origin = p.position;
+            }
+
+            // بلا نقاط خروج: يُوزَّعون على كامل المنطقة بدل التكوّم في المركز
+            Vector3 pos = (spawnPoints != null && spawnPoints.Length > 0)
+                ? RandomPointNear(origin, spawnRadius)
+                : RandomPointInTerritory();
+            homes[i] = pos;
+            wanderTargets[i] = RandomPointNear(pos, wanderRadius);
 
             // إزاحة ثابتة لكل فأر حول اللاعب حتى يحيطوا به بدل ما يتكدسوا في نقطة
             Vector2 spread = Random.insideUnitCircle * chaseSpread;
@@ -160,10 +192,32 @@ public class RatSwarm : MonoBehaviour
             animator.cullingMode = AnimatorCullingMode.CullCompletely;
     }
 
-    private Vector3 RandomPointAround(float radius)
+    private Vector3 RandomPointNear(Vector3 origin, float radius)
     {
         Vector2 c = Random.insideUnitCircle * radius;
-        return new Vector3(transform.position.x + c.x, groundY, transform.position.z + c.y);
+        return ClampToTerritory(new Vector3(origin.x + c.x, groundY, origin.z + c.y));
+    }
+
+    /// <summary>نقطة عشوائية موزّعة على كامل المنطقة — تملأ الشكل مهما كان.</summary>
+    private Vector3 RandomPointInTerritory()
+    {
+        if (territoryArea == null) return RandomPointNear(transform.position, territoryRadius);
+
+        // نعتمد الصندوق المحيط ثم نقصّ للداخل، فينضبط الشكل حتى لو كان مدوَّرًا
+        Bounds b = territoryArea.bounds;
+        return ClampToTerritory(new Vector3(Random.Range(b.min.x, b.max.x), groundY,
+                                            Random.Range(b.min.z, b.max.z)));
+    }
+
+    /// <summary>هل النقطة داخل حدود العش؟ (المقارنة أفقية — الفئران على الأرض)</summary>
+    private bool InTerritory(Vector3 point)
+    {
+        if (territoryArea == null)
+            return Flatten(point - transform.position).sqrMagnitude
+                   <= territoryRadius * territoryRadius;
+
+        Vector3 flat = new Vector3(point.x, territoryArea.bounds.center.y, point.z);
+        return (territoryArea.ClosestPoint(flat) - flat).sqrMagnitude < 0.0001f;
     }
 
     private void Update()
@@ -171,6 +225,9 @@ public class RatSwarm : MonoBehaviour
         if (rats == null) return;
 
         ResolvePlayer();
+
+        // هل اقتحم اللاعب المنطقة؟ يُحسب مرة واحدة لا لكل فأر
+        playerIntruding = player != null && InTerritory(player.position);
 
         // توزيع المنطق على إطارات: كل إطار يحدّث شريحة من السرب
         int batches = Mathf.Max(1, updateBatches);
@@ -227,7 +284,7 @@ public class RatSwarm : MonoBehaviour
         }
 
         // مطاردة اللاعب — كل فأر يقصد نقطة قريبة منه لا نفس النقطة
-        if (chasePlayer && player != null && (killable == null || !killable.IsDead))
+        if (ShouldChase())
         {
             Vector3 destination = player.position + chaseOffsets[index];
             if (leashToTerritory) destination = ClampToTerritory(destination);
@@ -237,12 +294,25 @@ public class RatSwarm : MonoBehaviour
             return;
         }
 
-        // تجوال عادي: هدف جديد كل ما وصل هدفه
+        // تجوال هادئ حول نقطة خروجه — لا حول مركز العش، فيبقى التوزيع كما رسمته
         if (Flatten(rat.position - wanderTargets[index]).sqrMagnitude < 0.09f)
-            wanderTargets[index] = RandomPointAround(territoryRadius);
+            wanderTargets[index] = RandomPointNear(homes[index], wanderRadius);
 
         MoveRat(rat, wanderTargets[index], wanderSpeed);
         SetAnimSpeed(index, wanderSpeed);
+    }
+
+    /// <summary>هل يهاجم السرب الآن؟ يعتمد على وضع العدوانية ووجود اللاعب حيًّا.</summary>
+    private bool ShouldChase()
+    {
+        if (player == null || (killable != null && killable.IsDead)) return false;
+
+        return aggression switch
+        {
+            Aggression.Always => true,
+            Aggression.WhenIntruded => playerIntruding,
+            _ => false
+        };
     }
 
     /// <summary>
@@ -276,6 +346,14 @@ public class RatSwarm : MonoBehaviour
 
     private Vector3 ClampToTerritory(Vector3 point)
     {
+        if (territoryArea != null)
+        {
+            // ClosestPoint يرجّع النقطة نفسها إن كانت داخلًا، وأقرب نقطة على السطح إن خرجت
+            Vector3 flat = new Vector3(point.x, territoryArea.bounds.center.y, point.z);
+            Vector3 inside = territoryArea.ClosestPoint(flat);
+            return new Vector3(inside.x, groundY, inside.z);
+        }
+
         Vector3 offset = Flatten(point - transform.position);
         if (offset.magnitude > territoryRadius)
             offset = offset.normalized * territoryRadius;
@@ -305,15 +383,31 @@ public class RatSwarm : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        // حدود العش
+        // حدود العش — الشكل الحر إن وُجد، وإلا الدائرة
         Gizmos.color = new Color(0.6f, 0.2f, 0.2f, 0.9f);
-        Gizmos.matrix = Matrix4x4.TRS(transform.position, Quaternion.identity,
-                                      new Vector3(1f, 0.02f, 1f));
-        Gizmos.DrawWireSphere(Vector3.zero, territoryRadius);
+        if (territoryArea != null)
+        {
+            Gizmos.DrawWireCube(territoryArea.bounds.center, territoryArea.bounds.size);
+        }
+        else
+        {
+            Gizmos.matrix = Matrix4x4.TRS(transform.position, Quaternion.identity,
+                                          new Vector3(1f, 0.02f, 1f));
+            Gizmos.DrawWireSphere(Vector3.zero, territoryRadius);
+        }
+
+        Gizmos.matrix = Matrix4x4.identity;
+
+        // نقاط الخروج ومدى تشتّت كل مجموعة حولها
+        if (spawnPoints != null)
+        {
+            Gizmos.color = new Color(1f, 0.8f, 0.2f, 0.9f);
+            foreach (var p in spawnPoints)
+                if (p != null) Gizmos.DrawWireSphere(p.position, spawnRadius);
+        }
 
         // مواقع الفئران ومدى قتلها وقت التشغيل — تراها حتى بلا مجسمات
         if (rats == null) return;
-        Gizmos.matrix = Matrix4x4.identity;
         Gizmos.color = new Color(1f, 0.35f, 0.35f, 0.9f);
         foreach (var rat in rats)
             if (rat != null) Gizmos.DrawWireSphere(rat.position, killRadius);
