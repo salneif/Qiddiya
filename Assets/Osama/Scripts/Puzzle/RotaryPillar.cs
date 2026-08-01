@@ -15,6 +15,12 @@ public class RotaryPillar : MonoBehaviour
     [Tooltip("الوجه الذي يبدأ عليه (0 حتى عدد الوجوه-1)")]
     [SerializeField] private int startFace = 0;
 
+    [Header("عرض الوجوه (بديل للدوران)")]
+    [Tooltip("كائن لكل وجه بالترتيب — يظهر واحد فقط حسب الوجه الحالي. " +
+             "استخدمه للوحات المسطّحة التي لا يصلح تدويرها فعليًا. " +
+             "اتركه فارغًا ليدور المجسّم كالمعتاد.")]
+    [SerializeField] private GameObject[] faceObjects;
+
     [Header("الدوران")]
     [Tooltip("محور الدوران المحلي (عادة Y للعمود الواقف)")]
     [SerializeField] private Vector3 rotationAxis = Vector3.up;
@@ -47,7 +53,19 @@ public class RotaryPillar : MonoBehaviour
         faceCount = Mathf.Max(2, faceCount);
         baseRotation = transform.localRotation;
         CurrentFace = ((startFace % faceCount) + faceCount) % faceCount;
-        transform.localRotation = RotationForFace(CurrentFace);
+
+        if (HasFaceObjects) ShowFace(CurrentFace);
+        else transform.localRotation = RotationForFace(CurrentFace);
+    }
+
+    /// <summary>هل يعرض وجوهه بتبديل الكائنات بدل الدوران؟</summary>
+    private bool HasFaceObjects => faceObjects != null && faceObjects.Length > 0;
+
+    /// <summary>يُظهر كائن الوجه المطلوب ويخفي البقية.</summary>
+    private void ShowFace(int face)
+    {
+        for (int i = 0; i < faceObjects.Length; i++)
+            if (faceObjects[i] != null) faceObjects[i].SetActive(i == face);
     }
 
     /// <summary>يدوّر العمود وجهًا واحدًا — اربطه بحدث الزر.</summary>
@@ -67,18 +85,27 @@ public class RotaryPillar : MonoBehaviour
         int fromFace = CurrentFace;
         CurrentFace = (CurrentFace + 1) % faceCount;
 
-        Quaternion from = RotationForFace(fromFace);
-        Quaternion to = RotationForFace(fromFace + 1); // بدون % حتى يدور للأمام دائمًا
-
-        float t = 0f;
-        while (t < rotateTime)
+        if (HasFaceObjects)
         {
-            t += Time.deltaTime;
-            float k = curve.Evaluate(rotateTime > 0f ? Mathf.Clamp01(t / rotateTime) : 1f);
-            transform.localRotation = Quaternion.Slerp(from, to, k);
-            yield return null;
+            // لوحة مسطّحة: نبدّل الصورة ونحترم نفس المدة ليبقى إيقاع اللغز واحدًا
+            ShowFace(CurrentFace);
+            if (rotateTime > 0f) yield return new WaitForSeconds(rotateTime);
         }
-        transform.localRotation = RotationForFace(CurrentFace);
+        else
+        {
+            Quaternion from = RotationForFace(fromFace);
+            Quaternion to = RotationForFace(fromFace + 1); // بدون % حتى يدور للأمام دائمًا
+
+            float t = 0f;
+            while (t < rotateTime)
+            {
+                t += Time.deltaTime;
+                float k = curve.Evaluate(rotateTime > 0f ? Mathf.Clamp01(t / rotateTime) : 1f);
+                transform.localRotation = Quaternion.Slerp(from, to, k);
+                yield return null;
+            }
+            transform.localRotation = RotationForFace(CurrentFace);
+        }
 
         IsRotating = false;
         onRotated?.Invoke();

@@ -25,6 +25,12 @@ public class A_WaterSection : MonoBehaviour
         {
             isFirstTime = false;
             OnEnemySeeingPlayer?.Invoke();
+            Invoke("ResetOnFirstTime", 6);
+
         }
+    }
+    private void ResetOnFirstTime()
+    {
+        isFirstTime=true;
     }
 }

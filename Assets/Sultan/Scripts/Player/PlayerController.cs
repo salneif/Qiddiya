@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -74,11 +75,13 @@ public class PlayerController : MonoBehaviour
         characterController = GetComponent<CharacterController>();
         _pusher = GetComponent<BoxPusher>();
 
+        crouchAndJumpSystem.OnCrouch += OnCrouch;
+        crouchAndJumpSystem.OnJump += OnJump;
+
         if (Camera.main != null)
             _topDownCam = Camera.main.GetComponent<TopDownCameraFollow>();
 
-        crouchAndJumpSystem.OnCrouch += OnCrouch;
-        crouchAndJumpSystem.OnJump += OnJump;
+      
     }
 
     private void OnEnable()
@@ -215,7 +218,10 @@ public class PlayerController : MonoBehaviour
 
         Vector3 planar = _moveRight * _currentSpeed + _moveForward * _currentZSpeed;
         Vector3 finalMove = new Vector3(planar.x, _verticalVelocity, planar.z);
-        characterController.Move(finalMove * Time.deltaTime);
+        if (characterController.enabled == true)
+        {
+            characterController.Move(finalMove * Time.deltaTime);
+        }
         _isGrounded = characterController.isGrounded;
     }
 
