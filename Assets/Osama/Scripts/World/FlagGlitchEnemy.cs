@@ -15,6 +15,9 @@ public class FlagGlitchEnemy : MonoBehaviour
 
     [Header("الربط بالعلم")]
     [SerializeField] private FlagItem flag;
+    [Tooltip("يعكس علاقته بالعلم: يطارد وأنت <b>حامله</b> ويهدأ لما تتركه. " +
+             "لمشاهد الهروب — تأخذ العلم فيستيقظ ويلاحقك حتى المخرج.")]
+    [SerializeField] private bool huntsWhenFlagHeld = false;
 
     [Header("الهدف")]
     [SerializeField] private string playerTag = "Player";
@@ -120,12 +123,13 @@ public class FlagGlitchEnemy : MonoBehaviour
 
     private void Start()
     {
-        // الحالة الابتدائية حسب العلم (بالأرض = مطاردة)
-        SetState(flag != null && flag.IsHeld ? State.Retreating : State.Hunting);
+        // الحالة الابتدائية حسب العلم — والعكس عند تفعيل huntsWhenFlagHeld
+        bool held = flag != null && flag.IsHeld;
+        SetState(held == huntsWhenFlagHeld ? State.Hunting : State.Retreating);
     }
 
-    private void OnFlagTaken() => SetState(State.Retreating);
-    private void OnFlagDown() => SetState(State.Hunting);
+    private void OnFlagTaken() => SetState(huntsWhenFlagHeld ? State.Hunting : State.Retreating);
+    private void OnFlagDown() => SetState(huntsWhenFlagHeld ? State.Retreating : State.Hunting);
 
     private void SetState(State s)
     {
@@ -206,7 +210,7 @@ public class FlagGlitchEnemy : MonoBehaviour
         if (respectSafeZones)
         {
             // لو اشتعل ملجأ فوق العدو نفسه → يطلع منه فورًا
-            var here = SafeZone.ZoneAt(transform.position);
+            var here = SafeZone.ZoneAt(transform.position, SafeZone.Targets.Monsters);
             if (here != null)
             {
                 Vector3 away = Flatten(transform.position - here.transform.position);
@@ -216,7 +220,7 @@ public class FlagGlitchEnemy : MonoBehaviour
             }
 
             // اللاعب داخل الضوء → يقف برّا ويراقبه بدل ما يلحقه
-            if (SafeZone.IsSafe(player.position))
+            if (SafeZone.IsSafe(player.position, SafeZone.Targets.Monsters))
             {
                 FaceDir(to.normalized);
                 return 0f;
@@ -265,7 +269,8 @@ public class FlagGlitchEnemy : MonoBehaviour
 
         // يقفز نحو اللاعب (بدون تجاوزه)
         float step = Mathf.Min(blinkStep, Mathf.Max(0f, distToPlayer - contactRange * 0.9f));
-        if (respectSafeZones && SafeZone.IsSafe(transform.position + dir * step))
+        if (respectSafeZones &&
+            SafeZone.IsSafe(transform.position + dir * step, SafeZone.Targets.Monsters))
             step = 0f; // لا يومض إلى داخل ملجأ مشتعل
         transform.position += dir * step;
         if (lockToGroundY)
