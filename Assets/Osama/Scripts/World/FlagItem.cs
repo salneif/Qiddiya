@@ -21,14 +21,6 @@ public class FlagItem : MonoBehaviour
     [Tooltip("إزاحة العلم عن مركز اللاعب أثناء الحمل (فوق الرأس مثل CTF)")]
     [SerializeField] private Vector3 holdOffset = new Vector3(0f, 1.8f, -0.15f);
 
-    [Header("الصوت")]
-    [Tooltip("مصدر الصوت — يُلتقط تلقائيًا من نفس كائن العلم إذا تُرك فارغًا")]
-    [SerializeField] private AudioSource audioSource;
-    [Tooltip("صوت التقاط العلم")]
-    [SerializeField] private AudioClip pickupSound;
-    [Tooltip("صوت غرس العلم في مقبسه")]
-    [SerializeField] private AudioClip placeSound;
-
     [Header("أحداث")]
     [Tooltip("عند التقاط العلم (افتح بوابة/شغّل مؤثر...)")]
     public UnityEvent onPickedUp;
@@ -48,12 +40,6 @@ public class FlagItem : MonoBehaviour
     {
         pickupCollider = GetComponent<Collider>();
         pickupCollider.isTrigger = true;
-        if (audioSource == null) audioSource = GetComponent<AudioSource>();
-    }
-
-    private void Play(AudioClip clip)
-    {
-        if (clip != null && audioSource != null) audioSource.PlayOneShot(clip);
     }
 
     private void OnTriggerEnter(Collider other)
@@ -71,7 +57,6 @@ public class FlagItem : MonoBehaviour
         transform.localPosition = holdOffset;
         transform.localRotation = Quaternion.identity;
 
-        Play(pickupSound);
         onPickedUp?.Invoke();
         PickedUp?.Invoke();
     }
@@ -89,7 +74,6 @@ public class FlagItem : MonoBehaviour
         transform.SetPositionAndRotation(point.position, point.rotation);
         pickupCollider.enabled = true; // يمكن التقاطه من جديد
 
-        Play(placeSound);
         onPlaced?.Invoke();
         Placed?.Invoke();
     }

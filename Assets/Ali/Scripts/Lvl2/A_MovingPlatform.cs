@@ -11,6 +11,7 @@ public class A_MovingPlatform : MonoBehaviour
 
     private void Start()
     {
+        
     }
     private void OnTriggerEnter(Collider other)
     {
@@ -31,14 +32,13 @@ public class A_MovingPlatform : MonoBehaviour
 
     private void Update()
     {
-
         Vector3 platformMovement = Vector3.zero;
         if (_isOnPlatform)
         {
             platformMovement = platform.position - lastPlatformPostion;
             lastPlatformPostion = platform.position;
         }
-        if(characterController.enabled == true) 
+        
             characterController.Move(platformMovement );
         
     }
