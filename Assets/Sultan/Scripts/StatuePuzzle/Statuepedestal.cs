@@ -50,6 +50,7 @@ public class StatuePedestal : MonoBehaviour
     private Vector3 _raisedPos;
     private Vector3 _hiddenPos;
     private bool _busy;
+    private bool _locked;
 
     void Awake()
     {
@@ -92,7 +93,7 @@ public class StatuePedestal : MonoBehaviour
 
     public bool Cycle()
     {
-        if (_busy) return false;
+        if (_busy || _locked) return false;
 
         Animal next = nextAnimal();
         if (next == _held) return false;
@@ -221,7 +222,12 @@ public class StatuePedestal : MonoBehaviour
         Cycle();
     }
 
+    public void Lock() => _locked = true;
+    public void Unlock() => _locked = false;
+
     public Animal Held => _held;
     public float RotationValue => rotationValue;
     public bool IsBusy => _busy;
+    public bool IsLocked => _locked;
+    public bool CanInteract => !_busy && !_locked;
 }

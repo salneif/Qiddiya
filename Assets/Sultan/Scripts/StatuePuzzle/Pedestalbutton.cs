@@ -37,10 +37,11 @@ public class PedestalButton : MonoBehaviour
         _rangeTimer -= Time.deltaTime;
         _playerInRange = _rangeTimer > 0f;
 
-        if (prompt != null && prompt.activeSelf != _playerInRange)
-            prompt.SetActive(_playerInRange);
+        bool showPrompt = _playerInRange && pedestal != null && !pedestal.IsLocked;
+        if (prompt != null && prompt.activeSelf != showPrompt)
+            prompt.SetActive(showPrompt);
 
-        if (_playerInRange && pedestal != null && !pedestal.IsBusy && Input.GetKeyDown(interactKey))
+        if (_playerInRange && pedestal != null && pedestal.CanInteract && Input.GetKeyDown(interactKey))
         {
             if (pedestal.Cycle()) _pressTimer = pressDuration;
         }
