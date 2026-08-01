@@ -32,8 +32,16 @@ public class FlagGlitchEnemy : MonoBehaviour
     [Tooltip("مسافة التلامس التي يقتل عندها اللاعب (متر)")]
     [SerializeField] private float contactRange = 1.3f;
     [SerializeField] private float turnSpeed = 8f;
-    [Tooltip("تثبيت ارتفاع العدو على مستوى الأرض (يمنعه من الطيران)")]
+    [Tooltip("تثبيت ارتفاع العدو على مستوى ثابت (يمنعه من الانجراف رأسيًا)")]
     [SerializeField] private bool lockToGroundY = true;
+
+    [Header("التحليق (شبح)")]
+    [Tooltip("ارتفاع التحليق فوق مستوى البداية (متر). 0 = يمشي على الأرض.")]
+    [SerializeField] private float hoverHeight = 0f;
+    [Tooltip("مدى التمايل الرأسي أثناء التحليق — يمنع الثبات الآلي فيبدو طافيًا حيًّا")]
+    [SerializeField] private float bobAmount = 0.25f;
+    [Tooltip("سرعة التمايل")]
+    [SerializeField] private float bobSpeed = 1.4f;
 
     [Header("الاختفاء والظهور (Blink) — طابع الرعب")]
     [Tooltip("يومض (يختفي ويقفز) بدل المشي المستمر أثناء المطاردة")]
@@ -325,17 +333,26 @@ public class FlagGlitchEnemy : MonoBehaviour
     private void Move(Vector3 dir, float speed)
     {
         transform.position += dir * speed * Time.deltaTime;
-        if (lockToGroundY)
-        {
-            Vector3 p = transform.position;
-            p.y = groundY;
-            transform.position = p;
-        }
+        ApplyHeight();
         if (dir.sqrMagnitude > 0.0001f)
         {
             Quaternion look = Quaternion.LookRotation(dir, Vector3.up);
             transform.rotation = Quaternion.Slerp(transform.rotation, look, Time.deltaTime * turnSpeed);
         }
+    }
+
+    /// <summary>
+    /// يثبّت الارتفاع على مستوى البداية + ارتفاع التحليق، مع تمايل جيبي.
+    /// التمايل هو ما يفرّق بين "شبح طافٍ" و"مجسّم معلّق في الهواء".
+    /// </summary>
+    private void ApplyHeight()
+    {
+        if (!lockToGroundY) return;
+
+        float bob = bobAmount > 0f ? Mathf.Sin(Time.time * bobSpeed) * bobAmount : 0f;
+        Vector3 p = transform.position;
+        p.y = groundY + hoverHeight + bob;
+        transform.position = p;
     }
 
     private Vector3 Flatten(Vector3 v) { v.y = 0f; return v; }
