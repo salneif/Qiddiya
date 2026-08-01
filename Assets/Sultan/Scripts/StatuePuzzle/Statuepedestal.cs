@@ -7,18 +7,23 @@ public class StatuePedestal : MonoBehaviour
 {
     public enum Animal { None, Chicken, Wolf, Elephant }
 
+    // Object references
     [SerializeField] private Transform flapA;
     [SerializeField] private Transform flapB;
     [SerializeField] private Transform animalAnchor;
     [SerializeField] private GameObject chickenVisual;
     [SerializeField] private GameObject wolfVisual;
     [SerializeField] private GameObject elephantVisual;
+
+    // Settings
     [SerializeField] private float rotationValue = 25f;
-    [SerializeField] private Vector3 flapAxis = Vector3.up;
+    [SerializeField] private Vector3 flapAxis = Vector3.forward;
     [SerializeField] private float flapOpenAngleA = 90f;
     [SerializeField] private float flapOpenAngleB = -90f;
     [SerializeField] private float hideDepth = 0.8f;
     [SerializeField] private Animal startingAnimal = Animal.None;
+
+    // Timing
     [SerializeField] private float flapOpenDuration = 0.35f;
     [SerializeField] private float lowerDuration = 0.4f;
     [SerializeField] private float swapPause = 0.08f;
@@ -26,6 +31,8 @@ public class StatuePedestal : MonoBehaviour
     [SerializeField] private float flapCloseDuration = 0.35f;
     [SerializeField] private AnimationCurve flapCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
     [SerializeField] private AnimationCurve liftCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+    // Debug
     [SerializeField] private bool debug;
 
     public event Action<StatuePedestal> OnAnimalChanged;
