@@ -46,9 +46,10 @@ public class RemoteSlideControl : MonoBehaviour
     [SerializeField] private float moveSpeed = 2f;
 
     [Header("التحكّم أثناء الإمساك")]
-    [Tooltip("سكربتات تتعطّل أثناء استخدام التحكّم — ضع فيها سكربت حركة اللاعب " +
-             "حتى لا يمشي وهو يشغّل اللوحة")]
-    [SerializeField] private Behaviour[] disableWhileUsing;
+    [Tooltip("سكربتات تتعطّل أثناء استخدام التحكّم: سكربت حركة اللاعب، وسكربت متابعة " +
+             "الكاميرا. النوع MonoBehaviour عمدًا حتى لا يمكن وضع مكوّن Camera بالغلط " +
+             "(تعطيله يطفئ الشاشة).")]
+    [SerializeField] private MonoBehaviour[] disableWhileUsing;
     [SerializeField] private Key leftKey = Key.A;
     [SerializeField] private Key rightKey = Key.D;
 
@@ -66,15 +67,6 @@ public class RemoteSlideControl : MonoBehaviour
     [SerializeField] private Vector3 crankAxis = Vector3.forward;
     [Tooltip("[Crank] سرعة اللفّ (درجة/ثانية)")]
     [SerializeField] private float crankSpeed = 220f;
-
-    [Header("الكاميرا أثناء الاستخدام")]
-    [Tooltip("كائن فارغ تقف عنده الكاميرا أثناء الإمساك — وجّهه ليُظهر اللمبة والمنطقة " +
-             "التي تحرّكها إليها معًا. اتركه فارغًا لتبقى الكاميرا مكانها.")]
-    [SerializeField] private Transform cameraViewPoint;
-    [Tooltip("الكاميرا المتحرّكة — تُلتقط Camera.main تلقائيًا إذا تُركت فارغة")]
-    [SerializeField] private Camera controlledCamera;
-    [Tooltip("سرعة انتقال الكاميرا لنقطة العرض")]
-    [SerializeField] private float cameraBlendSpeed = 3f;
 
     [Header("الصوت")]
     [SerializeField] private AudioSource audioSource;
@@ -201,22 +193,7 @@ public class RemoteSlideControl : MonoBehaviour
         if (disableWhileUsing == null) return;
 
         foreach (var b in disableWhileUsing)
-        {
-            if (b == null) continue;
-
-            // تعطيل مكوّن Camera يطفئ الشاشة كلها ("No cameras rendering").
-            // المقصود سكربت متابعة الكاميرا لا الكاميرا نفسها — نتجاهله ونوضّح السبب.
-            if (b is Camera)
-            {
-                Debug.LogWarning(
-                    $"[RemoteSlideControl] على '{name}': تجاهلت مكوّن Camera في " +
-                    "Disable While Using، لأن تعطيله يطفئ الشاشة. " +
-                    "ضع سكربت متابعة الكاميرا (TopDownCameraFollow) بدله.", this);
-                continue;
-            }
-
-            b.enabled = enabled;
-        }
+            if (b != null) b.enabled = enabled;
     }
 
     /// <summary>-1 يسار، +1 يمين، 0 وقوف.</summary>
@@ -257,30 +234,18 @@ public class RemoteSlideControl : MonoBehaviour
                                                 Time.deltaTime * handleSpeed);
     }
 
-    /// <summary>
-    /// ينقل الكاميرا لنقطة العرض أثناء الإمساك. في LateUpdate ليأتي بعد سكربت
-    /// متابعة الكاميرا لا قبله.
-    ///
-    /// عند الترك لا نعيدها يدويًا — يكفي أن يعود سكربت المتابعة للعمل فيسحبها
-    /// للاعب بنعومة بنفسه (Follow Speed)، فلا نكتب منطق رجوع ولا يتنازع اثنان عليها.
-    /// </summary>
-    private void LateUpdate()
-    {
-        if (!IsEngaged || cameraViewPoint == null) return;
-
-        var cam = controlledCamera != null ? controlledCamera : Camera.main;
-        if (cam == null) return;
-
-        float k = Time.deltaTime * cameraBlendSpeed;
-        cam.transform.position = Vector3.Lerp(cam.transform.position,
-                                              cameraViewPoint.position, k);
-        cam.transform.rotation = Quaternion.Slerp(cam.transform.rotation,
-                                                  cameraViewPoint.rotation, k);
-    }
-
     private void UpdateSound(float direction)
     {
         if (audioSource == null || moveLoop == null) return;
+
+        // ضمان دوران الحلقة مهما تغيّر إعداد المصدر بعد Awake — بدونها لو توقّف
+        // التشغيل مرة (loop مطفي مثلًا) لا يعود أبدًا ويبقى الصوت صامتًا للأبد
+        if (!audioSource.isPlaying)
+        {
+            audioSource.clip = moveLoop;
+            audioSource.loop = true;
+            audioSource.Play();
+        }
 
         // الصوت يشتغل فقط أثناء حركة فعلية (لا عند الوقوف على الحد)
         bool atLimit = (direction < 0f && currentOffset <= minOffset) ||
