@@ -42,6 +42,11 @@ public class FlagGlitchEnemy : MonoBehaviour
     [SerializeField] private float bobAmount = 0.25f;
     [Tooltip("سرعة التمايل")]
     [SerializeField] private float bobSpeed = 1.4f;
+    [Tooltip("يتبع ارتفاع اللاعب فيطير لأي مكان — يصعد للمنصّات وينزل للحفر. " +
+             "أطفئه ليبقى حبيس مستوى واحد.")]
+    [SerializeField] private bool followPlayerHeight = true;
+    [Tooltip("سرعة الصعود والهبوط (متر/ثانية) — أبطأ من سرعة المطاردة ليبدو منزلقًا لا قافزًا")]
+    [SerializeField] private float verticalSpeed = 2f;
 
     [Header("الاختفاء والظهور (Blink) — طابع الرعب")]
     [Tooltip("يومض (يختفي ويقفز) بدل المشي المستمر أثناء المطاردة")]
@@ -57,6 +62,19 @@ public class FlagGlitchEnemy : MonoBehaviour
     [Tooltip("صوت الومضة (اختياري)")]
     [SerializeField] private AudioSource blinkAudio;
     [SerializeField] private AudioClip blinkSound;
+
+    [Header("صوت العدو")]
+    [Tooltip("مصدر مستقل للأنين — لا تستخدم نفس مصدر الومضة، لأن مستوى الحلقة " +
+             "يتغيّر كل إطار وسيبتلع صوت الومضة معه")]
+    [SerializeField] private AudioSource voiceSource;
+    [Tooltip("أنين/همس مستمر — يعلو كلما اقترب، فيعرف اللاعب قربه بأذنه قبل عينه")]
+    [SerializeField] private AudioClip ambientLoop;
+    [Range(0f, 1f)]
+    [SerializeField] private float ambientMaxVolume = 0.85f;
+    [Tooltip("المسافة التي يبدأ الأنين يُسمع عندها (متر)")]
+    [SerializeField] private float hearingRange = 22f;
+    [Tooltip("صرخة لحظة بدء المطاردة — تُشغَّل مرة واحدة")]
+    [SerializeField] private AudioClip huntStartSound;
 
     [Header("الأنميشن")]
     [SerializeField] private Animator animator;
@@ -94,6 +112,7 @@ public class FlagGlitchEnemy : MonoBehaviour
     private int speedHash;
     private bool hasSpeedParam;
     private float groundY;
+    private float currentBaseY;   // الارتفاع المتتبَّع، يتحرك بنعومة نحو ارتفاع اللاعب
     private float blinkTimer;
     private bool blinking;
     private float glitchTimer;
@@ -106,9 +125,18 @@ public class FlagGlitchEnemy : MonoBehaviour
     private void Awake()
     {
         groundY = transform.position.y;
+        currentBaseY = groundY + hoverHeight;
         if (animator == null) animator = GetComponentInChildren<Animator>();
         if (glitchForm != null) glitchBaseLocalPos = glitchForm.transform.localPosition;
         CacheSpeedParam();
+
+        if (voiceSource != null && ambientLoop != null)
+        {
+            voiceSource.clip = ambientLoop;
+            voiceSource.loop = true;
+            voiceSource.volume = 0f;
+            voiceSource.Play();
+        }
     }
 
     private void OnEnable()
@@ -141,6 +169,11 @@ public class FlagGlitchEnemy : MonoBehaviour
 
     private void SetState(State s)
     {
+        // صرخة بدء المطاردة تُطلق مرة واحدة عند التحوّل، لا كل إطار
+        if (s == State.Hunting && state != State.Hunting &&
+            huntStartSound != null && voiceSource != null)
+            voiceSource.PlayOneShot(huntStartSound);
+
         state = s;
         // إيقاف أي ومضة جارية حتى لا تعيد تفعيل الشكل الخطأ
         StopAllCoroutines();
@@ -183,6 +216,27 @@ public class FlagGlitchEnemy : MonoBehaviour
         }
 
         if (hasSpeedParam) animator.SetFloat(speedHash, speed);
+
+        UpdateVoice();
+    }
+
+    /// <summary>
+    /// يرفع الأنين كلما قرب من اللاعب ويخفته كلما ابتعد — فيتحوّل الصوت إلى
+    /// مؤشّر مسافة يسمعه اللاعب قبل أن يراه. أقوى أدوات الرعب وأرخصها.
+    /// </summary>
+    private void UpdateVoice()
+    {
+        if (voiceSource == null || ambientLoop == null) return;
+
+        // يصمت تمامًا وهو متراجع — الأنين للتهديد لا للوجود
+        float wanted = 0f;
+        if (state == State.Hunting && player != null && hearingRange > 0.01f)
+        {
+            float dist = Flatten(player.position - transform.position).magnitude;
+            wanted = Mathf.Clamp01(1f - dist / hearingRange) * ambientMaxVolume;
+        }
+
+        voiceSource.volume = Mathf.Lerp(voiceSource.volume, wanted, Time.deltaTime * 3f);
     }
 
     /// <summary>يجمّد ويشغّل الأنيميتور بشكل عشوائي سريع فتطلع المشية متقطّعة (قلتش).</summary>
@@ -349,9 +403,19 @@ public class FlagGlitchEnemy : MonoBehaviour
     {
         if (!lockToGroundY) return;
 
+        // يلاحق ارتفاع اللاعب فيعبر المنصّات والحفر، أو يبقى على مستوى بدايته
+        float wantedBase = (followPlayerHeight && player != null)
+            ? player.position.y
+            : groundY;
+
+        // انتقال تدريجي حتى لا يقفز رأسيًا عند فرق ارتفاع مفاجئ
+        currentBaseY = Mathf.MoveTowards(currentBaseY, wantedBase + hoverHeight,
+                                         verticalSpeed * Time.deltaTime);
+
         float bob = bobAmount > 0f ? Mathf.Sin(Time.time * bobSpeed) * bobAmount : 0f;
+
         Vector3 p = transform.position;
-        p.y = groundY + hoverHeight + bob;
+        p.y = currentBaseY + bob;   // التمايل فوق الارتفاع المتتبَّع لا بدلًا منه
         transform.position = p;
     }
 

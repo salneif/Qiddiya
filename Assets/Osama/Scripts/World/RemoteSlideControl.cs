@@ -196,6 +196,17 @@ public class RemoteSlideControl : MonoBehaviour
             if (b != null) b.enabled = enabled;
     }
 
+    /// <summary>
+    /// يعيد الهدف لموضع بدايته ويفلت التحكّم — اربطه بـ PlayerKillable.onRespawn.
+    /// </summary>
+    public void ResetTarget()
+    {
+        if (IsEngaged) SetEngaged(false);
+
+        currentOffset = 0f;
+        if (target != null) target.position = targetStart;
+    }
+
     /// <summary>-1 يسار، +1 يمين، 0 وقوف.</summary>
     private float ReadDirection()
     {
