@@ -54,7 +54,7 @@ public class LongBoatSectionManager : MonoBehaviour
     }
     private void Awake()
     {
-        _currentTime = timeToTurnAround;
+        _currentTime = 1.6f;
         speedUpAmount = originalSpeedUpTime;
 
         lightLeft.SetActive(false);
@@ -79,6 +79,7 @@ public class LongBoatSectionManager : MonoBehaviour
         _inDangerZone = false ;
         speedUpAmount = originalSpeedUpTime ;
         _currentTime = timeToTurnAround;
+        fastestTimeToTurn = 100;
         
     }
 
@@ -158,7 +159,7 @@ public class LongBoatSectionManager : MonoBehaviour
 
 
                     }
-                    if (fastestTimeToTurn > 1)
+                    if (fastestTimeToTurn > 1.6f)
                     {
                         speedUpAmount += speedUpAmount;
                         fastestTimeToTurn = timeToTurnAround - speedUpAmount;
@@ -174,6 +175,7 @@ public class LongBoatSectionManager : MonoBehaviour
                 {
 
                     case -1:
+                        if(!_inCahngeState)
 
                         // invoke death
                         ActiveDeath();

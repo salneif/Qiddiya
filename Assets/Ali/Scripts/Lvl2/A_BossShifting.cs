@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public class A_ShifingWorldToDarkFirstPoint : MonoBehaviour
+public class A_BossShifting : MonoBehaviour
 {
 
     [SerializeField] private int triggerNumber;

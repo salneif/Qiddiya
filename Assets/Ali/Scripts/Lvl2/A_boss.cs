@@ -10,6 +10,12 @@ public class A_boss : MonoBehaviour
     [Header("First Shift")]
     [SerializeField] private Transform firstPoint;
     [SerializeField] private ParticleSystem firstSmokcBoom;
+    [SerializeField] private bool isInBoatSection;
+    [SerializeField] private GameObject boat;
+
+    [Header("Secound Shift")]
+    [SerializeField] private Transform secoundPoint;
+    
 
 
     private Transform _transFromPlaceLocation;
@@ -18,11 +24,11 @@ public class A_boss : MonoBehaviour
 
     private void OnEnable()
     {
-        A_ShifingWorldToDarkFirstPoint.OnShiftingWorldToDarkBossEvent += OnShiftingWorldToDarkBossEvent;
+        A_BossShifting.OnShiftingWorldToDarkBossEvent += OnShiftingWorldToDarkBossEvent;
     }
     private void OnDisable()
     {
-        A_ShifingWorldToDarkFirstPoint.OnShiftingWorldToDarkBossEvent -= OnShiftingWorldToDarkBossEvent;
+        A_BossShifting.OnShiftingWorldToDarkBossEvent -= OnShiftingWorldToDarkBossEvent;
     }
 
     private void OnShiftingWorldToDarkBossEvent(int triggerNumber)
@@ -35,6 +41,13 @@ public class A_boss : MonoBehaviour
                 animator.SetTrigger("TriggerSwitch");
                 shifingEffect.Play();
                 break;
+                case 1:
+                _transFromPlaceLocation = secoundPoint;
+                laugh.Play();
+                animator.SetTrigger("TriggerSwitch");
+                shifingEffect.Play();
+                transform.SetParent(null);
+                break;
         }
     }
 
@@ -46,5 +59,14 @@ public class A_boss : MonoBehaviour
         transform.rotation = _transFromPlaceLocation.rotation;
         OnShiftingWorldToDark?.Invoke();
 
+        isInBoatSection = true;
+
+    }
+    private void Update()
+    {
+        if(isInBoatSection)
+        {
+            gameObject.transform.SetParent(boat.transform, true);
+        }
     }
 }

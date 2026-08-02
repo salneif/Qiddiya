@@ -53,7 +53,7 @@ public class A_LongBoatRide : MonoBehaviour
 
             if(Vector3.Distance(transform.position, endPoint.position) < 0.1f)
             {
-                transform.position = endPoint.position;
+                //transform.position = endPoint.position;
             }
         }
     }
