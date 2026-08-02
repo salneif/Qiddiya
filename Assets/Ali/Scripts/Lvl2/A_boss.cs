@@ -13,6 +13,10 @@ public class A_boss : MonoBehaviour
     [SerializeField] private bool isInBoatSection;
     [SerializeField] private GameObject boat;
 
+    [Header("Secound Shift")]
+    [SerializeField] private Transform secoundPoint;
+    
+
 
     private Transform _transFromPlaceLocation;
     public  event Action OnShiftingWorldToDark;
@@ -20,11 +24,11 @@ public class A_boss : MonoBehaviour
 
     private void OnEnable()
     {
-        A_ShifingWorldToDarkFirstPoint.OnShiftingWorldToDarkBossEvent += OnShiftingWorldToDarkBossEvent;
+        A_BossShifting.OnShiftingWorldToDarkBossEvent += OnShiftingWorldToDarkBossEvent;
     }
     private void OnDisable()
     {
-        A_ShifingWorldToDarkFirstPoint.OnShiftingWorldToDarkBossEvent -= OnShiftingWorldToDarkBossEvent;
+        A_BossShifting.OnShiftingWorldToDarkBossEvent -= OnShiftingWorldToDarkBossEvent;
     }
 
     private void OnShiftingWorldToDarkBossEvent(int triggerNumber)
@@ -36,6 +40,13 @@ public class A_boss : MonoBehaviour
                 laugh.Play();
                 animator.SetTrigger("TriggerSwitch");
                 shifingEffect.Play();
+                break;
+                case 1:
+                _transFromPlaceLocation = secoundPoint;
+                laugh.Play();
+                animator.SetTrigger("TriggerSwitch");
+                shifingEffect.Play();
+                transform.SetParent(null);
                 break;
         }
     }

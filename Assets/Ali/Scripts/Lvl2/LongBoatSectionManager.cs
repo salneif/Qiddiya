@@ -54,7 +54,7 @@ public class LongBoatSectionManager : MonoBehaviour
     }
     private void Awake()
     {
-        _currentTime = timeToTurnAround;
+        _currentTime = 1.6f;
         speedUpAmount = originalSpeedUpTime;
 
         lightLeft.SetActive(false);
