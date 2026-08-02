@@ -79,6 +79,7 @@ public class LongBoatSectionManager : MonoBehaviour
         _inDangerZone = false ;
         speedUpAmount = originalSpeedUpTime ;
         _currentTime = timeToTurnAround;
+        fastestTimeToTurn = 100;
         
     }
 
