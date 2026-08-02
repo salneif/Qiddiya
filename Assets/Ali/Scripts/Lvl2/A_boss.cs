@@ -10,6 +10,8 @@ public class A_boss : MonoBehaviour
     [Header("First Shift")]
     [SerializeField] private Transform firstPoint;
     [SerializeField] private ParticleSystem firstSmokcBoom;
+    [SerializeField] private bool isInBoatSection;
+    [SerializeField] private GameObject boat;
 
 
     private Transform _transFromPlaceLocation;
@@ -46,5 +48,14 @@ public class A_boss : MonoBehaviour
         transform.rotation = _transFromPlaceLocation.rotation;
         OnShiftingWorldToDark?.Invoke();
 
+        isInBoatSection = true;
+
+    }
+    private void Update()
+    {
+        if(isInBoatSection)
+        {
+            gameObject.transform.SetParent(boat.transform, true);
+        }
     }
 }

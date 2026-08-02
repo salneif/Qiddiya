@@ -175,6 +175,7 @@ public class LongBoatSectionManager : MonoBehaviour
                 {
 
                     case -1:
+                        if(!_inCahngeState)
 
                         // invoke death
                         ActiveDeath();
