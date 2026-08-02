@@ -158,7 +158,7 @@ public class LongBoatSectionManager : MonoBehaviour
 
 
                     }
-                    if (fastestTimeToTurn > 1)
+                    if (fastestTimeToTurn > 1.6f)
                     {
                         speedUpAmount += speedUpAmount;
                         fastestTimeToTurn = timeToTurnAround - speedUpAmount;
