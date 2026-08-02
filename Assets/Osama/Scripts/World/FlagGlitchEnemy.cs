@@ -47,6 +47,9 @@ public class FlagGlitchEnemy : MonoBehaviour
     [SerializeField] private bool followPlayerHeight = true;
     [Tooltip("سرعة الصعود والهبوط (متر/ثانية) — أبطأ من سرعة المطاردة ليبدو منزلقًا لا قافزًا")]
     [SerializeField] private float verticalSpeed = 2f;
+    [Tooltip("يتجاهل فروق الارتفاع الأصغر من هذه (متر). قفزة اللاعب ~1.2م فلا تحرّكه، " +
+             "أما نزوله لطابق أو حفرة فيتبعه. بدونها يهتز الشبح مع كل قفزة.")]
+    [SerializeField] private float verticalDeadzone = 1.8f;
 
     [Header("الاختفاء والظهور (Blink) — طابع الرعب")]
     [Tooltip("يومض (يختفي ويقفز) بدل المشي المستمر أثناء المطاردة")]
@@ -112,7 +115,8 @@ public class FlagGlitchEnemy : MonoBehaviour
     private int speedHash;
     private bool hasSpeedParam;
     private float groundY;
-    private float currentBaseY;   // الارتفاع المتتبَّع، يتحرك بنعومة نحو ارتفاع اللاعب
+    private float currentBaseY;   // الارتفاع الفعلي، يتحرك بنعومة نحو المستهدف
+    private float trackedBase;    // مستوى اللاعب المعتمد، لا يتغيّر إلا بفرق كبير
     private float blinkTimer;
     private bool blinking;
     private float glitchTimer;
@@ -126,6 +130,7 @@ public class FlagGlitchEnemy : MonoBehaviour
     {
         groundY = transform.position.y;
         currentBaseY = groundY + hoverHeight;
+        trackedBase = groundY;
         if (animator == null) animator = GetComponentInChildren<Animator>();
         if (glitchForm != null) glitchBaseLocalPos = glitchForm.transform.localPosition;
         CacheSpeedParam();
@@ -428,9 +433,20 @@ public class FlagGlitchEnemy : MonoBehaviour
         if (!lockToGroundY) return;
 
         // يلاحق ارتفاع اللاعب فيعبر المنصّات والحفر، أو يبقى على مستوى بدايته
-        float wantedBase = (followPlayerHeight && player != null)
-            ? player.position.y
-            : groundY;
+        float wantedBase = trackedBase;
+
+        if (followPlayerHeight && player != null)
+        {
+            // لا نتبع إلا الفروق الكبيرة (طابق/حفرة). القفزة أصغر من المنطقة الميتة
+            // فتُتجاهَل، وإلا اهتز الشبح صعودًا ونزولًا مع كل قفزة للاعب
+            if (Mathf.Abs(player.position.y - trackedBase) > verticalDeadzone)
+                trackedBase = player.position.y;
+            wantedBase = trackedBase;
+        }
+        else
+        {
+            wantedBase = groundY;
+        }
 
         // انتقال تدريجي حتى لا يقفز رأسيًا عند فرق ارتفاع مفاجئ
         currentBaseY = Mathf.MoveTowards(currentBaseY, wantedBase + hoverHeight,
