@@ -164,6 +164,30 @@ public class FlagGlitchEnemy : MonoBehaviour
         SetState(held == huntsWhenFlagHeld ? State.Hunting : State.Retreating);
     }
 
+    /// <summary>
+    /// يربط العلم بعد التوليد — يستخدمه <see cref="GhostSpawner"/>.
+    /// بدونه يولد الشبح بعلم فارغ فيبدأ في حالة التراجع بدل المطاردة.
+    /// </summary>
+    public void SetFlag(FlagItem newFlag)
+    {
+        if (flag != null)
+        {
+            flag.PickedUp -= OnFlagTaken;
+            flag.Placed -= OnFlagDown;
+        }
+
+        flag = newFlag;
+
+        if (flag != null && isActiveAndEnabled)
+        {
+            flag.PickedUp += OnFlagTaken;
+            flag.Placed += OnFlagDown;
+        }
+
+        bool held = flag != null && flag.IsHeld;
+        SetState(held == huntsWhenFlagHeld ? State.Hunting : State.Retreating);
+    }
+
     private void OnFlagTaken() => SetState(huntsWhenFlagHeld ? State.Hunting : State.Retreating);
     private void OnFlagDown() => SetState(huntsWhenFlagHeld ? State.Retreating : State.Hunting);
 
