@@ -21,6 +21,11 @@ public class FlagItem : MonoBehaviour
     [Tooltip("إزاحة العلم عن مركز اللاعب أثناء الحمل (فوق الرأس مثل CTF)")]
     [SerializeField] private Vector3 holdOffset = new Vector3(0f, 1.8f, -0.15f);
 
+    [Header("العودة عند إعادة الضبط")]
+    [Tooltip("نقطة عودة العلم عند الموت — عادة مقبسه. " +
+             "اتركها فارغة ليعود لموضعه الذي بدأت عليه اللعبة.")]
+    [SerializeField] private Transform returnPoint;
+
     [Header("الصوت")]
     [Tooltip("مصدر الصوت — يُلتقط تلقائيًا من نفس كائن العلم إذا تُرك فارغًا")]
     [SerializeField] private AudioSource audioSource;
@@ -43,12 +48,40 @@ public class FlagItem : MonoBehaviour
     public bool IsHeld { get; private set; }
 
     private Collider pickupCollider;
+    private Vector3 startPosition;
+    private Quaternion startRotation;
 
     private void Awake()
     {
         pickupCollider = GetComponent<Collider>();
         pickupCollider.isTrigger = true;
         if (audioSource == null) audioSource = GetComponent<AudioSource>();
+
+        startPosition = transform.position;
+        startRotation = transform.rotation;
+    }
+
+    /// <summary>
+    /// يعيد العلم لنقطة عودته ويفلته من يد اللاعب — اربطه بـ PlayerKillable.onRespawn.
+    /// لا يطلق أحداث الوضع إلا إن كان محمولًا فعلًا، حتى لا يُعاد ضبط العالم
+    /// في كل موتة والعلم أصلًا في مكانه.
+    /// </summary>
+    public void ReturnHome()
+    {
+        bool wasHeld = IsHeld;
+        IsHeld = false;
+
+        transform.SetParent(null);
+        transform.SetPositionAndRotation(
+            returnPoint != null ? returnPoint.position : startPosition,
+            returnPoint != null ? returnPoint.rotation : startRotation);
+
+        pickupCollider.enabled = true;
+
+        if (!wasHeld) return;
+        Play(placeSound);
+        onPlaced?.Invoke();
+        Placed?.Invoke();
     }
 
     private void Play(AudioClip clip)

@@ -102,6 +102,11 @@ public class RatSwarm : MonoBehaviour
     [SerializeField] private AudioSource audioSource;
     [Tooltip("صرير مستمر للسرب")]
     [SerializeField] private AudioClip squeakLoop;
+    [Tooltip("مستوى الصرير وهم حاضرون — يتلاشى لصفر مع انسحابهم بسبب العلم")]
+    [Range(0f, 1f)]
+    [SerializeField] private float squeakVolume = 0.6f;
+    [Tooltip("سرعة تلاشي الصرير — أبطأ من الهرب قليلًا فيبدو كأنهم ابتعدوا لا كأنهم حُذفوا")]
+    [SerializeField] private float squeakFadeSpeed = 1.5f;
 
     [Header("أحداث")]
     [Tooltip("عند قتل اللاعب")]
@@ -132,6 +137,7 @@ public class RatSwarm : MonoBehaviour
         {
             audioSource.clip = squeakLoop;
             audioSource.loop = true;
+            audioSource.volume = squeakVolume;
             audioSource.Play();
         }
     }
@@ -262,6 +268,19 @@ public class RatSwarm : MonoBehaviour
         SetRatsHidden(false);
     }
 
+    /// <summary>
+    /// يخفت الصرير مع انسحابهم ويعيده مع عودتهم. التلاشي التدريجي يقرأ
+    /// كابتعادهم، أما القطع المفاجئ فيكشف أنهم حُذفوا.
+    /// </summary>
+    private void UpdateSqueak()
+    {
+        if (audioSource == null || squeakLoop == null) return;
+
+        float wanted = (retreating || hidden) ? 0f : squeakVolume;
+        audioSource.volume = Mathf.Lerp(audioSource.volume, wanted,
+                                        Time.deltaTime * squeakFadeSpeed);
+    }
+
     private void SetRatsHidden(bool hide)
     {
         if (hidden == hide || rats == null) return;
@@ -281,6 +300,11 @@ public class RatSwarm : MonoBehaviour
             retreatTimer -= Time.deltaTime;
             if (retreatTimer <= 0f) SetRatsHidden(true);
         }
+
+        // قبل الخروج المبكر: مصدر الصوت على الأب وهو يبقى فعّالًا بعد اختفاء الفئران،
+        // فبدون هذا يظل الصرير يُسمع في منطقة خالية
+        UpdateSqueak();
+
         if (hidden) return;
 
         ResolvePlayer();
