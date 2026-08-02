@@ -2436,6 +2436,66 @@ Transform:
   - {fileID: 406950962}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 74.22, y: 0, z: 0}
+--- !u!1001 &219087061
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2758316757484639796, guid: d6b8519a76bb44e6c84743b916b03448, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -334.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 2758316757484639796, guid: d6b8519a76bb44e6c84743b916b03448, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 15.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2758316757484639796, guid: d6b8519a76bb44e6c84743b916b03448, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -129.217
+      objectReference: {fileID: 0}
+    - target: {fileID: 2758316757484639796, guid: d6b8519a76bb44e6c84743b916b03448, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 2758316757484639796, guid: d6b8519a76bb44e6c84743b916b03448, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2758316757484639796, guid: d6b8519a76bb44e6c84743b916b03448, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 2758316757484639796, guid: d6b8519a76bb44e6c84743b916b03448, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2758316757484639796, guid: d6b8519a76bb44e6c84743b916b03448, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2758316757484639796, guid: d6b8519a76bb44e6c84743b916b03448, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 2758316757484639796, guid: d6b8519a76bb44e6c84743b916b03448, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4893950217294667227, guid: d6b8519a76bb44e6c84743b916b03448, type: 3}
+      propertyPath: m_Name
+      value: Ring-Area-final 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1598339367958152055, guid: d6b8519a76bb44e6c84743b916b03448, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+  m_SourcePrefab: {fileID: 100100000, guid: d6b8519a76bb44e6c84743b916b03448, type: 3}
 --- !u!1 &221989333
 GameObject:
   m_ObjectHideFlags: 0
@@ -10185,6 +10245,12 @@ MonoBehaviour:
   contactRange: 0.79
   turnSpeed: 6.48
   lockToGroundY: 1
+  hoverHeight: 0
+  bobAmount: 0.25
+  bobSpeed: 1.4
+  followPlayerHeight: 1
+  verticalSpeed: 2
+  verticalDeadzone: 1.8
   blinkMovement: 0
   blinkStep: 3
   blinkInterval: 1.2
@@ -10192,6 +10258,11 @@ MonoBehaviour:
   blinkVfx: {fileID: 0}
   blinkAudio: {fileID: 1070121505}
   blinkSound: {fileID: 8300000, guid: b61134a120bd1784d91c0069f3ac6465, type: 3}
+  voiceSource: {fileID: 0}
+  ambientLoop: {fileID: 0}
+  ambientMaxVolume: 0.85
+  hearingRange: 22
+  huntStartSound: {fileID: 0}
   animator: {fileID: 1683714083}
   speedParam: Speed
   glitchAnimation: 0
@@ -28779,3 +28850,4 @@ SceneRoots:
   - {fileID: 3694354005776753889}
   - {fileID: 7609386394618458095}
   - {fileID: 127147950}
+  - {fileID: 219087061}
