@@ -9,15 +9,32 @@ public class A_ChangeWorld : MonoBehaviour
     [SerializeField] private Material evilSkybox;
     [SerializeField] private bool test;
 
-    private bool firstTime;
+    private bool _isIndarkWorldStat;
 
     private List<GameObject> lightObjects;
     private List<GameObject> darkObjects;
 
+    [Header("Ref")]
+    [SerializeField] private A_boss a_Boss;
+
+    private void OnEnable()
+    {
+        a_Boss.OnShiftingWorldToDark += OnShiftingWorldToDark;
+    }
+    private void OnDisable()
+    {
+        a_Boss.OnShiftingWorldToDark -= OnShiftingWorldToDark;
+    }
+
+    private void OnShiftingWorldToDark()
+    {
+        _isIndarkWorldStat = true;
+    }
+
     private void Update()
     {
         
-        if (test)
+        if (test || _isIndarkWorldStat)
         {
 
             // light
