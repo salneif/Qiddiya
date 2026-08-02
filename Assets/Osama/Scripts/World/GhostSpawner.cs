@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -60,6 +61,9 @@ public class GhostSpawner : MonoBehaviour
     /// <summary>هل خرجت المجموعة؟</summary>
     public bool HasSpawned { get; private set; }
 
+    /// <summary>الأشباح المولَّدة — نتعقّبها لنقدر نحذفها عند الموت أو عند المخرج.</summary>
+    private readonly List<GameObject> spawned = new List<GameObject>();
+
     private Transform Origin => spawnPoint != null ? spawnPoint : transform;
 
     private void Reset()
@@ -106,6 +110,29 @@ public class GhostSpawner : MonoBehaviour
         onSpawnFinished?.Invoke();
     }
 
+    /// <summary>
+    /// يحذف كل الأشباح ويعيد تسليح الكمين ليعمل من جديد —
+    /// اربطه بـ PlayerKillable.onRespawn.
+    /// </summary>
+    public void DespawnAll() => Clear(rearm: true);
+
+    /// <summary>
+    /// يحذف الأشباح ويقفل الكمين نهائيًا — اربطه بمخرج المرحلة
+    /// حتى لا يلاحقوك للمراحل التالية.
+    /// </summary>
+    public void DespawnPermanently() => Clear(rearm: false);
+
+    private void Clear(bool rearm)
+    {
+        StopAllCoroutines();   // يوقف أي خروج لم يكتمل بعد
+
+        foreach (var go in spawned)
+            if (go != null) Destroy(go);
+        spawned.Clear();
+
+        HasSpawned = !rearm;   // عند إعادة التسليح نرجّعها false ليعمل التريغر ثانية
+    }
+
     private void SpawnOne()
     {
         Vector2 c = Random.insideUnitCircle * spawnSpread;
@@ -121,6 +148,7 @@ public class GhostSpawner : MonoBehaviour
 
         // نفعّله بعد ربط العلم، فيشترك OnEnable في أحداث العلم وهو مضبوط أصلًا
         go.SetActive(true);
+        spawned.Add(go);
 
         if (spawnSound != null && audioSource != null) audioSource.PlayOneShot(spawnSound);
     }
