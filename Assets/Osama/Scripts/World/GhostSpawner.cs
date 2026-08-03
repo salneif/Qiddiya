@@ -46,6 +46,11 @@ public class GhostSpawner : MonoBehaviour
     [Tooltip("أب اختياري تُوضع تحته الأشباح لترتيب الهيرآركي")]
     [SerializeField] private Transform ghostParent;
 
+    [Header("موسيقى المطاردة")]
+    [Tooltip("مقطع المطاردة — يُشغَّل مع خروج الأشباح ويتوقف تلقائيًا عند حذفهم " +
+             "(موت أو مخرج). عمره مربوط بعمرهم فيستحيل أن يبقى شغّالًا بعد اختفائهم.")]
+    [SerializeField] private AudioClip chaseMusic;
+
     [Header("لمسات")]
     [SerializeField] private AudioSource audioSource;
     [Tooltip("صوت يُشغَّل مع كل شبح يخرج")]
@@ -101,6 +106,9 @@ public class GhostSpawner : MonoBehaviour
         onSpawnStarted?.Invoke();   // هنا تختفي الستارة
         if (cameraShake != null) cameraShake.Shake();
 
+        if (chaseMusic != null && MusicDirector.Instance != null)
+            MusicDirector.Instance.PlayOverride(chaseMusic);
+
         for (int i = 0; i < Mathf.Max(1, count); i++)
         {
             SpawnOne();
@@ -129,6 +137,10 @@ public class GhostSpawner : MonoBehaviour
         foreach (var go in spawned)
             if (go != null) Destroy(go);
         spawned.Clear();
+
+        // الموسيقى تموت مع الأشباح — لا مطاردة بلا مطارِد
+        if (chaseMusic != null && MusicDirector.Instance != null)
+            MusicDirector.Instance.ClearOverride();
 
         HasSpawned = !rearm;   // عند إعادة التسليح نرجّعها false ليعمل التريغر ثانية
     }

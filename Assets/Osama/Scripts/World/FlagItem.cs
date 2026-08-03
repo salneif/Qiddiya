@@ -25,6 +25,10 @@ public class FlagItem : MonoBehaviour
     [Tooltip("نقطة عودة العلم عند الموت — عادة مقبسه. " +
              "اتركها فارغة ليعود لموضعه الذي بدأت عليه اللعبة.")]
     [SerializeField] private Transform returnPoint;
+    [Tooltip("يعود تلقائيًا لحظة موت حامله، بلا حاجة لربطه بـ On Respawn. " +
+             "بدونه يبقى العلم في يد اللاعب بعد البعث فيظل العالم في حالة 'العلم محمول' " +
+             "— الفئران مختفية والأبواب مفتوحة.")]
+    [SerializeField] private bool returnOnHolderDeath = true;
 
     [Header("الصوت")]
     [Tooltip("مصدر الصوت — يُلتقط تلقائيًا من نفس كائن العلم إذا تُرك فارغًا")]
@@ -50,6 +54,7 @@ public class FlagItem : MonoBehaviour
     private Collider pickupCollider;
     private Vector3 startPosition;
     private Quaternion startRotation;
+    private PlayerKillable holderKillable;   // حامل العلم الحالي، لمراقبة موته
 
     private void Awake()
     {
@@ -95,9 +100,20 @@ public class FlagItem : MonoBehaviour
         PickUp(other.transform);
     }
 
+    /// <summary>
+    /// يعيد العلم لحظة موت حامله. بلا هذا يبقى العلم في يده بعد البعث،
+    /// فيظل العالم كله في حالة "العلم محمول" رغم أن اللاعب عاد لنقطة البداية.
+    /// </summary>
+    private void Update()
+    {
+        if (!IsHeld || !returnOnHolderDeath) return;
+        if (holderKillable != null && holderKillable.IsDead) ReturnHome();
+    }
+
     private void PickUp(Transform player)
     {
         IsHeld = true;
+        holderKillable = player.GetComponentInParent<PlayerKillable>();
         pickupCollider.enabled = false; // لا يُلتقط مرتين ولا يعيق الحركة
 
         transform.SetParent(player);

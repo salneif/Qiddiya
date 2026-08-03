@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Rendering;
@@ -92,11 +93,38 @@ public class RatSwarm : MonoBehaviour
     [Range(1, 8)]
     [SerializeField] private int updateBatches = 1;
 
+    [Header("الوعي بالسقوط")]
+    [Tooltip("لا يشعرون بك إلا إذا سقطت لمستوى أرضهم فعليًا — المرور فوقهم على جسر " +
+             "أو منصّة لا يوقظهم. أطفئه ليشعروا بك بمجرد دخولك حدود العش أيًا كان ارتفاعك.")]
+    [SerializeField] private bool requireFallToNotice = true;
+    [Tooltip("أقصى فرق ارتفاع عن أرض العش يُحسب سقوطًا (متر)")]
+    [SerializeField] private float fallHeightTolerance = 1.5f;
+    [Tooltip("بعد أول ما ينتبهون لك، يظلّون منتبهين طوال هذه الزيارة حتى لو رجعت " +
+             "فوق الجسر — أطفئه ليعودوا غافلين أول ما تخرج من ارتفاع السقوط")]
+    [SerializeField] private bool staysAlertedOnceNoticed = true;
+
+    [Header("تتبّع الخطوات")]
+    [Tooltip("بعد التنبّه، لا يقفزون لموقعك مباشرة — يتبعون مسارك المسجَّل خطوة خطوة " +
+             "حتى يلحقوا بك، فيلاحقون خطواتك بالضبط لا موقعك الحالي")]
+    [SerializeField] private bool followExactFootsteps = true;
+    [Tooltip("المسافة بين كل نقطة مسجَّلة من مسارك (متر) — أصغر = تتبّع أدق وأثقل")]
+    [SerializeField] private float footstepSampleDistance = 0.6f;
+    [Tooltip("أقصى عدد خطوات محفوظة — الأقدم يُنسى تلقائيًا")]
+    [SerializeField] private int maxFootsteps = 80;
+    [Tooltip("المسافة التي يُعتبر عندها الفأر 'وصل' لنقطة الخطوة فينتقل للتي بعدها")]
+    [SerializeField] private float footstepArrivalDistance = 0.35f;
+    [Tooltip("لو عجز الفأر عن بلوغ نقطة خلال هذه المدة (ثواني) يتخطّاها ويكمل. " +
+             "شبكة أمان: أي عائق أو حافة أو سكة تمنع الوصول كانت تجمّده عليها للأبد.")]
+    [SerializeField] private float footstepTimeout = 1.5f;
+
     [Header("الخطر")]
     [Tooltip("وسم اللاعب")]
     [SerializeField] private string playerTag = "Player";
     [Tooltip("مسافة القتل من أي فأر (متر)")]
     [SerializeField] private float killRadius = 0.7f;
+    [Tooltip("أقصى فرق ارتفاع يُحسب فيه القتل (متر) — يمنع قتلك وأنت واقف فوق " +
+             "الفئران على منصّة أو درج بلا ملامسة فعلية")]
+    [SerializeField] private float killMaxHeightDiff = 1f;
 
     [Header("الصوت")]
     [SerializeField] private AudioSource audioSource;
@@ -118,7 +146,13 @@ public class RatSwarm : MonoBehaviour
     private float[] animVariation;
     private Vector3[] chaseOffsets;
     private Vector3[] homes;          // نقطة خروج كل فأر — يتجوّل حولها فيبقى التوزيع
+    private int[] footstepIndex;      // أي نقطة من المسار وصل لها كل فأر
+    private float[] footstepStuckTime; // كم صار يحاول بلوغ نقطته الحالية
     private bool playerIntruding;     // يُحسب مرة كل إطار لا لكل فأر
+    private bool everAlerted;         // انتبهوا لك مرة على الأقل (بعد السقوط)
+    private bool activelyAlerted;     // منتبهون الآن فعليًا (حسب staysAlertedOnceNoticed)
+    private bool wasDead;             // لكشف لحظة الموت مرة واحدة
+    private readonly List<Vector3> footprintTrail = new List<Vector3>();
     private bool retreating;          // ينسحبون الآن بسبب العلم
     private float retreatTimer;
     private bool hidden;
@@ -151,6 +185,8 @@ public class RatSwarm : MonoBehaviour
         animVariation = new float[count];
         chaseOffsets = new Vector3[count];
         homes = new Vector3[count];
+        footstepIndex = new int[count];
+        footstepStuckTime = new float[count];
 
         for (int i = 0; i < count; i++)
         {
@@ -261,11 +297,31 @@ public class RatSwarm : MonoBehaviour
         SetRatsHidden(false);
     }
 
-    /// <summary>غُرس العلم: يرجع السرب لمنطقته.</summary>
+    /// <summary>غُرس العلم: يرجع السرب لمنطقته وينسى أنه كان منتبهًا.</summary>
     private void OnFlagPlaced()
     {
         retreating = false;
         SetRatsHidden(false);
+        ResetAlert();
+    }
+
+    /// <summary>
+    /// ينسى السرب أنه كان منتبهًا لك ويمسح مسارك المسجَّل، فيرجعون غافلين تمامًا
+    /// حتى تسقط بينهم من جديد. اربطه بـ PlayerKillable.onRespawn إن أردت أن
+    /// يُمحى انتباههم عند الموت أيضًا لا عند إرجاع العلم فقط.
+    /// </summary>
+    public void ResetAlert()
+    {
+        everAlerted = false;
+        activelyAlerted = false;
+        footprintTrail.Clear();
+
+        if (footstepIndex == null) return;
+        for (int i = 0; i < footstepIndex.Length; i++)
+        {
+            footstepIndex[i] = 0;
+            footstepStuckTime[i] = 0f;
+        }
     }
 
     /// <summary>
@@ -309,8 +365,29 @@ public class RatSwarm : MonoBehaviour
 
         ResolvePlayer();
 
-        // هل اقتحم اللاعب المنطقة؟ يُحسب مرة واحدة لا لكل فأر
-        playerIntruding = player != null && InTerritory(player.position);
+        // لحظة الموت: ننسى الانتباه والمسار فورًا، وإلا رجع اللاعب من التشيك بوينت
+        // والفئران لا تزال تمشي على مسار حياته السابقة
+        bool isDead = killable != null && killable.IsDead;
+        if (isDead && !wasDead) ResetAlert();
+        wasDead = isDead;
+
+        // هل اقتحم اللاعب المنطقة؟ يُحسب مرة واحدة لا لكل فأر.
+        // بشرط السقوط: المرور فوقهم على جسر لا يُحتسب حتى لو كان أفقيًا داخل حدودهم
+        bool inBounds = player != null && InTerritory(player.position);
+        bool heightOk = !requireFallToNotice || player == null ||
+                        Mathf.Abs(player.position.y - groundY) <= fallHeightTolerance;
+        playerIntruding = inBounds && heightOk;
+
+        if (playerIntruding && !everAlerted)
+        {
+            everAlerted = true;
+            // يبدأ المسار من نقطة سقوطه فيتجه الفئران نحوها أول ما ينتبهون
+            if (footprintTrail.Count == 0)
+                footprintTrail.Add(new Vector3(player.position.x, groundY, player.position.z));
+        }
+
+        activelyAlerted = everAlerted && (staysAlertedOnceNoticed || playerIntruding);
+        if (activelyAlerted) RecordFootstep();
 
         // توزيع المنطق على إطارات: كل إطار يحدّث شريحة من السرب
         int batches = Mathf.Max(1, updateBatches);
@@ -322,6 +399,33 @@ public class RatSwarm : MonoBehaviour
         }
 
         TryKillPlayer();
+    }
+
+    /// <summary>
+    /// يسجّل نقطة جديدة في مسار اللاعب كلما ابتعد عن آخر نقطة مسجَّلة بما يكفي.
+    /// هذا المسار هو ما تتبعه الفئران حرفيًا بدل القفز لموقعك مباشرة.
+    /// </summary>
+    private void RecordFootstep()
+    {
+        if (player == null || !followExactFootsteps) return;
+
+        // نقصّ النقطة داخل حدود العش عند التسجيل: بدونها تُسجَّل نقاط خارج الحدود
+        // ثم يُقصّ هدف الفأر إليها فلا يصلها أبدًا ويعلق عند الحافة للأبد
+        Vector3 p = new Vector3(player.position.x, groundY, player.position.z);
+        if (leashToTerritory) p = ClampToTerritory(p);
+
+        if (footprintTrail.Count > 0 &&
+            Flatten(p - footprintTrail[footprintTrail.Count - 1]).sqrMagnitude
+                < footstepSampleDistance * footstepSampleDistance)
+            return;
+
+        footprintTrail.Add(p);
+        if (footprintTrail.Count <= maxFootsteps) return;
+
+        // نحذف أقدم نقطة ونزيح مؤشرات كل الفئران معها حتى تظل تشير لنفس نقاطها
+        footprintTrail.RemoveAt(0);
+        for (int i = 0; i < footstepIndex.Length; i++)
+            footstepIndex[i] = Mathf.Max(0, footstepIndex[i] - 1);
     }
 
     private void ResolvePlayer()
@@ -347,14 +451,23 @@ public class RatSwarm : MonoBehaviour
             Vector3 away = Flatten(rat.position - zone.transform.position);
             if (away.sqrMagnitude < 0.0001f) away = Random.insideUnitSphere;
 
-            // نقطة خارج حافة المنطقة مباشرة، مقيّدة داخل حدود العش
+            // نقطة خارج حافة الضوء مباشرة — بلا تقييد بحدود العش عمدًا.
+            // تقييدها كان يقصّها رجوعًا لداخل الضوء إذا كان قرب الحافة، فيهرب
+            // الفأر إلى ما يهرب منه ويذبذب في مكانه للأبد. الهرب من الضوء طارئ
+            // يتغلّب على حدّ المنطقة، والفئران ترجع لعشها تلقائيًا بعد أن يبتعد.
+            // + إزاحة الفأر الثابتة: بدونها يحسب كل الفئران القريبة نفس نقطة الهرب
+            // تقريبًا فتصطفّ في طابور ملتصق بالحافة. الإزاحة توزّعها على المحيط.
             Vector3 escape = zone.transform.position +
-                             away.normalized * (zone.Radius + lightMargin);
-            escape = ClampToTerritory(escape);
+                             away.normalized * (zone.Radius + lightMargin) +
+                             chaseOffsets[index];
 
             MoveRat(rat, escape, fleeSpeed);
             SetAnimSpeed(index, fleeSpeed);
             wanderTargets[index] = escape; // لا يرجع لهدفه القديم داخل الضوء
+
+            // مؤقّت الخطوة لا يجري أثناء الهرب: الوقت الضائع في الفرار ليس عجزًا
+            // عن بلوغ الخطوة، فلا يُحتسب عليه ويُفقده تتبّع مسارك بعد أن ينجو
+            footstepStuckTime[index] = 0f;
             return;
         }
 
@@ -376,7 +489,8 @@ public class RatSwarm : MonoBehaviour
             Vector3 out_ = Flatten(rat.position - blocker.Center);
             if (out_.sqrMagnitude < 0.0001f) out_ = Flatten(Random.insideUnitSphere);
 
-            Vector3 escape = ClampToTerritory(rat.position + out_.normalized * 2f);
+            // بلا تقييد كذلك: القصّ كان يعيده داخل العائق فيرتد ذهابًا وإيابًا
+            Vector3 escape = rat.position + out_.normalized * 2f;
             MoveRat(rat, escape, fleeSpeed);
             SetAnimSpeed(index, fleeSpeed);
             return;
@@ -385,7 +499,7 @@ public class RatSwarm : MonoBehaviour
         // مطاردة اللاعب — كل فأر يقصد نقطة قريبة منه لا نفس النقطة
         if (ShouldChase())
         {
-            Vector3 destination = player.position + chaseOffsets[index];
+            Vector3 destination = GetChaseDestination(index, rat);
             if (leashToTerritory) destination = ClampToTerritory(destination);
 
             MoveRat(rat, destination, chaseSpeed);
@@ -406,12 +520,52 @@ public class RatSwarm : MonoBehaviour
     {
         if (player == null || (killable != null && killable.IsDead)) return false;
 
+        // اللاعب داخل ضوء يطردنا: لا نطارده. المطاردة تسحبنا للضوء والضوء يدفعنا
+        // خارجه، فنذبذب على حافته في طابور ملتصق. الفئران تتجنّب الضوء لا تحاصره.
+        if (SafeZone.IsSafe(player.position, SafeZone.Targets.Rats)) return false;
+
         return aggression switch
         {
             Aggression.Always => true,
-            Aggression.WhenIntruded => playerIntruding,
+            // بعد السقوط والانتباه، يظلون يلاحقون (أو يتوقفون لحظة يخرج من ارتفاع
+            // السقوط، حسب staysAlertedOnceNoticed) — لا يعتمدون على playerIntruding
+            // وحده لأن الوعي بالسقوط أصبح الشرط الحقيقي
+            Aggression.WhenIntruded => activelyAlerted,
             _ => false
         };
+    }
+
+    /// <summary>
+    /// وجهة المطاردة لفأر معيّن: يتبع مسار اللاعب المسجَّل نقطة نقطة إن كان
+    /// التتبّع مفعّلًا وفيه مسار، وإلا يقصد موقعه الحالي مباشرة (السلوك القديم).
+    /// عند اللحاق بآخر نقطة مسجَّلة ينتقل للمطاردة المباشرة تلقائيًا.
+    /// </summary>
+    private Vector3 GetChaseDestination(int index, Transform rat)
+    {
+        if (!followExactFootsteps || footprintTrail.Count == 0)
+            return player.position + chaseOffsets[index];
+
+        int lastIndex = footprintTrail.Count - 1;
+        int idx = Mathf.Clamp(footstepIndex[index], 0, lastIndex);
+        Vector3 target = footprintTrail[idx];
+
+        bool arrived = Flatten(rat.position - target).sqrMagnitude
+                       < footstepArrivalDistance * footstepArrivalDistance;
+
+        // الخطوة الواحدة تُتخطّى إما بالوصول إليها أو بانتهاء مهلتها — فلا يعلق
+        // فأر أبدًا عند نقطة يعجز عن بلوغها مهما كان السبب
+        float elapsed = Time.deltaTime * Mathf.Max(1, updateBatches);
+        if (!arrived && (footstepStuckTime[index] += elapsed) < footstepTimeout)
+            return target;
+
+        idx = footstepIndex[index] = Mathf.Min(idx + 1, lastIndex);
+        footstepStuckTime[index] = 0f;
+
+        // لحق بآخر خطوة مسجَّلة = وصل لحاضر اللاعب، فيلاحقه مباشرة الآن
+        if (idx >= lastIndex)
+            return player.position + chaseOffsets[index];
+
+        return footprintTrail[idx];
     }
 
     /// <summary>
@@ -472,6 +626,9 @@ public class RatSwarm : MonoBehaviour
         foreach (var rat in rats)
         {
             if (rat == null) continue;
+
+            // فرق الارتفاع أولًا: واقف فوقهم على منصّة = آمن، حتى لو قريب أفقيًا
+            if (Mathf.Abs(player.position.y - rat.position.y) > killMaxHeightDiff) continue;
             if (Flatten(player.position - rat.position).sqrMagnitude > sqrKill) continue;
 
             killable.Kill();
@@ -518,9 +675,18 @@ public class RatSwarm : MonoBehaviour
         }
 
         // مواقع الفئران ومدى قتلها وقت التشغيل — تراها حتى بلا مجسمات
-        if (rats == null) return;
-        Gizmos.color = new Color(1f, 0.35f, 0.35f, 0.9f);
-        foreach (var rat in rats)
-            if (rat != null) Gizmos.DrawWireSphere(rat.position, killRadius);
+        if (rats != null)
+        {
+            Gizmos.color = new Color(1f, 0.35f, 0.35f, 0.9f);
+            foreach (var rat in rats)
+                if (rat != null) Gizmos.DrawWireSphere(rat.position, killRadius);
+        }
+
+        // مسار الخطوات المسجَّل — خط أصفر يمر بكل نقطة، فتشوف بالضبط ما يتبعونه
+        if (footprintTrail.Count < 2) return;
+        Gizmos.color = new Color(1f, 0.9f, 0.2f, 0.9f);
+        for (int i = 1; i < footprintTrail.Count; i++)
+            Gizmos.DrawLine(footprintTrail[i - 1] + Vector3.up * 0.1f,
+                            footprintTrail[i] + Vector3.up * 0.1f);
     }
 }
