@@ -99,6 +99,21 @@ public class PushableObject : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// يعيد الجسم لموضع بدايته ويفلته — اربطه بـ PlayerKillable.onRespawn.
+    /// </summary>
+    public void ResetPosition()
+    {
+        if (IsGrabbed)
+        {
+            IsGrabbed = false;
+            onReleased?.Invoke();
+        }
+
+        currentOffset = 0f;
+        transform.position = startPosition;
+    }
+
     private void UpdateGrabState()
     {
         bool inRange = Vector3.Distance(player.position, transform.position) <= grabRange;

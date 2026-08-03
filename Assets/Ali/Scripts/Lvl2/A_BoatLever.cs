@@ -6,6 +6,7 @@ public class A_BoatLever : MonoBehaviour
 {
     [SerializeField] private GameObject rightSideWood;
     [SerializeField] private GameObject leftSideWood;
+    [SerializeField] private AudioSource leverSound;
 
     [SerializeField] private int state = -1;
 
@@ -40,6 +41,7 @@ public class A_BoatLever : MonoBehaviour
     {
         if(context.started && _canInterAct)
         {
+            leverSound.Play();
             if (state == -1)
             {
                 state = 0;

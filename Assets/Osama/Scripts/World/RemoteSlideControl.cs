@@ -15,6 +15,13 @@ using UnityEngine.InputSystem;
 /// </summary>
 public class RemoteSlideControl : MonoBehaviour
 {
+    /// <summary>شكل حركة المقبض.</summary>
+    public enum HandleMode
+    {
+        [InspectorName("رافعة تميل")] Tilt,
+        [InspectorName("مرفاع يلف")] Crank
+    }
+
     [Header("التفاعل")]
     [Tooltip("وسم اللاعب")]
     [SerializeField] private string playerTag = "Player";
@@ -39,25 +46,43 @@ public class RemoteSlideControl : MonoBehaviour
     [SerializeField] private float moveSpeed = 2f;
 
     [Header("التحكّم أثناء الإمساك")]
-    [Tooltip("سكربتات تتعطّل أثناء استخدام التحكّم — ضع فيها سكربت حركة اللاعب " +
-             "حتى لا يمشي وهو يشغّل اللوحة")]
-    [SerializeField] private Behaviour[] disableWhileUsing;
+    [Tooltip("سكربتات تتعطّل أثناء استخدام التحكّم: سكربت حركة اللاعب، وسكربت متابعة " +
+             "الكاميرا. النوع MonoBehaviour عمدًا حتى لا يمكن وضع مكوّن Camera بالغلط " +
+             "(تعطيله يطفئ الشاشة).")]
+    [SerializeField] private MonoBehaviour[] disableWhileUsing;
     [SerializeField] private Key leftKey = Key.A;
     [SerializeField] private Key rightKey = Key.D;
 
     [Header("المقبض (بصري، اختياري)")]
-    [Tooltip("محوّل المقبض الذي يميل مع اتجاه التحريك")]
+    [Tooltip("محوّل المقبض")]
     [SerializeField] private Transform handle;
-    [Tooltip("أقصى ميلان للمقبض عند الدفع لجهة (Euler محلي)")]
+    [Tooltip("Tilt = رافعة تميل لجهة الحركة وترجع. Crank = مرفاع يلف باستمرار ما دمت تحرّك.")]
+    [SerializeField] private HandleMode handleMode = HandleMode.Tilt;
+
+    [Tooltip("[Tilt] أقصى ميلان للمقبض عند الدفع لجهة (Euler محلي)")]
     [SerializeField] private Vector3 maxTilt = new Vector3(0f, 0f, 25f);
     [SerializeField] private float handleSpeed = 8f;
 
-    [Header("الصوت")]
+    [Tooltip("[Crank] محور لفّ المرفاع المحلي")]
+    [SerializeField] private Vector3 crankAxis = Vector3.forward;
+    [Tooltip("[Crank] سرعة اللفّ (درجة/ثانية)")]
+    [SerializeField] private float crankSpeed = 220f;
+
+    [Header("صوت المرفاع (عند يدك)")]
     [SerializeField] private AudioSource audioSource;
-    [Tooltip("صوت آلية مستمر أثناء تحريك الهدف")]
+    [Tooltip("صوت آلية المرفاع الذي تديره")]
     [SerializeField] private AudioClip moveLoop;
     [Range(0f, 1f)]
     [SerializeField] private float moveVolume = 0.6f;
+
+    [Header("صوت السكة (عند اللمبة)")]
+    [Tooltip("مصدر صوت على الهدف المتحرّك نفسه — صرير السكة فوقك. " +
+             "منفصل عن صوت المرفاع، فتسمع الاثنين من مكانين مختلفين ويصير للآلة جسد.")]
+    [SerializeField] private AudioSource targetAudioSource;
+    [Tooltip("صوت انزلاق اللمبة على السكة")]
+    [SerializeField] private AudioClip targetMoveLoop;
+    [Range(0f, 1f)]
+    [SerializeField] private float targetMoveVolume = 0.7f;
 
     [Header("أحداث")]
     [Tooltip("عند الإمساك بالتحكّم")]
@@ -175,8 +200,20 @@ public class RemoteSlideControl : MonoBehaviour
     private void SetScriptsEnabled(bool enabled)
     {
         if (disableWhileUsing == null) return;
+
         foreach (var b in disableWhileUsing)
             if (b != null) b.enabled = enabled;
+    }
+
+    /// <summary>
+    /// يعيد الهدف لموضع بدايته ويفلت التحكّم — اربطه بـ PlayerKillable.onRespawn.
+    /// </summary>
+    public void ResetTarget()
+    {
+        if (IsEngaged) SetEngaged(false);
+
+        currentOffset = 0f;
+        if (target != null) target.position = targetStart;
     }
 
     /// <summary>-1 يسار، +1 يمين، 0 وقوف.</summary>
@@ -201,6 +238,17 @@ public class RemoteSlideControl : MonoBehaviour
     private void UpdateHandle(float direction)
     {
         if (handle == null) return;
+
+        if (handleMode == HandleMode.Crank)
+        {
+            // يلف ما دام اللاعب يحرّك، ويتجمّد فور توقفه — كمرفاع حقيقي.
+            // لا يرجع لوضع البداية، فاللفّة تتراكم كما هو متوقع.
+            if (!Mathf.Approximately(direction, 0f))
+                handle.Rotate(crankAxis.normalized,
+                              direction * crankSpeed * Time.deltaTime, Space.Self);
+            return;
+        }
+
         Quaternion wanted = handleRest * Quaternion.Euler(maxTilt * direction);
         handle.localRotation = Quaternion.Slerp(handle.localRotation, wanted,
                                                 Time.deltaTime * handleSpeed);
@@ -208,13 +256,31 @@ public class RemoteSlideControl : MonoBehaviour
 
     private void UpdateSound(float direction)
     {
-        if (audioSource == null || moveLoop == null) return;
-
-        // الصوت يشتغل فقط أثناء حركة فعلية (لا عند الوقوف على الحد)
+        // الصوت يشتغل فقط أثناء حركة فعلية (لا عند الدفع على الحد)
         bool atLimit = (direction < 0f && currentOffset <= minOffset) ||
                        (direction > 0f && currentOffset >= maxOffset);
-        float wanted = (!Mathf.Approximately(direction, 0f) && !atLimit) ? moveVolume : 0f;
-        audioSource.volume = Mathf.Lerp(audioSource.volume, wanted, Time.deltaTime * 10f);
+        bool moving = !Mathf.Approximately(direction, 0f) && !atLimit;
+
+        DriveLoop(audioSource, moveLoop, moving ? moveVolume : 0f);
+        DriveLoop(targetAudioSource, targetMoveLoop, moving ? targetMoveVolume : 0f);
+    }
+
+    /// <summary>
+    /// يدير حلقة صوت ويضبط مستواها بنعومة. يعيد التشغيل إن توقّفت لأي سبب،
+    /// وإلا بقيت صامتة للأبد بعد أول توقف.
+    /// </summary>
+    private static void DriveLoop(AudioSource src, AudioClip clip, float wanted)
+    {
+        if (src == null || clip == null) return;
+
+        if (!src.isPlaying)
+        {
+            src.clip = clip;
+            src.loop = true;
+            src.Play();
+        }
+
+        src.volume = Mathf.Lerp(src.volume, wanted, Time.deltaTime * 10f);
     }
 
     private void OnDrawGizmosSelected()
