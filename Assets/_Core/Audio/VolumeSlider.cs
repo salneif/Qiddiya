@@ -17,6 +17,10 @@ public class VolumeSlider : MonoBehaviour
     [Tooltip("نص النسبة المئوية (اختياري)")]
     [SerializeField] private TextMeshProUGUI valueLabel;
 
+    [Tooltip("ما يُكتب بعد الرقم. اتركه فارغًا — خط DK Crayon Crumble2 لا يحتوي حرف % " +
+             "فيغرق الكونسول بتحذير عند كل تحريك للسلايدر")]
+    [SerializeField] private string valueSuffix = "";
+
     private Slider slider;
 
     private void Awake()
@@ -73,6 +77,6 @@ public class VolumeSlider : MonoBehaviour
     private void UpdateLabel(float value)
     {
         if (valueLabel != null)
-            valueLabel.text = Mathf.RoundToInt(value * 100f) + "%";
+            valueLabel.text = Mathf.RoundToInt(value * 100f) + valueSuffix;
     }
 }

@@ -32,16 +32,34 @@ public class MenuManager : MonoBehaviour
 
     private readonly List<UIPanel> stack = new List<UIPanel>();
     private float cachedTimeScale = 1f;
+    private bool lastInputWasPointer;
 
     /// <summary>اللوحة المفتوحة حاليًا في الأعلى، أو null إذا لا شيء مفتوح.</summary>
     public UIPanel Current => stack.Count > 0 ? stack[stack.Count - 1] : null;
 
     public bool IsAnyPanelOpen => stack.Count > 0;
 
+    /// <summary>
+    /// هل آخر إدخال كان بالماوس؟ يستخدمه UISelectOnHover ليقرر متى يُلغي التحديد.
+    /// حين يقود الماوس لا نفرض تحديدًا على أي زر — وإلا بقي زر بارز بلا سبب.
+    /// </summary>
+    public static bool PointerIsDriving => Instance == null || Instance.lastInputWasPointer;
+
+    /// <summary>
+    /// حقيقي أثناء تحديد يفرضه فتح/إغلاق لوحة. يقرأه UISelectOnHover فلا يشغّل صوت
+    /// التحويم — وإلا سمعت نغمة زر عند بدء المشهد وعند كل فتح لوحة بلا سبب.
+    /// </summary>
+    public static bool SelectionIsSilent { get; private set; }
+
     private void Awake()
     {
         Instance = this;
         cachedTimeScale = 1f;
+
+        // بلا كنترولر موصول نفترض الماوس، فلا يُنوَّر زر تلقائيًا عند بدء المشهد
+#if ENABLE_INPUT_SYSTEM
+        lastInputWasPointer = Gamepad.current == null;
+#endif
     }
 
     private void OnDestroy()
@@ -51,6 +69,15 @@ public class MenuManager : MonoBehaviour
 
     private void Start()
     {
+        // قبل أي إخفاء: نلتقط الحجم الطبيعي للأزرار وهي لم تُلمس بعد.
+        // لا نستطيع الاعتماد على Awake الخاص باللوحة لأن اللوحة المطفأة في السين لا يعمل Awake لها.
+        if (rootPanel != null) rootPanel.CaptureBaseline();
+        if (closeOnStart != null)
+        {
+            foreach (var panel in closeOnStart)
+                if (panel != null) panel.CaptureBaseline();
+        }
+
         if (closeOnStart != null)
         {
             foreach (var panel in closeOnStart)
@@ -68,12 +95,15 @@ public class MenuManager : MonoBehaviour
 
     private void Update()
     {
+        TrackActiveDevice();
+
         if (WasBackPressed())
             HandleBack();
         else if (WasStartPressed() && !IsAnyPanelOpen)
             onCancelAtRoot?.Invoke();
 
         KeepSelectionAlive();
+        DropStaleMouseSelection();
     }
 
     // ---------- التنقل ----------
@@ -82,6 +112,29 @@ public class MenuManager : MonoBehaviour
     public void Open(UIPanel panel)
     {
         if (panel == null || Current == panel) return;
+
+        // اللوحة موجودة أصلًا تحت في الترتيب (نقرة مزدوجة، أو ربط الزر مرتين):
+        // نرجع إليها بدل تكرارها — التكرار كان يجعل زر الرجوع يحتاج ضغطتين.
+        int existing = stack.IndexOf(panel);
+        if (existing >= 0)
+        {
+            for (int i = stack.Count - 1; i > existing; i--)
+            {
+                stack[i].SetVisible(false);
+                stack[i].RaiseClosed();
+                stack.RemoveAt(i);
+            }
+
+            panel.SetVisible(true);
+            panel.ResetVisualStates();
+            Select(panel.LastSelected != null && panel.LastSelected.activeInHierarchy
+                ? panel.LastSelected
+                : panel.FirstSelected);
+
+            ApplyTimeScale();
+            ApplyCursor();
+            return;
+        }
 
         UIPanel previous = Current;
         if (previous != null)
@@ -96,6 +149,7 @@ public class MenuManager : MonoBehaviour
 
         stack.Add(panel);
         panel.SetVisible(true);
+        panel.ResetVisualStates();
         panel.RaiseOpened();
 
         // أول زر في اللوحة، أو الزر الذي كنا عليه آخر مرة
@@ -123,6 +177,7 @@ public class MenuManager : MonoBehaviour
         if (previous != null)
         {
             previous.SetVisible(true);
+            previous.ResetVisualStates();
             Select(previous.LastSelected != null && previous.LastSelected.activeInHierarchy
                 ? previous.LastSelected
                 : previous.FirstSelected);
@@ -148,13 +203,28 @@ public class MenuManager : MonoBehaviour
         if (previous != null)
         {
             previous.SetVisible(true);
+            previous.ResetVisualStates();
             Select(previous.FirstSelected);
         }
         else
         {
-            Select(null);
+            ForceSelect(null);
         }
 
+        ApplyTimeScale();
+        ApplyCursor();
+    }
+
+    /// <summary>
+    /// تُنادى من UIPanel حين تُطفأ اللوحة بـ`SetActive` من خارج هذا المدير.
+    /// نُسقطها هي وكل ما فوقها من الترتيب حتى يبقى الترتيب مطابقًا لما يراه اللاعب.
+    /// </summary>
+    public void NotifyPanelClosedExternally(UIPanel panel)
+    {
+        int index = stack.IndexOf(panel);
+        if (index < 0) return;
+
+        stack.RemoveRange(index, stack.Count - index);
         ApplyTimeScale();
         ApplyCursor();
     }
@@ -170,13 +240,32 @@ public class MenuManager : MonoBehaviour
 
     // ---------- تحديد الأزرار (الكنترولر) ----------
 
+    /// <summary>
+    /// يحدد الزر للكنترولر/الكيبورد فقط. إن كان اللاعب يستخدم الماوس نترك التحديد
+    /// فارغًا — لأن فرضه كان يترك زرًا بارزًا (منتفخًا) والمؤشر بعيد عنه تمامًا،
+    /// وهذا بالضبط ما يظهر عند الرجوع من الإعدادات.
+    /// </summary>
     private void Select(GameObject target)
     {
-        if (EventSystem.current == null) return;
+        if (lastInputWasPointer)
+        {
+            ForceSelect(null);
+            return;
+        }
 
+        ForceSelect(target);
+    }
+
+    private static void ForceSelect(GameObject target)
+    {
+        if (EventSystem.current == null) return;
+        if (EventSystem.current.currentSelectedGameObject == target) return; // وإلا أعدنا الصوت بلا داعٍ
+
+        SelectionIsSilent = true;
         EventSystem.current.SetSelectedGameObject(null);
         if (target != null)
             EventSystem.current.SetSelectedGameObject(target);
+        SelectionIsSilent = false;
     }
 
     /// <summary>
@@ -193,9 +282,33 @@ public class MenuManager : MonoBehaviour
         UIPanel top = Current;
         if (top == null || !WasNavigatePressed()) return;
 
-        Select(top.LastSelected != null && top.LastSelected.activeInHierarchy
+        ForceSelect(top.LastSelected != null && top.LastSelected.activeInHierarchy
             ? top.LastSelected
             : top.FirstSelected);
+    }
+
+    /// <summary>يتابع الجهاز المستخدم فعلًا هذه اللحظة: ماوس أم كنترولر/كيبورد.</summary>
+    private void TrackActiveDevice()
+    {
+        if (WasNonPointerInput())
+            lastInputWasPointer = false;
+        else if (WasPointerInput())
+            lastInputWasPointer = true;
+    }
+
+    /// <summary>
+    /// في وضع الماوس لا يبقى محدَّدًا إلا ما تحت المؤشر فعلًا.
+    /// بدون هذا يظل زر منوّرًا بلا سبب: الزر الأول يُحدَّد تلقائيًا عند بدء المشهد،
+    /// والزر المنقور يبقى محدَّدًا بعد أن يبتعد المؤشر عنه.
+    /// </summary>
+    private void DropStaleMouseSelection()
+    {
+        if (!lastInputWasPointer || EventSystem.current == null) return;
+        if (IsPointerHeld()) return;   // سحب سلايدر: المؤشر يخرج والعنصر ما زال قيد الاستخدام
+
+        GameObject selected = EventSystem.current.currentSelectedGameObject;
+        if (selected != null && selected != UISelectOnHover.Hovered)
+            ForceSelect(null);
     }
 
     // ---------- الحالة ----------
@@ -273,6 +386,54 @@ public class MenuManager : MonoBehaviour
         return false;
 #else
         return Mathf.Abs(Input.GetAxisRaw("Vertical")) > 0.5f || Mathf.Abs(Input.GetAxisRaw("Horizontal")) > 0.5f;
+#endif
+    }
+
+    /// <summary>أي إدخال من الكنترولر أو الكيبورد — يعني أن اللاعب ترك الماوس.</summary>
+    private static bool WasNonPointerInput()
+    {
+        if (WasNavigatePressed()) return true;
+
+#if ENABLE_INPUT_SYSTEM
+        var gamepad = Gamepad.current;
+        if (gamepad != null && (gamepad.buttonSouth.wasPressedThisFrame
+            || gamepad.buttonEast.wasPressedThisFrame
+            || gamepad.startButton.wasPressedThisFrame)) return true;
+
+        var keyboard = Keyboard.current;
+        if (keyboard != null && (keyboard.enterKey.wasPressedThisFrame
+            || keyboard.spaceKey.wasPressedThisFrame
+            || keyboard.escapeKey.wasPressedThisFrame
+            || keyboard.tabKey.wasPressedThisFrame)) return true;
+
+        return false;
+#else
+        return Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space)
+            || Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.JoystickButton0);
+#endif
+    }
+
+    /// <summary>زر الماوس مضغوط الآن (سحب جارٍ).</summary>
+    private static bool IsPointerHeld()
+    {
+#if ENABLE_INPUT_SYSTEM
+        return Mouse.current != null && Mouse.current.leftButton.isPressed;
+#else
+        return Input.GetMouseButton(0);
+#endif
+    }
+
+    /// <summary>حركة الماوس أو ضغط أزراره.</summary>
+    private static bool WasPointerInput()
+    {
+#if ENABLE_INPUT_SYSTEM
+        var mouse = Mouse.current;
+        if (mouse == null) return false;
+        if (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame) return true;
+        return mouse.delta.ReadValue().sqrMagnitude > 1f;
+#else
+        if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)) return true;
+        return Mathf.Abs(Input.GetAxisRaw("Mouse X")) > 0.01f || Mathf.Abs(Input.GetAxisRaw("Mouse Y")) > 0.01f;
 #endif
     }
 }

@@ -24,6 +24,21 @@ public class SceneLoader : MonoBehaviour
 
     private static bool isLoading;
 
+    /// <summary>
+    /// القفل ثابت (static) ليمنع نقرتين متتاليتين على Play. لكن الكائن الذي يحمل
+    /// الكوروتين يُدمَّر أثناء تحميل المشهد، فلا يصل السطر الذي يرفع القفل ويبقى
+    /// مرفوعًا للأبد — فيصير زر Play ميتًا عند العودة للقائمة. نرفعه هنا بدلًا من ذلك.
+    /// </summary>
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void InstallLockRelease()
+    {
+        isLoading = false;
+        SceneManager.sceneLoaded -= ReleaseLock;
+        SceneManager.sceneLoaded += ReleaseLock;
+    }
+
+    private static void ReleaseLock(Scene scene, LoadSceneMode mode) => isLoading = false;
+
     /// <summary>اربطه بزر Play في الـ Inspector (بدون تمرير أي قيمة).</summary>
     public void LoadTargetScene() => LoadScene(sceneName);
 
