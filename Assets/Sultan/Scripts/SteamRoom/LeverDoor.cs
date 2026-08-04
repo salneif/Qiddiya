@@ -35,7 +35,6 @@ public class DoorLever : MonoBehaviour
 
         Quaternion doorTarget = _isOpen ? _doorOpenRot : _doorClosedRot;
         doorPivot.localRotation = Quaternion.RotateTowards(doorPivot.localRotation, doorTarget, doorSpeed * Time.deltaTime);
-        Debug.Log(doorPivot.localRotation);
     }
 
     void OnTriggerEnter(Collider other)

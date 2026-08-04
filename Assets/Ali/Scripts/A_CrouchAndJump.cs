@@ -61,7 +61,6 @@ public class A_CrouchAndJump : MonoBehaviour
             }
 
         }
-
     }
 
     public void OnInputJump(InputAction.CallbackContext context)
@@ -72,15 +71,5 @@ public class A_CrouchAndJump : MonoBehaviour
         {
             OnJump?.Invoke(jumpForce , canDoubleJump);
         }
-
-
-
-
-
-
-
-
-
-     
     }
 }
