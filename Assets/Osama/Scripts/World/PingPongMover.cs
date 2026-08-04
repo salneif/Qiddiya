@@ -36,6 +36,13 @@ public class PingPongMover : MonoBehaviour
     [Tooltip("يبدأ متحرّكًا؟ أطفئه إذا الرافعة هي اللي تشغّله")]
     [SerializeField] private bool startMoving = true;
 
+    [Header("الصوت")]
+    [SerializeField] private AudioSource audioSource;
+    [Tooltip("صوت آلية مستمر — يعلو أثناء الحركة ويسكت عند الوقفات وعند الإيقاف")]
+    [SerializeField] private AudioClip moveLoop;
+    [Range(0f, 1f)]
+    [SerializeField] private float moveVolume = 0.6f;
+
     [Header("أحداث")]
     [Tooltip("عند الوصول لنقطة البداية")]
     public UnityEvent onReachedA;
@@ -57,6 +64,15 @@ public class PingPongMover : MonoBehaviour
 
         IsMoving = startMoving;
         transform.position = a;
+
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
+        if (audioSource != null && moveLoop != null)
+        {
+            audioSource.clip = moveLoop;
+            audioSource.loop = true;
+            audioSource.volume = 0f;
+            audioSource.Play();
+        }
     }
 
     /// <summary>يشغّل الحركة — اربطه بحدث الرافعة.</summary>
@@ -70,16 +86,22 @@ public class PingPongMover : MonoBehaviour
 
     private void Update()
     {
-        if (!IsMoving) return;
+        bool movingNow = false;
 
-        if (pauseTimer > 0f)
+        if (IsMoving)
         {
-            pauseTimer -= Time.deltaTime;
-            return;
+            if (pauseTimer > 0f) pauseTimer -= Time.deltaTime;
+            else movingNow = Step();
         }
 
+        UpdateSound(movingNow);
+    }
+
+    /// <summary>خطوة حركة واحدة. يُرجع true إذا تحرّك فعلًا هذا الإطار.</summary>
+    private bool Step()
+    {
         float distance = Vector3.Distance(a, b);
-        if (distance < 0.001f) return;
+        if (distance < 0.001f) return false;
 
         // القسمة على المسافة تجعل السرعة بالمتر/ثانية مهما طال المسار
         t += direction * (speed / distance) * Time.deltaTime;
@@ -101,6 +123,27 @@ public class PingPongMover : MonoBehaviour
 
         float k = smoothEase ? Mathf.SmoothStep(0f, 1f, t) : t;
         transform.position = Vector3.Lerp(a, b, k);
+        return true;
+    }
+
+    /// <summary>
+    /// يربط مستوى الصوت بالحركة الفعلية: يعلو أثناء السير ويخفت في الوقفات
+    /// وعند الإيقاف — بدل تشغيل/إيقاف مفاجئ.
+    /// </summary>
+    private void UpdateSound(bool movingNow)
+    {
+        if (audioSource == null || moveLoop == null) return;
+
+        // ضمان دوران الحلقة مهما تغيّر إعداد المصدر بعد Awake
+        if (!audioSource.isPlaying)
+        {
+            audioSource.clip = moveLoop;
+            audioSource.loop = true;
+            audioSource.Play();
+        }
+
+        float wanted = movingNow ? moveVolume : 0f;
+        audioSource.volume = Mathf.Lerp(audioSource.volume, wanted, Time.deltaTime * 8f);
     }
 
     private void OnDrawGizmosSelected()

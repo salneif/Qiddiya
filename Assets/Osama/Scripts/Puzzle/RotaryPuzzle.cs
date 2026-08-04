@@ -57,6 +57,23 @@ public class RotaryPuzzle : MonoBehaviour
         Solve();
     }
 
+    /// <summary>
+    /// يعيد اللغز لحالته الأولى: يفك الحل، ويرجّع كل عمود لوجه بدايته، ويفتح الأزرار.
+    /// اربطه بـ PlayerKillable.onRespawn ليُمحى تقدّم اللغز عند الموت.
+    /// </summary>
+    public void ResetPuzzle()
+    {
+        IsSolved = false;
+
+        if (pillars != null)
+            foreach (var p in pillars)
+                if (p != null) p.ResetToStart();
+
+        if (buttons != null)
+            foreach (var b in buttons)
+                if (b != null) b.Locked = false;
+    }
+
     private void Solve()
     {
         IsSolved = true;

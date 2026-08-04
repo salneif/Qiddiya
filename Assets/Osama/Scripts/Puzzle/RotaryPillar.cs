@@ -111,6 +111,21 @@ public class RotaryPillar : MonoBehaviour
         onRotated?.Invoke();
     }
 
+    /// <summary>
+    /// يرجّع العمود لوجه البداية فورًا ويفك قفله — لإعادة ضبط المرحلة عند الموت.
+    /// يوقف أي دوران جارٍ حتى لا يكمل بعد الإعادة ويخرّب الحالة.
+    /// </summary>
+    public void ResetToStart()
+    {
+        StopAllCoroutines();
+        IsRotating = false;
+        Locked = false;
+        CurrentFace = ((startFace % faceCount) + faceCount) % faceCount;
+
+        if (HasFaceObjects) ShowFace(CurrentFace);
+        else transform.localRotation = RotationForFace(CurrentFace);
+    }
+
     /// <summary>زاوية الدوران المقابلة لوجه معيّن.</summary>
     private Quaternion RotationForFace(int face)
     {

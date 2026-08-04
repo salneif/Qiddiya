@@ -13,8 +13,9 @@ public class StatuePedestal : MonoBehaviour
     [SerializeField] private GameObject chickenVisual;
     [SerializeField] private GameObject wolfVisual;
     [SerializeField] private GameObject elephantVisual;
+    [SerializeField] private GameObject pedestalLight;
     [SerializeField] private float rotationValue = 25f;
-    [SerializeField] private Vector3 flapAxis = Vector3.up;
+    [SerializeField] private Vector3 flapAxis = Vector3.forward;
     [SerializeField] private float flapOpenAngleA = 90f;
     [SerializeField] private float flapOpenAngleB = -90f;
     [SerializeField] private float hideDepth = 0.8f;
@@ -43,6 +44,7 @@ public class StatuePedestal : MonoBehaviour
     private Vector3 _raisedPos;
     private Vector3 _hiddenPos;
     private bool _busy;
+    private bool _locked;
 
     void Awake()
     {
@@ -85,7 +87,7 @@ public class StatuePedestal : MonoBehaviour
 
     public bool Cycle()
     {
-        if (_busy) return false;
+        if (_busy || _locked) return false;
 
         Animal next = nextAnimal();
         if (next == _held) return false;
@@ -136,6 +138,7 @@ public class StatuePedestal : MonoBehaviour
             yield return moveAnchor(_hiddenPos, lowerDuration);
             _visible = Animal.None;
             showOnly(_visible);
+            setLight(_held != Animal.None);
 
             if (swapPause > 0f)
                 yield return new WaitForSeconds(swapPause);
@@ -146,6 +149,7 @@ public class StatuePedestal : MonoBehaviour
             if (animalAnchor != null) animalAnchor.localPosition = _hiddenPos;
             _visible = _held;
             showOnly(_visible);
+            setLight(true);
             yield return moveAnchor(_raisedPos, raiseDuration);
         }
 
@@ -198,6 +202,7 @@ public class StatuePedestal : MonoBehaviour
         if (animalAnchor != null)
             animalAnchor.localPosition = _visible == Animal.None ? _hiddenPos : _raisedPos;
         showOnly(_visible);
+        setLight(_visible != Animal.None);
     }
 
     void showOnly(Animal a)
@@ -207,6 +212,13 @@ public class StatuePedestal : MonoBehaviour
         if (elephantVisual != null) elephantVisual.SetActive(a == Animal.Elephant);
     }
 
+    void setLight(bool state)
+    {
+        if (pedestalLight == null) return;
+        if (pedestalLight.activeSelf == state) return;
+        pedestalLight.SetActive(state);
+    }
+
     [ContextMenu("Cycle")]
     void cycleFromMenu()
     {
@@ -214,7 +226,12 @@ public class StatuePedestal : MonoBehaviour
         Cycle();
     }
 
+    public void Lock() => _locked = true;
+    public void Unlock() => _locked = false;
+
     public Animal Held => _held;
     public float RotationValue => rotationValue;
     public bool IsBusy => _busy;
+    public bool IsLocked => _locked;
+    public bool CanInteract => !_busy && !_locked;
 }

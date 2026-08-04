@@ -68,12 +68,21 @@ public class RemoteSlideControl : MonoBehaviour
     [Tooltip("[Crank] سرعة اللفّ (درجة/ثانية)")]
     [SerializeField] private float crankSpeed = 220f;
 
-    [Header("الصوت")]
+    [Header("صوت المرفاع (عند يدك)")]
     [SerializeField] private AudioSource audioSource;
-    [Tooltip("صوت آلية مستمر أثناء تحريك الهدف")]
+    [Tooltip("صوت آلية المرفاع الذي تديره")]
     [SerializeField] private AudioClip moveLoop;
     [Range(0f, 1f)]
     [SerializeField] private float moveVolume = 0.6f;
+
+    [Header("صوت السكة (عند اللمبة)")]
+    [Tooltip("مصدر صوت على الهدف المتحرّك نفسه — صرير السكة فوقك. " +
+             "منفصل عن صوت المرفاع، فتسمع الاثنين من مكانين مختلفين ويصير للآلة جسد.")]
+    [SerializeField] private AudioSource targetAudioSource;
+    [Tooltip("صوت انزلاق اللمبة على السكة")]
+    [SerializeField] private AudioClip targetMoveLoop;
+    [Range(0f, 1f)]
+    [SerializeField] private float targetMoveVolume = 0.7f;
 
     [Header("أحداث")]
     [Tooltip("عند الإمساك بالتحكّم")]
@@ -196,6 +205,17 @@ public class RemoteSlideControl : MonoBehaviour
             if (b != null) b.enabled = enabled;
     }
 
+    /// <summary>
+    /// يعيد الهدف لموضع بدايته ويفلت التحكّم — اربطه بـ PlayerKillable.onRespawn.
+    /// </summary>
+    public void ResetTarget()
+    {
+        if (IsEngaged) SetEngaged(false);
+
+        currentOffset = 0f;
+        if (target != null) target.position = targetStart;
+    }
+
     /// <summary>-1 يسار، +1 يمين، 0 وقوف.</summary>
     private float ReadDirection()
     {
@@ -236,22 +256,31 @@ public class RemoteSlideControl : MonoBehaviour
 
     private void UpdateSound(float direction)
     {
-        if (audioSource == null || moveLoop == null) return;
-
-        // ضمان دوران الحلقة مهما تغيّر إعداد المصدر بعد Awake — بدونها لو توقّف
-        // التشغيل مرة (loop مطفي مثلًا) لا يعود أبدًا ويبقى الصوت صامتًا للأبد
-        if (!audioSource.isPlaying)
-        {
-            audioSource.clip = moveLoop;
-            audioSource.loop = true;
-            audioSource.Play();
-        }
-
-        // الصوت يشتغل فقط أثناء حركة فعلية (لا عند الوقوف على الحد)
+        // الصوت يشتغل فقط أثناء حركة فعلية (لا عند الدفع على الحد)
         bool atLimit = (direction < 0f && currentOffset <= minOffset) ||
                        (direction > 0f && currentOffset >= maxOffset);
-        float wanted = (!Mathf.Approximately(direction, 0f) && !atLimit) ? moveVolume : 0f;
-        audioSource.volume = Mathf.Lerp(audioSource.volume, wanted, Time.deltaTime * 10f);
+        bool moving = !Mathf.Approximately(direction, 0f) && !atLimit;
+
+        DriveLoop(audioSource, moveLoop, moving ? moveVolume : 0f);
+        DriveLoop(targetAudioSource, targetMoveLoop, moving ? targetMoveVolume : 0f);
+    }
+
+    /// <summary>
+    /// يدير حلقة صوت ويضبط مستواها بنعومة. يعيد التشغيل إن توقّفت لأي سبب،
+    /// وإلا بقيت صامتة للأبد بعد أول توقف.
+    /// </summary>
+    private static void DriveLoop(AudioSource src, AudioClip clip, float wanted)
+    {
+        if (src == null || clip == null) return;
+
+        if (!src.isPlaying)
+        {
+            src.clip = clip;
+            src.loop = true;
+            src.Play();
+        }
+
+        src.volume = Mathf.Lerp(src.volume, wanted, Time.deltaTime * 10f);
     }
 
     private void OnDrawGizmosSelected()
