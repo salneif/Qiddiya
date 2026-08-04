@@ -32,6 +32,7 @@ public class PlayerController : MonoBehaviour
     private Vector3 _moveForward = Vector3.forward;
     private int _lastRawX;
     private int _lastRawZ;
+    private float _baseZMoveSpeed;
 
     private static readonly int SpeedHash = Animator.StringToHash("speed");
     private static readonly int GroundedHash = Animator.StringToHash("isGrounded");
@@ -74,6 +75,7 @@ public class PlayerController : MonoBehaviour
     {
         characterController = GetComponent<CharacterController>();
         _pusher = GetComponent<BoxPusher>();
+        _baseZMoveSpeed = zMoveSpeed;
 
         crouchAndJumpSystem.OnCrouch += OnCrouch;
         crouchAndJumpSystem.OnJump += OnJump;
@@ -143,6 +145,7 @@ public class PlayerController : MonoBehaviour
         if(isCrouching)
         {
             speed = normalWalkSpeed;
+            zMoveSpeed = _baseZMoveSpeed;
             animator.SetBool("IsCrouch" , false);
             characterController.height = 1;
             characterController.center = Vector3.zero;
@@ -151,6 +154,7 @@ public class PlayerController : MonoBehaviour
         {
             animator.SetBool("IsCrouch", true);
             speed = CrouchMoveSpeed;
+            zMoveSpeed = CrouchMoveSpeed;
             characterController.height = 0.5f;
             characterController.center = new Vector3(0, -0.25f, 0);
         }
