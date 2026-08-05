@@ -2339,7 +2339,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8048711249401447186, guid: 3065990dea2a4b84c8b698c5c8d96488, type: 3}
   m_PrefabInstance: {fileID: 2089101629}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 2089101630}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4c72c346748685c44a0901335c66115e, type: 3}
@@ -20057,8 +20057,33 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6309023975070677693, guid: 3065990dea2a4b84c8b698c5c8d96488, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2089101631}
   m_SourcePrefab: {fileID: 100100000, guid: 3065990dea2a4b84c8b698c5c8d96488, type: 3}
+--- !u!1 &2089101630 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6309023975070677693, guid: 3065990dea2a4b84c8b698c5c8d96488, type: 3}
+  m_PrefabInstance: {fileID: 2089101629}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2089101631
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2089101630}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dac64c814ba970b4eb7357f115f55f56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlagCarry
+  flagId: 3
+  whenNotOwned: 0
+  plantedPoint: {fileID: 0}
+  playerTag: Player
+  playerSearchTimeout: 2
 --- !u!1 &2098326824
 GameObject:
   m_ObjectHideFlags: 0
