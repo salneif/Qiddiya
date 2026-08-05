@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1197647606721057057}
   - component: {fileID: 4079586449993683635}
   - component: {fileID: 1807839565250763547}
+  - component: {fileID: 8197746704291806656}
   m_Layer: 0
   m_Name: DeathZoneSystem
   m_TagString: Untagged
@@ -27,8 +28,8 @@ Transform:
   m_GameObject: {fileID: 442270646417754792}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.011, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: -0.0000008869, y: 1.011, z: 0.041832}
+  m_LocalScale: {x: 1, y: 2.4816, z: 1.2821}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7988584415206817869}
@@ -52,8 +53,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 17.099234, y: 1, z: 12.221361}
-  m_Center: {x: -3.482351, y: 0, z: -0.1482758}
+  m_Size: {x: 14.3716345, y: 1, z: 8.821571}
+  m_Center: {x: 2.0862908, y: 0, z: 1.5516146}
 --- !u!114 &1807839565250763547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -67,6 +68,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::A_WaterSection
   a_WaterEnemySystem: {fileID: 2419788645249140961}
+--- !u!114 &8197746704291806656
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 442270646417754792}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 324d16628c302ec42833f85e352dd952, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::A_dontfollowparaent
 --- !u!1 &1868550390042781683
 GameObject:
   m_ObjectHideFlags: 0
@@ -313,19 +326,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 48504d14ef5a147f5af2d57e3ec5f72d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 92.03
+      value: 159.13
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 48504d14ef5a147f5af2d57e3ec5f72d, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -7.545
+      value: -8.76
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 48504d14ef5a147f5af2d57e3ec5f72d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 20.622
+      value: 134.57
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 48504d14ef5a147f5af2d57e3ec5f72d, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.69180393
+      value: -0.025557285
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 48504d14ef5a147f5af2d57e3ec5f72d, type: 3}
       propertyPath: m_LocalRotation.x
@@ -333,7 +346,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 48504d14ef5a147f5af2d57e3ec5f72d, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.72208536
+      value: -0.99967337
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 48504d14ef5a147f5af2d57e3ec5f72d, type: 3}
       propertyPath: m_LocalRotation.z
@@ -345,7 +358,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 48504d14ef5a147f5af2d57e3ec5f72d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -92.454
+      value: -182.929
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 48504d14ef5a147f5af2d57e3ec5f72d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
