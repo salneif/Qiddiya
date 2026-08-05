@@ -14,7 +14,28 @@ public class AudioManager : MonoBehaviour
     public const string MusicKey = "vol_music";
     public const string SfxKey = "vol_sfx";
 
-    public static AudioManager Instance { get; private set; }
+    private static AudioManager instance;
+    private static bool quitting;
+
+    /// <summary>
+    /// يُنشئ نفسه عند أول طلب إن لم يكن في المشهد، فتعمل سلايدرات الصوت بلا أي إعداد.
+    /// ضع كائن `AudioManager` يدويًا فقط إن أردت ربط ميكسر أو أصوات واجهة افتراضية.
+    /// </summary>
+    public static AudioManager Instance
+    {
+        get
+        {
+            if (instance != null) return instance;
+            if (quitting || !Application.isPlaying) return null;
+
+            instance = FindAnyObjectByType<AudioManager>();
+            if (instance != null) return instance;
+
+            instance = new GameObject("AudioManager (auto)").AddComponent<AudioManager>();
+            return instance;
+        }
+        private set => instance = value;
+    }
 
     [Header("الميكسر")]
     [Tooltip("AudioMixer فيه Exposed Parameters بالأسماء أدناه — إن تُرك فارغًا يتحكم Master بصوت اللعبة كاملًا")]
@@ -33,9 +54,16 @@ public class AudioManager : MonoBehaviour
     public AudioClip DefaultClickClip => defaultClickClip;
     public AudioClip DefaultBackClip => defaultBackClip;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        instance = null;
+        quitting = false;
+    }
+
     private void Awake()
     {
-        if (Instance != null && Instance != this)
+        if (instance != null && instance != this)
         {
             Destroy(gameObject);
             return;
@@ -81,12 +109,26 @@ public class AudioManager : MonoBehaviour
         {
             // الأذن تسمع لوغاريتميًا: تحويل 0..1 إلى ديسيبل يجعل السلايدر يبدو خطيًا
             mixer.SetFloat(parameter, LinearToDecibel(value));
+            return;
         }
-        else if (prefsKey == MasterKey)
+
+        if (prefsKey == MasterKey)
         {
             AudioListener.volume = value; // بديل بسيط عند عدم وجود ميكسر
+            return;
+        }
+
+        // بلا ميكسر لا سبيل للفصل بين الموسيقى والمؤثرات — القيمة تُحفظ فقط
+        if (!warnedNoMixer)
+        {
+            warnedNoMixer = true;
+            Debug.LogWarning(
+                $"[AudioManager] قناة \"{prefsKey}\" تحتاج AudioMixer. بدونه يعمل Master وحده " +
+                "(عبر AudioListener). أنشئ ميكسرًا واربطه في خانة Mixer — التفاصيل في Assets/_Core/README_UI_SETUP.md", this);
         }
     }
+
+    private bool warnedNoMixer;
 
     private static float LinearToDecibel(float linear)
     {
@@ -107,5 +149,9 @@ public class AudioManager : MonoBehaviour
     public void PlayClick() => PlayUI(defaultClickClip);
     public void PlayBack() => PlayUI(defaultBackClip);
 
-    private void OnApplicationQuit() => PlayerPrefs.Save();
+    private void OnApplicationQuit()
+    {
+        quitting = true;
+        PlayerPrefs.Save();
+    }
 }

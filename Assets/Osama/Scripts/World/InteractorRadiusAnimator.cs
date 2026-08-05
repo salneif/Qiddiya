@@ -81,6 +81,26 @@ public class InteractorRadiusAnimator : MonoBehaviour
         else Expand();
     }
 
+    /// <summary>
+    /// تمدّد فوري بلا حركة — لاستعادة منطقة تمدّدت في زيارة سابقة للسين
+    /// (دائرة جزيرة زُرع علمها). لا يُطلق <c>On Expand Complete</c>
+    /// لأنها استعادة لا حدث: مؤثرات اللحظة ما تُعاد كل مرة يدخل السين.
+    /// </summary>
+    public void ExpandInstant() => SetInstant(expandedRadius, true);
+
+    /// <summary>انكماش فوري بلا حركة — يضمن حالة البداية الصحيحة.</summary>
+    public void ShrinkInstant() => SetInstant(collapsedRadius, false);
+
+    private void SetInstant(float radius, bool expand)
+    {
+        // قد تُنادى من Start سكربت آخر قبل Awake هذا — الترتيب بين الكائنات غير مضمون
+        if (interactor == null) interactor = GetComponent<WorldInteractor>();
+
+        if (routine != null) { StopCoroutine(routine); routine = null; }
+        expanded = expand;
+        interactor.Radius = radius;
+    }
+
     private void AnimateTo(float target, bool expand)
     {
         expanded = expand;

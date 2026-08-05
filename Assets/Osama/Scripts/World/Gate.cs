@@ -22,15 +22,36 @@ public class Gate : MonoBehaviour
     private Vector3 closedPos, openPos;
     private bool isOpen;
     private bool wasOpen;
+    private bool initialized;
 
     public bool IsOpen => isOpen;
 
-    private void Awake()
+    private void Awake() => Initialize();
+
+    /// <summary>
+    /// حساب الموضعين. مفصولة عن Awake لأن <see cref="OpenInstant"/> قد تُنادى من
+    /// Awake سكربت آخر — وترتيب الـ Awake غير مضمون، فبدونها كان openPos = صفر.
+    /// </summary>
+    private void Initialize()
     {
+        if (initialized) return;
+        initialized = true;
+
         closedPos = transform.position;
         openPos = closedPos + openOffset;
         isOpen = wasOpen = startOpen;
         transform.position = startOpen ? openPos : closedPos;
+    }
+
+    /// <summary>
+    /// يفتحها فورًا بلا حركة ولا حدث — لاستعادة باب فُتح في زيارة سابقة
+    /// (يستخدمها <see cref="FlagBase"/> عند العودة للهب).
+    /// </summary>
+    public void OpenInstant()
+    {
+        Initialize();
+        isOpen = wasOpen = true;
+        transform.position = openPos;
     }
 
     private void Update()
