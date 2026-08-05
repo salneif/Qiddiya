@@ -52,6 +52,7 @@ public class A_WaterEnemySystem : MonoBehaviour
                 else if (!isUnderWater)
                 {
                     animator.SetBool("isAboveWater", false);
+                    isUnderWater = true;
                     _CountDown = -99;
 
                 }

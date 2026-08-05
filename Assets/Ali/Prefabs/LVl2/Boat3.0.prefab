@@ -85,8 +85,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 337846649643900191}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.0038731988, z: -0, w: 0.9999925}
-  m_LocalPosition: {x: -6.642, y: -2.3010898, z: 13.675}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -7.6, y: -2.3010898, z: 8.24}
   m_LocalScale: {x: 3.5653007, y: 3.5653, z: 3.5653007}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -423,8 +423,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2069711051771153873}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.0038731988, z: -0, w: 0.9999925}
-  m_LocalPosition: {x: -6.48, y: -2.3010898, z: 1.33}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -7.79, y: -2.3010898, z: 1.17}
   m_LocalScale: {x: 3.5653007, y: 3.5653, z: 3.5653007}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -499,6 +499,7 @@ MonoBehaviour:
   platform: {fileID: 7022985362646037859}
   lastPlatformPostion: {x: 0, y: 0, z: 0}
   characterController: {fileID: 0}
+  playerDeath_WaterSection: {fileID: 0}
 --- !u!1 &4095430716231767645
 GameObject:
   m_ObjectHideFlags: 0
@@ -616,13 +617,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5657760986619356383}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 8.89, z: 0}
+  m_LocalRotation: {x: -0, y: 0.0070945304, z: -0, w: 0.99997485}
+  m_LocalPosition: {x: -0.3343563, y: 8.890002, z: 0.016235352}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7823359952785233166}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0.813, z: 0}
 --- !u!33 &8929199351343617150
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -1121,8 +1122,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8595068572631871976}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.7098403, z: -0, w: 0.70436275}
-  m_LocalPosition: {x: -6.350727, y: -2.3010898, z: 2.3243828}
+  m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -6.235115, y: -2.3010898, z: 2.2698789}
   m_LocalScale: {x: 0.071018524, y: 0.071018524, z: 0.071018524}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1146,4 +1147,4 @@ MonoBehaviour:
   Point1: {fileID: 3767292003908463713}
   Point2: {fileID: 2943457170774242029}
   targetPoint: {fileID: 0}
-  boatSpeed: 1
+  boatSpeed: 1.5

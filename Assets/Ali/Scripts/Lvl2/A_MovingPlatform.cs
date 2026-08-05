@@ -9,9 +9,26 @@ public class A_MovingPlatform : MonoBehaviour
     [SerializeField] private Vector3 lastPlatformPostion;
     [SerializeField] private CharacterController characterController;
 
+    //ref
+    [SerializeField] private A_PlayerDeath_WaterSection playerDeath_WaterSection;
+
     private void Start()
     {
     }
+    private void OnEnable()
+    {
+        playerDeath_WaterSection.OnPlayerDeath += WaterSection_OnPlayerDeath;
+    }
+    private void OnDisable()
+    {
+        playerDeath_WaterSection.OnPlayerDeath -= WaterSection_OnPlayerDeath;
+    }
+
+    private void WaterSection_OnPlayerDeath()
+    {
+        _isOnPlatform = false;
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.CompareTag("Player"))
