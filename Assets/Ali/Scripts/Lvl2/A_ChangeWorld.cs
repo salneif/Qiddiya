@@ -33,6 +33,7 @@ public class A_ChangeWorld : MonoBehaviour
     private void OnFlagPick()
     {
         _isIndarkWorldStat = false;
+        test = false;
     }
 
     private void OnShiftingWorldToDark()
