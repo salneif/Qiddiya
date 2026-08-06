@@ -205,8 +205,13 @@ public class LevelPortal : MonoBehaviour
             return;
         }
 
+        // العلم المزروع يُغني عن حمله: لو رجع اللاعب لمرحلة أنهاها، علمها مخفي
+        // (مزروع في الهب) فلا يقدر يحمله — واشتراط الحمل هنا كان يحبسه في المرحلة
+        // بلا مخرج. أنهاها مرة، فله أن يخرج متى شاء.
+        var progress = GameProgress.Instance;
         if (requireCarriedFlag != FlagId.None &&
-            !GameProgress.Instance.IsCarrying(requireCarriedFlag))
+            !progress.IsCarrying(requireCarriedFlag) &&
+            !progress.IsPlanted(requireCarriedFlag))
         {
             Play(blockedSound);
             onBlocked?.Invoke();
