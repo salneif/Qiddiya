@@ -12,10 +12,14 @@ public class A_boss : MonoBehaviour
     [SerializeField] private ParticleSystem firstSmokcBoom;
     [SerializeField] private bool isInBoatSection;
     [SerializeField] private GameObject boat;
+    [SerializeField] private Transform Flag;
 
     [Header("Secound Shift")]
     [SerializeField] private Transform secoundPoint;
-    
+    [SerializeField] private ParticleSystem secoundSmokcBoom;
+    [SerializeField] private Transform powerCrystol;
+
+
 
 
     private Transform _transFromPlaceLocation;
@@ -40,13 +44,15 @@ public class A_boss : MonoBehaviour
                 laugh.Play();
                 animator.SetTrigger("TriggerSwitch");
                 shifingEffect.Play();
+                Destroy(Flag.gameObject);
                 break;
                 case 1:
                 _transFromPlaceLocation = secoundPoint;
                 laugh.Play();
-                animator.SetTrigger("TriggerSwitch");
+                animator.SetTrigger("Trigger2");
                 shifingEffect.Play();
                 transform.SetParent(null);
+                Invoke("HandleHidePowerCrystol", 1);
                 break;
         }
     }
@@ -61,6 +67,10 @@ public class A_boss : MonoBehaviour
 
         isInBoatSection = true;
 
+    }
+    private void HandleHidePowerCrystol()
+    {
+        powerCrystol.gameObject.SetActive(false);
     }
     private void Update()
     {
