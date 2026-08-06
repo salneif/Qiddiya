@@ -16,14 +16,23 @@ public class A_ChangeWorld : MonoBehaviour
 
     [Header("Ref")]
     [SerializeField] private A_boss a_Boss;
+    [SerializeField] private A_Flag a_Flag;
 
     private void OnEnable()
     {
         a_Boss.OnShiftingWorldToDark += OnShiftingWorldToDark;
+        a_Flag.OnFlagPick += OnFlagPick;
     }
+
+  
     private void OnDisable()
     {
         a_Boss.OnShiftingWorldToDark -= OnShiftingWorldToDark;
+        a_Flag.OnFlagPick -= OnFlagPick;
+    }
+    private void OnFlagPick()
+    {
+        _isIndarkWorldStat = false;
     }
 
     private void OnShiftingWorldToDark()

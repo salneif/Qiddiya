@@ -38,6 +38,7 @@ public class LongBoatSectionManager : MonoBehaviour
     [SerializeField] private A_PlayerDeath_WaterSection a_PlayerDeath;
 
 
+
     private void OnTriggerStay(Collider other)
     {
         if (other.gameObject.CompareTag("Player"))
