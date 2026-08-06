@@ -25,6 +25,9 @@ public class LadderController : MonoBehaviour
     [Header("Animation")]
     [SerializeField] private Animator animator;
 
+    [Header("Audio")]
+    [SerializeField] private AudioSource climbAudio;
+
 
 
 
@@ -52,6 +55,8 @@ public class LadderController : MonoBehaviour
     {
         A_Ladderbegin.OnBeginLadder -= OnbeginLadder;
         A_LadderEndPoint.OnEndLadder -= OnEndLadder;
+
+        setClimbAudio(false);
     }
     private void OnEndLadder(A_LadderEndPoint ladderEnd , Vector3 ladderForward)
     {
@@ -64,6 +69,8 @@ public class LadderController : MonoBehaviour
             thisladderForward = -ladderForward;
             AlreadyOnLadderNow = false;
             animator.SetBool("isOnLadder", false);
+
+            setClimbAudio(false);
         }
         
     }
@@ -109,6 +116,7 @@ public class LadderController : MonoBehaviour
             if (input == 0)
             {
                 animator.SetFloat("MovementDirInLadder", 0);
+                setClimbAudio(false);
                 return;
             }
             else
@@ -116,10 +124,25 @@ public class LadderController : MonoBehaviour
                 animator.SetFloat("MovementDirInLadder", input);
                 Vector3 climbDir = new Vector3(0, input, 0);
                 characterController.Move(climbDir * Time.deltaTime * climbSpeed);
+                setClimbAudio(true);
 
             }
           }
          }
+
+    private void setClimbAudio(bool active)
+    {
+        if (climbAudio == null) return;
+
+        if (active)
+        {
+            if (!climbAudio.isPlaying) climbAudio.Play();
+        }
+        else if (climbAudio.isPlaying)
+        {
+            climbAudio.Stop();
+        }
+    }
 
     public void OnInputLadder(InputAction.CallbackContext context)
     {
