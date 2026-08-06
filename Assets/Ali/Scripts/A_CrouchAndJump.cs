@@ -84,6 +84,7 @@ public class A_CrouchAndJump : MonoBehaviour
             {
                 _currentWidow = jumpWindow;
                 canJump = true;
+                
             }
         }
     }

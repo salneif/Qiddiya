@@ -890,10 +890,7 @@ MonoBehaviour:
   target: {fileID: 3364632180257609903}
   offset: {x: 0, y: 0, z: 0}
   cameraRotation: {x: 0, y: 0, z: 0}
-  roomWidth: 20
-  firstRoomCenterX: 0
-  boundaryPadding: 0.3
-  roomTransitionSpeed: 3
+  xFollowSpeed: 7
   zFollowSpeed: 3
   anchorYFromTargetOnStart: 1
   anchorY: 0
@@ -18004,7 +18001,7 @@ GameObject:
   - component: {fileID: 1556748576041111420}
   m_Layer: 0
   m_Name: Cylinder
-  m_TagString: Untagged
+  m_TagString: Metal
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -22679,6 +22676,10 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: d26fac3c-1704-4acf-85d1-1bbef3b8b57d
     m_ActionName: 'DefulatController/LadderMovement[/Keyboard/s,/Keyboard/w]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 46ec40c8-a0cc-4f44-bbd7-b1b6f93b3044
+    m_ActionName: 'DefulatController/Interact[/Keyboard/e]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: DefulatController
@@ -32849,6 +32850,8 @@ GameObject:
   - component: {fileID: 1851533531456167973}
   - component: {fileID: 3853398792128726550}
   - component: {fileID: 7635420234013428525}
+  - component: {fileID: 9100159816652169183}
+  - component: {fileID: 9100159816652169184}
   m_Layer: 7
   m_Name: Player
   m_TagString: Player
@@ -33459,8 +33462,10 @@ MonoBehaviour:
   zMoveSpeed: 5
   gravity: -20
   pushSpeedScale: 0.6
+  cameraRelative: 0
   blendTimeMovement: 4.7
   crouchAndJumpSystem: {fileID: 9100159816652169182}
+  a_PlayerDeath: {fileID: 0}
 --- !u!1 &6037359524041127889
 GameObject:
   m_ObjectHideFlags: 0
@@ -45282,6 +45287,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Boat
       objectReference: {fileID: 0}
+    - target: {fileID: 6319639464572671632, guid: 9803f12d739aef34d8a5f78553187535, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6326493687163196805, guid: 9803f12d739aef34d8a5f78553187535, type: 3}
       propertyPath: m_LocalPosition.x
       value: 52.08279
@@ -51600,6 +51609,126 @@ MonoBehaviour:
   crouchWalkSpeed: 1
   isCrouching: 0
   jumpForce: 1
+  jumpWindow: 0.5
+  _currentWidow: 0
+  canJump: 0
+  a_Ballon: {fileID: 0}
+--- !u!114 &9100159816652169183
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5890357180324306200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37cc3b5da3ccd344d835f89a80ff3186, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::A_FootSounds
+  footStepAudioSource: {fileID: 9100159816652169184}
+  woodLoopClip: {fileID: 0}
+  metalLoopClip: {fileID: 0}
+  grassLoopClip: {fileID: 0}
+  defaultLoopClip: {fileID: 8300000, guid: 6c0d40a1587f5954bb68693dad10323b, type: 3}
+  characterController: {fileID: 1217153624750406849}
+  crouchAndJumpSystem: {fileID: 9100159816652169182}
+--- !u!82 &9100159816652169184
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5890357180324306200}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 0.1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &9102499798612807669
 GameObject:
   m_ObjectHideFlags: 0
