@@ -16,6 +16,10 @@ public class PuzzleManager : MonoBehaviour
     [SerializeField] private AudioSource platformAudio;
     [SerializeField] private AudioClip startSound;
     [SerializeField] private AudioClip riseLoop;
+    [SerializeField] private GameObject collider1;
+    [SerializeField] private GameObject collider2;
+    [SerializeField] private GameObject collider3;
+    [SerializeField] private GameObject collider4;
 
     public event Action OnPuzzleSolved;
 
@@ -83,6 +87,10 @@ public class PuzzleManager : MonoBehaviour
         {
             _solved = true;
             Debug.Log("SOLVED");
+            collider1.SetActive(true);
+            collider2.SetActive(true);
+            collider3.SetActive(true);
+            collider4.SetActive(true);
             playPlatformAudio();
             OnPuzzleSolved?.Invoke();
         }
