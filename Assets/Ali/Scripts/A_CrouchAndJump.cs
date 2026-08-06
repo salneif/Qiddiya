@@ -20,6 +20,9 @@ public class A_CrouchAndJump : MonoBehaviour
 
     [Header("Jump Numbers")]
     [SerializeField] private float jumpForce;
+    [SerializeField] private float jumpWindow = 0.5f;
+    [SerializeField] private float _currentWidow;
+    [SerializeField] private bool canJump;
 
     [Header("Ref")]
     [SerializeField] private A_Ballon a_Ballon;
@@ -62,12 +65,26 @@ public class A_CrouchAndJump : MonoBehaviour
 
         }
     }
-
+    private void Update()
+    {
+        if(!characterController.isGrounded)
+        {
+            _currentWidow -= Time.deltaTime;
+            if(_currentWidow >= 0)
+            {
+                canJump = true;
+            }
+        }
+        else if(characterController.isGrounded)
+        {
+            _currentWidow = jumpWindow;
+        }
+    }
     public void OnInputJump(InputAction.CallbackContext context)
     {
 
 
-        if (context.performed && !isCrouching && (characterController.isGrounded || canDoubleJump))
+        if (context.performed && !isCrouching && (canJump || canDoubleJump))
         {
             OnJump?.Invoke(jumpForce , canDoubleJump);
         }
