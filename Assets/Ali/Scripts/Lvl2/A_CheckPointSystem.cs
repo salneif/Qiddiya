@@ -10,6 +10,8 @@ public class A_CheckPointSystem : MonoBehaviour
     [SerializeField] private Transform checkPoint3;
     [SerializeField] private Transform checkPoint4;
     [SerializeField] private Transform checkPoint5;
+    [SerializeField] private Transform checkPoint6;
+
 
     [Header("Ref")]
     [SerializeField] private A_PlayerDeath_WaterSection playerDeath;
@@ -62,7 +64,11 @@ public class A_CheckPointSystem : MonoBehaviour
                 case 5:
                 _currentCheckPoint = checkPoint5;
                 break;
-                
+            case 6:
+                _currentCheckPoint = checkPoint6;
+                break;
+
+
         }
     }
 
