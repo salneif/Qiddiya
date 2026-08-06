@@ -7256,6 +7256,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1976786004}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &871228321 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8940225917214355961, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+  m_PrefabInstance: {fileID: 2009508721}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &874638557 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4562838526801763846, guid: 6ee24f475674def489f0dcbe443b4f6e, type: 3}
@@ -15894,6 +15899,80 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1705219718}
   m_Mesh: {fileID: -8964284599248585592, guid: 734327ee6024b6f4fa62d076ab4de9e8, type: 3}
+--- !u!1001 &1711054949
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 871228321}
+    m_Modifications:
+    - target: {fileID: 4216674876371085428, guid: 4c33fc8f1c6ba9a41b2c6427750b2bb5, type: 3}
+      propertyPath: m_Name
+      value: SM_Chr_Attach_Bag_Bird_01
+      objectReference: {fileID: 0}
+    - target: {fileID: 4216674876371383380, guid: 4c33fc8f1c6ba9a41b2c6427750b2bb5, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.66
+      objectReference: {fileID: 0}
+    - target: {fileID: 4216674876371383380, guid: 4c33fc8f1c6ba9a41b2c6427750b2bb5, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.66
+      objectReference: {fileID: 0}
+    - target: {fileID: 4216674876371383380, guid: 4c33fc8f1c6ba9a41b2c6427750b2bb5, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.66
+      objectReference: {fileID: 0}
+    - target: {fileID: 4216674876371383380, guid: 4c33fc8f1c6ba9a41b2c6427750b2bb5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.0058
+      objectReference: {fileID: 0}
+    - target: {fileID: 4216674876371383380, guid: 4c33fc8f1c6ba9a41b2c6427750b2bb5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.0054
+      objectReference: {fileID: 0}
+    - target: {fileID: 4216674876371383380, guid: 4c33fc8f1c6ba9a41b2c6427750b2bb5, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4216674876371383380, guid: 4c33fc8f1c6ba9a41b2c6427750b2bb5, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4216674876371383380, guid: 4c33fc8f1c6ba9a41b2c6427750b2bb5, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4216674876371383380, guid: 4c33fc8f1c6ba9a41b2c6427750b2bb5, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4216674876371383380, guid: 4c33fc8f1c6ba9a41b2c6427750b2bb5, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4216674876371383380, guid: 4c33fc8f1c6ba9a41b2c6427750b2bb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4216674876371383380, guid: 4c33fc8f1c6ba9a41b2c6427750b2bb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4216674876371383380, guid: 4c33fc8f1c6ba9a41b2c6427750b2bb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4c33fc8f1c6ba9a41b2c6427750b2bb5, type: 3}
+--- !u!4 &1711054950 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4216674876371383380, guid: 4c33fc8f1c6ba9a41b2c6427750b2bb5, type: 3}
+  m_PrefabInstance: {fileID: 1711054949}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1718896525
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -19712,6 +19791,10 @@ PrefabInstance:
       propertyPath: m_ActionEvents.Array.data[3].m_ActionName
       value: 'DefulatController/Interact[/Keyboard/e]'
       objectReference: {fileID: 0}
+    - target: {fileID: 2197621358410965187, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+      propertyPath: jumpWindow
+      value: 0.1
+      objectReference: {fileID: 0}
     - target: {fileID: 4415379080658964846, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: speed
       value: 3
@@ -19770,7 +19853,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 8940225917214355961, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1711054950}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 8017891553713565822, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       insertIndex: -1
