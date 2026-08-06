@@ -38,6 +38,11 @@ public class AudioFadeZone : MonoBehaviour
     [Tooltip("عند اكتمال التلاشي — مفيد لبدء الانتقال بعد الصمت")]
     public UnityEvent onFadeComplete;
 
+    [Header("تشخيص")]
+    [Tooltip("يطبع في الكونسول متى دخلت المنطقة ومتى انطلق On Fade Complete. " +
+             "لو مرّيت وما طُبع شيء = ما دخلت الكولايدر أصلًا. أطفئه بعد ما تخلص.")]
+    [SerializeField] private bool debugLog = false;
+
     private float[] originalVolumes;
     private Coroutine routine;
     private bool used;
@@ -59,10 +64,17 @@ public class AudioFadeZone : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (used && triggerOnce) return;
         if (!other.CompareTag(playerTag)) return;
 
+        if (used && triggerOnce)
+        {
+            Log("اللاعب دخل المنطقة لكنها مستهلكة (Trigger Once) — انطلقت في مرور سابق. " +
+                "أطفئ Trigger Once لتعمل في كل مرور.");
+            return;
+        }
+
         used = true;
+        Log($"بدأ التلاشي — On Fade Complete بعد {fadeDuration} ثانية.");
         StartFade(targetVolume, true);
     }
 
@@ -80,17 +92,23 @@ public class AudioFadeZone : MonoBehaviour
     /// <summary>يرجّع المستويات الأصلية.</summary>
     public void FadeIn() => StartFade(-1f, false);
 
+    /// <summary>
+    /// تعمل حتى لو قائمة المصادر فارغة — كثيرًا ما تُستخدم المنطقة كمؤقّت
+    /// لـ<see cref="onFadeComplete"/> وحده (الموسيقى يديرها MusicDirector لا مصدر في المشهد).
+    /// الخروج المبكر هنا كان يقتل الحدث بصمت.
+    /// </summary>
     private void StartFade(float volume, bool fireEvent)
     {
-        if (targets == null || targets.Length == 0) return;
         if (routine != null) StopCoroutine(routine);
         routine = StartCoroutine(FadeRoutine(volume, fireEvent));
     }
 
     private IEnumerator FadeRoutine(float volume, bool fireEvent)
     {
-        var from = new float[targets.Length];
-        for (int i = 0; i < targets.Length; i++)
+        int n = targets != null ? targets.Length : 0;
+
+        var from = new float[n];
+        for (int i = 0; i < n; i++)
             from[i] = targets[i] != null ? targets[i].volume : 0f;
 
         float t = 0f;
@@ -99,7 +117,7 @@ public class AudioFadeZone : MonoBehaviour
             t += Time.deltaTime;
             float k = fadeDuration > 0f ? Mathf.Clamp01(t / fadeDuration) : 1f;
 
-            for (int i = 0; i < targets.Length; i++)
+            for (int i = 0; i < n; i++)
             {
                 if (targets[i] == null) continue;
                 float to = volume < 0f ? originalVolumes[i] : volume;
@@ -108,14 +126,22 @@ public class AudioFadeZone : MonoBehaviour
             yield return null;
         }
 
-        for (int i = 0; i < targets.Length; i++)
+        for (int i = 0; i < n; i++)
         {
             if (targets[i] == null) continue;
             targets[i].volume = volume < 0f ? originalVolumes[i] : volume;
         }
 
         routine = null;
-        if (fireEvent) onFadeComplete?.Invoke();
+        if (!fireEvent) yield break;
+
+        Log("اكتمل التلاشي — On Fade Complete ينطلق الآن.");
+        onFadeComplete?.Invoke();
+    }
+
+    private void Log(string message)
+    {
+        if (debugLog) Debug.Log($"[AudioFadeZone] {name}: {message}", this);
     }
 
     private void OnDrawGizmosSelected()
