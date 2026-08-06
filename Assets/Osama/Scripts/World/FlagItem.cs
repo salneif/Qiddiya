@@ -126,6 +126,16 @@ public class FlagItem : MonoBehaviour
     }
 
     /// <summary>
+    /// العلم يبقى في يد اللاعب حتى لو مات — اربطها بـ<c>Checkpoint.On Activated</c>
+    /// لتخفيف العقوبة بعد نقطة معيّنة في المرحلة: قبلها الموت يكلّفك العلم،
+    /// وبعدها يكلّفك المسافة فقط.
+    /// </summary>
+    public void KeepOnDeath() => returnOnHolderDeath = false;
+
+    /// <summary>يرجع العلم لموضعه عند موت حامله — السلوك الافتراضي.</summary>
+    public void ReturnHomeOnDeath() => returnOnHolderDeath = true;
+
+    /// <summary>
     /// يلصق العلم بلاعب فورًا بلا لمس التريغر — يستخدمها <see cref="FlagCarry"/>
     /// لاستعادة الحمل عند بداية سين جديد، فيدخل اللاعب وهو حامله.
     /// تطلق أحداث الالتقاط كالمعتاد، فتكبر الدائرة وتتبدّل الموسيقى وحدها.

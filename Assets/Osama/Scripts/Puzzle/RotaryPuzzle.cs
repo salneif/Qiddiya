@@ -31,6 +31,12 @@ public class RotaryPuzzle : MonoBehaviour
     [Tooltip("عند الحل — اربطه بـ Gate.Open لفتح الباب")]
     public UnityEvent onSolved;
 
+    [Header("تشخيص")]
+    [Tooltip("يطبع أوجه الأعمدة عند كل فحص. " +
+             "لو لففت عمودًا وما طُبع شيء = On Rotated في ذاك العمود غير مربوط " +
+             "بـ RotaryPuzzle.CheckSolution — وهذا يعني أن اللغز لن يُحلّ أبدًا.")]
+    [SerializeField] private bool debugLog = false;
+
     /// <summary>هل حُلّ اللغز؟</summary>
     public bool IsSolved { get; private set; }
 
@@ -47,6 +53,19 @@ public class RotaryPuzzle : MonoBehaviour
             return;
         }
 
+        if (debugLog)
+        {
+            var now = new System.Text.StringBuilder();
+            var want = new System.Text.StringBuilder();
+            for (int i = 0; i < pillars.Length; i++)
+            {
+                if (i > 0) { now.Append(','); want.Append(','); }
+                now.Append(pillars[i] == null ? "؟" : pillars[i].CurrentFace.ToString());
+                want.Append(solution[i]);
+            }
+            Debug.Log($"[RotaryPuzzle] {name}: الأوجه الآن [{now}] — المطلوب [{want}]", this);
+        }
+
         // لو أي عمود على وجه غلط → اللغز غير محلول بعد
         for (int i = 0; i < pillars.Length; i++)
         {
@@ -55,6 +74,21 @@ public class RotaryPuzzle : MonoBehaviour
         }
 
         Solve();
+    }
+
+    /// <summary>
+    /// اختبار: كليك يمين على اسم المكوّن أثناء اللعب → يحلّ اللغز فورًا.
+    /// لفحص ما بعد الحل (الانتقال، الباب) بلا لفّ الأعمدة.
+    /// </summary>
+    [ContextMenu("تجربة: حُلّ اللغز الآن")]
+    private void DebugSolve()
+    {
+        if (!Application.isPlaying)
+        {
+            Debug.LogWarning("[RotaryPuzzle] التجربة تعمل أثناء Play فقط.", this);
+            return;
+        }
+        if (!IsSolved) Solve();
     }
 
     /// <summary>
@@ -77,6 +111,7 @@ public class RotaryPuzzle : MonoBehaviour
     private void Solve()
     {
         IsSolved = true;
+        if (debugLog) Debug.Log($"[RotaryPuzzle] {name}: انحلّ — On Solved ينطلق الآن.", this);
 
         if (solvedSound != null && audioSource != null)
             audioSource.PlayOneShot(solvedSound);
