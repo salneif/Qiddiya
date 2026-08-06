@@ -8,6 +8,8 @@ public class EmblemPuzzle : MonoBehaviour
     [SerializeField] private float valueTolerance = 0.01f;
     [SerializeField] private bool waitForSettle = true;
     [SerializeField] private bool lockPedestalsOnSolve = true;
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip solveClip;
     [SerializeField] private bool debug;
 
     public UnityEvent OnSolved;
@@ -37,7 +39,6 @@ public class EmblemPuzzle : MonoBehaviour
         if (_solved) return;
         if (!isCorrect()) return;
         if (waitForSettle && !allSettled()) return;
-
         solve();
     }
 
@@ -54,7 +55,6 @@ public class EmblemPuzzle : MonoBehaviour
             bool placed = tryHostValue(shapes[i].BoundAnimal, out float value);
             shapes[i].SetHost(value, placed);
         }
-
         if (debug) Debug.Log($"[Emblem] {stateString()}");
     }
 
@@ -62,16 +62,13 @@ public class EmblemPuzzle : MonoBehaviour
     {
         value = 0f;
         if (a == StatuePedestal.Animal.None) return false;
-
         for (int i = 0; i < pedestals.Length; i++)
         {
             if (pedestals[i] == null) continue;
             if (pedestals[i].Held != a) continue;
-
             value = pedestals[i].RotationValue;
             return true;
         }
-
         return false;
     }
 
@@ -83,7 +80,6 @@ public class EmblemPuzzle : MonoBehaviour
             if (!tryHostValue(shapes[i].BoundAnimal, out float value)) return false;
             if (Mathf.Abs(value - shapes[i].RequiredValue) > valueTolerance) return false;
         }
-
         return shapes.Length > 0;
     }
 
@@ -91,7 +87,6 @@ public class EmblemPuzzle : MonoBehaviour
     {
         for (int i = 0; i < shapes.Length; i++)
             if (shapes[i] != null && !shapes[i].IsSettled) return false;
-
         return true;
     }
 
@@ -105,6 +100,9 @@ public class EmblemPuzzle : MonoBehaviour
                 if (pedestals[i] != null) pedestals[i].Lock();
         }
 
+        if (audioSource != null && solveClip != null)
+            audioSource.PlayOneShot(solveClip);
+
         Debug.Log("[Emblem] SOLVED");
         OnSolved?.Invoke();
     }
@@ -114,7 +112,6 @@ public class EmblemPuzzle : MonoBehaviour
         for (int i = 0; i < shapes.Length; i++)
         {
             if (shapes[i] == null) continue;
-
             bool reachable = false;
             for (int p = 0; p < pedestals.Length; p++)
             {
@@ -125,7 +122,6 @@ public class EmblemPuzzle : MonoBehaviour
                     break;
                 }
             }
-
             if (!reachable)
                 Debug.LogWarning($"[Emblem] {shapes[i].name} requires {shapes[i].RequiredValue} but no pedestal has that value. Puzzle is unsolvable.", shapes[i]);
         }
