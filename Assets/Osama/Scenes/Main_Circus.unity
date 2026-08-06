@@ -3585,11 +3585,11 @@ Transform:
   m_GameObject: {fileID: 536387024}
   serializedVersion: 2
   m_LocalRotation: {x: 0.6000387, y: -0, z: -0, w: 0.799971}
-  m_LocalPosition: {x: -334.018, y: 17.359, z: -129.957}
-  m_LocalScale: {x: 3.800951, y: 7.811357, z: 1}
+  m_LocalPosition: {x: 0.58200073, y: 2.058999, z: -0.7391968}
+  m_LocalScale: {x: 3.800951, y: 7.8113575, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 5885758265614148500}
   m_LocalEulerAnglesHint: {x: 73.745, y: 0, z: 0}
 --- !u!1 &547783848
 GameObject:
@@ -6117,16 +6117,16 @@ MonoBehaviour:
   targets:
   - {fileID: 1880626920}
   targetVolume: 0
-  fadeDuration: 4.25
+  fadeDuration: 1.87
   playerTag: Player
-  triggerOnce: 1
+  triggerOnce: 0
   restoreOnExit: 0
   onFadeComplete:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1648741718}
         m_TargetAssemblyTypeName: GhostSpawner, Assembly-CSharp
-        m_MethodName: DespawnPermanently
+        m_MethodName: DespawnAll
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -6148,6 +6148,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  debugLog: 1
 --- !u!65 &783373942
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6167,7 +6168,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2.0587769, y: 1, z: 10.829235}
+  m_Size: {x: 2.0587769, y: 8.42, z: 10.829235}
   m_Center: {x: 2.4859924, y: 0, z: 0.01830101}
 --- !u!4 &783373943
 Transform:
@@ -6178,7 +6179,7 @@ Transform:
   m_GameObject: {fileID: 783373940}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -354.47, y: 7.42481, z: 59.88}
+  m_LocalPosition: {x: -357.2, y: 7.42481, z: 59.88}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10170,7 +10171,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TopDownCameraZone
   overrideOffset: {x: -1, y: -1.13, z: -4}
-  overrideRotation: {x: -9, y: 9, z: 0}
+  overrideRotation: {x: 0, y: 9, z: 0}
   transitionSpeed: 3
   followPlayerY: 0
   cameraYaw: 0
@@ -12230,7 +12231,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TopDownCameraZone
   overrideOffset: {x: -1, y: 0, z: -4}
-  overrideRotation: {x: -9, y: 9, z: 0}
+  overrideRotation: {x: 0, y: 9, z: 0}
   transitionSpeed: 3
   followPlayerY: 1
   cameraYaw: 0
@@ -13496,6 +13497,7 @@ MonoBehaviour:
   onSpawnFinished:
     m_PersistentCalls:
       m_Calls: []
+  debugLog: 1
 --- !u!65 &1648741719
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -13515,7 +13517,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2.1274705, y: 1, z: 10.749764}
+  m_Size: {x: 2.1274705, y: 7.19, z: 10.749764}
   m_Center: {x: 0.5637468, y: 0, z: 4.874806}
 --- !u!4 &1648741720
 Transform:
@@ -16910,6 +16912,37 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 955913c6da6d4844f8a4a840cfa5b818, type: 3}
+--- !u!1 &1821622344
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1821622345}
+  m_Layer: 0
+  m_Name: PortalToHub
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1821622345
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1821622344}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -153.05684, y: 3.40409, z: 116.91397}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1842082458
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -19491,7 +19524,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TopDownCameraZone
   overrideOffset: {x: -1, y: -1.13, z: -4}
-  overrideRotation: {x: -9, y: 9, z: 0}
+  overrideRotation: {x: 0, y: 9, z: 0}
   transitionSpeed: 3
   followPlayerY: 1
   cameraYaw: 0
@@ -92100,6 +92133,7 @@ Transform:
   - {fileID: 4597335722798090221}
   - {fileID: 6780904600275096027}
   - {fileID: 6295546924286981832}
+  - {fileID: 536387028}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5887029713478341534
@@ -132891,9 +132925,9 @@ SceneRoots:
   - {fileID: 215056165}
   - {fileID: 34676062}
   - {fileID: 5885758265614148500}
-  - {fileID: 536387028}
   - {fileID: 348133907}
   - {fileID: 1046490925}
   - {fileID: 1624351463}
   - {fileID: 2032656864}
   - {fileID: 463487058}
+  - {fileID: 1821622345}

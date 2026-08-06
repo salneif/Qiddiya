@@ -63,6 +63,12 @@ public class GhostSpawner : MonoBehaviour
     [Tooltip("بعد خروج آخر شبح")]
     public UnityEvent onSpawnFinished;
 
+    [Header("تشخيص")]
+    [Tooltip("يطبع في الكونسول سبب عدم انطلاق الكمين. " +
+             "لو مرّيت بالمنطقة وما طُبع شيء أبدًا = الكولايدر ما حسّ باللاعب أصلًا. " +
+             "أطفئه بعد ما تخلص.")]
+    [SerializeField] private bool debugLog = false;
+
     /// <summary>هل خرجت المجموعة؟</summary>
     public bool HasSpawned { get; private set; }
 
@@ -82,19 +88,62 @@ public class GhostSpawner : MonoBehaviour
     /// </summary>
     private void OnTriggerStay(Collider other)
     {
-        if (HasSpawned && triggerOnce) return;
         if (!other.CompareTag(playerTag)) return;
 
-        // الشرط غير متحقق → لا ينطلق ولا يُستهلك، فيبقى مسلّحًا لمروره القادم
-        if (requireFlagHeld && (flag == null || !flag.IsHeld)) return;
+        // HasSpawned تمنع التكرار دائمًا — لا كل إطار داخل المنطقة.
+        // مع Trigger Once تظل مرفوعة للأبد، وبدونها تنزل عند الخروج (أدناه).
+        if (HasSpawned)
+        {
+            if (triggerOnce)
+                Report("اللاعب داخل المنطقة، لكن الكمين مستهلك (Trigger Once). " +
+                       "يُعاد تسليحه بـ DespawnAll فقط — تأكد أنه مربوط بـ PlayerKillable.On Respawn، " +
+                       "وأن DespawnPermanently ما انطلق من AudioFadeZone. " +
+                       "ولو تبيه يشتغل كل مرة تمر فيها بالعلم، أطفئ Trigger Once.");
+            return;
+        }
 
+        // الشرط غير متحقق → لا ينطلق ولا يُستهلك، فيبقى مسلّحًا لمروره القادم
+        if (requireFlagHeld && flag == null)
+        {
+            Report("خانة Flag فارغة مع Require Flag Held — لن ينطلق أبدًا.");
+            return;
+        }
+
+        if (requireFlagHeld && !flag.IsHeld)
+        {
+            Report($"اللاعب داخل المنطقة لكنه لا يحمل \"{flag.name}\".");
+            return;
+        }
+
+        Report("الشرط تحقّق — الأشباح تخرج الآن.");
         Spawn();
     }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (!other.CompareTag(playerTag)) return;
+
+        lastReason = null; // نسمح بطباعة نفس السبب من جديد في المرور القادم
+
+        // بلا Trigger Once: يُعاد التسليح عند الخروج لا داخل المنطقة —
+        // وإلا انطلق كل إطار وأنت واقف فيها وولّد أشباحًا بلا نهاية.
+        if (!triggerOnce) HasSpawned = false;
+    }
+
+    /// <summary>يطبع السبب مرة واحدة لا كل إطار — OnTriggerStay يعمل ٦٠ مرة في الثانية.</summary>
+    private void Report(string reason)
+    {
+        if (!debugLog || reason == lastReason) return;
+        lastReason = reason;
+        Debug.Log($"[GhostSpawner] {name}: {reason}", this);
+    }
+
+    private string lastReason;
 
     /// <summary>يطلق الخروج يدويًا — اربطه بأي حدث آخر إن أردت.</summary>
     public void Spawn()
     {
-        if (HasSpawned && triggerOnce) return;
+        if (HasSpawned) return;
         if (ghostPrefab == null) return;
 
         HasSpawned = true;
