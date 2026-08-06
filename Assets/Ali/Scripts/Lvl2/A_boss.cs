@@ -20,7 +20,14 @@ public class A_boss : MonoBehaviour
     [SerializeField] private Transform powerCrystol;
 
 
+    [Header("third Shift")]
+    [SerializeField] private Transform thirdpoint;
+    [SerializeField] private AudioSource congratulationsSound;
+    [SerializeField] private ParticleSystem JapanThing;
 
+
+
+    [SerializeField] private bool runTest = false;
 
     private Transform _transFromPlaceLocation;
     public  event Action OnShiftingWorldToDark;
@@ -72,11 +79,31 @@ public class A_boss : MonoBehaviour
     {
         powerCrystol.gameObject.SetActive(false);
     }
+    private void Start()
+    {
+       
+    }
+
+    public void OnLastShift()
+    {
+        _transFromPlaceLocation = thirdpoint;
+        transform.position = _transFromPlaceLocation.position;
+        transform.rotation = _transFromPlaceLocation.rotation;
+        congratulationsSound.Play();
+        shifingEffect.Play();
+        JapanThing.Play();
+        transform.SetParent(null);
+    }
     private void Update()
     {
         if(isInBoatSection)
         {
             gameObject.transform.SetParent(boat.transform, true);
+        }
+        if (runTest)
+        {
+            OnShiftingWorldToDarkBossEvent(1);
+            runTest = false;
         }
     }
 }
