@@ -10,7 +10,7 @@ public class A_CrouchAndJump : MonoBehaviour
     // we will do that by event system 
     // here we will fire the event and tell movement code about it with the required varlibals
     public event Action<bool, float> OnCrouch;
-    public event Action<float, bool> OnJump;
+    public event Action<float, bool , bool> OnJump;
 
 
     // we need to send some data with it 
@@ -20,6 +20,9 @@ public class A_CrouchAndJump : MonoBehaviour
 
     [Header("Jump Numbers")]
     [SerializeField] private float jumpForce;
+    [SerializeField] private float jumpWindow = 0.5f;
+    [SerializeField] private float _currentWidow;
+    [SerializeField] private bool canJump;
 
     [Header("Ref")]
     [SerializeField] private A_Ballon a_Ballon;
@@ -62,14 +65,35 @@ public class A_CrouchAndJump : MonoBehaviour
 
         }
     }
-
+    private void Update()
+    {
+        if (PlayerController.instance != null)
+        {
+            if (!PlayerController.instance.IsGrounded)
+            {
+                if (_currentWidow >= 0)
+                {
+                    _currentWidow -= Time.deltaTime;
+                }
+                else
+                {
+                    canJump = false;
+                }
+            }
+            else
+            {
+                _currentWidow = jumpWindow;
+                canJump = true;
+            }
+        }
+    }
     public void OnInputJump(InputAction.CallbackContext context)
     {
 
 
-        if (context.performed && !isCrouching && (characterController.isGrounded || canDoubleJump))
+        if (context.performed && !isCrouching && (canJump || canDoubleJump))
         {
-            OnJump?.Invoke(jumpForce , canDoubleJump);
+            OnJump?.Invoke(jumpForce , canDoubleJump , canJump);
         }
     }
 }
