@@ -20,6 +20,8 @@ public class PuzzleManager : MonoBehaviour
     [SerializeField] private GameObject collider2;
     [SerializeField] private GameObject collider3;
     [SerializeField] private GameObject collider4;
+    [SerializeField] private GameObject basePlatform;
+    [SerializeField] private GameObject triggerActivate;
 
     public event Action OnPuzzleSolved;
 
@@ -91,6 +93,8 @@ public class PuzzleManager : MonoBehaviour
             collider2.SetActive(true);
             collider3.SetActive(true);
             collider4.SetActive(true);
+            basePlatform.SetActive(false);
+            triggerActivate.SetActive(true);
             playPlatformAudio();
             OnPuzzleSolved?.Invoke();
         }
