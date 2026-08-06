@@ -10,7 +10,7 @@ public class A_CrouchAndJump : MonoBehaviour
     // we will do that by event system 
     // here we will fire the event and tell movement code about it with the required varlibals
     public event Action<bool, float> OnCrouch;
-    public event Action<float, bool> OnJump;
+    public event Action<float, bool , bool> OnJump;
 
 
     // we need to send some data with it 
@@ -67,17 +67,24 @@ public class A_CrouchAndJump : MonoBehaviour
     }
     private void Update()
     {
-        if(!characterController.isGrounded)
+        if (PlayerController.instance != null)
         {
-            _currentWidow -= Time.deltaTime;
-            if(_currentWidow >= 0)
+            if (!PlayerController.instance.IsGrounded)
             {
+                if (_currentWidow >= 0)
+                {
+                    _currentWidow -= Time.deltaTime;
+                }
+                else
+                {
+                    canJump = false;
+                }
+            }
+            else
+            {
+                _currentWidow = jumpWindow;
                 canJump = true;
             }
-        }
-        else if(characterController.isGrounded)
-        {
-            _currentWidow = jumpWindow;
         }
     }
     public void OnInputJump(InputAction.CallbackContext context)
@@ -86,7 +93,7 @@ public class A_CrouchAndJump : MonoBehaviour
 
         if (context.performed && !isCrouching && (canJump || canDoubleJump))
         {
-            OnJump?.Invoke(jumpForce , canDoubleJump);
+            OnJump?.Invoke(jumpForce , canDoubleJump , canJump);
         }
     }
 }

@@ -110,13 +110,13 @@ public class PlayerController : MonoBehaviour
         characterController.Move(new Vector3(0,gravity,0));
     }
 
-    private void OnJump(float jumpForce , bool canDoubleJump)
+    private void OnJump(float jumpForce , bool canDoubleJump , bool canJump)
     {
         if (!CanMove)
         {
             return ;
         }
-        if (characterController.isGrounded)
+        if (canJump)
         {
             _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
             animator.SetTrigger("Jump");
