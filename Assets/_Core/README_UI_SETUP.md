@@ -138,6 +138,145 @@
 
 ---
 
+## 8) الزر يعلق منتفخًا بعد الرجوع من الإعدادات — السبب والحل
+
+**السبب في الأنميشن، لا في السكربتات.**
+
+في كل كنترولر زر (`Assets/Abeer/Animations-Abeer/Play_Button .controller` وإخوانه):
+
+| الكليب | يكتب `m_LocalScale`؟ |
+|---|---|
+| `Highlighted` | ✔ `(2.71, 3.03, 1.74)` |
+| `Normal` / `Selected` / `Pressed` / `Disabled` | ✘ **فارغة تمامًا** |
+
+كليب `Normal` بلا أي منحنى، فيونيتي لا يرجّع الحجم من الكليب بل من **القيمة الافتراضية**
+التي التقطها الأنميتور لحظة ربطه بالكائن.
+
+وهنا تنفجر المشكلة: إخفاء اللوحة يجمّد الأنميتور على حجم `Highlighted`. وعند إظهارها
+يُعيد الأنميتور الربط **والزر لا يزال منتفخًا**، فيلتقط الحجم المنتفخ كقيمة افتراضية
+جديدة. من تلك اللحظة لا شيء يعيده أبدًا.
+
+**الحل المطبَّق في `UIPanel`:** التقاط الحجم/الموضع/الزخارف الأصلية مرة واحدة قبل أي
+تحويم (`CaptureBaseline`)، وإرجاعها **قبل** `Animator.Rebind()` لا بعده. الترتيب هو كل
+شيء — `Rebind` وحده كان يثبّت العطل لا يصلحه.
+
+> **لا تركّب `UIButtonHoverEffect` ولا `UIButtonFeedback` على هذه الأزرار.** كلاهما
+> يكتب `transform.localScale` كل إطار، والأنميتور يكتبه أيضًا بعد `Update` — فيتنازعان.
+> هما بديلان لأزرار **بلا** أنميتور (`Transition = None`).
+
+**حل جذري بديل** (لو أردت التخلص من المصدر): افتح كل كنترولر زر، اختر حالة `Normal`،
+وفي نافذة Animation أضف مفتاحًا لـ`Scale` بالحجم الطبيعي. عندها لا يحتاج أي كود.
+
+---
+
+## 9) الماوس + الكيبورد + الكنترولر معًا
+
+| المشكلة | الحل المطبَّق |
+|---|---|
+| زرّان بارزان معًا (واحد بالماوس وواحد محدَّد بالكنترولر) | `UISelectOnHover` — يُركَّب **تلقائيًا** على كل زر داخل `UIPanel` |
+| زر يبقى بارزًا والمؤشر بعيد عنه | `MenuManager` يتتبّع الجهاز القائد؛ حين يقود الماوس لا يفرض تحديدًا، و`UISelectOnHover` يلغيه عند خروج المؤشر |
+| صوت التحويم لا يُسمع بالكنترولر (مربوط على `EventTrigger > PointerEnter`) | `UISelectOnHover.OnSelect` ينادي الـ`EventTrigger` وحده — لا الكائن كله، وإلا ظنّ الـ`Button` أن المؤشر فوقه فعلق في `Highlighted` |
+
+**لا يحتاج أي عمل في الـ Inspector** — التركيب تلقائي من خانة
+`UIPanel > Auto Sync Mouse And Controller`.
+
+### فخ: الزر يصير "ناشفًا" لا يكبر إطلاقًا
+
+ترتيب أولويات `Selectable` (من `Selectable.cs:609`):
+
+```
+Disabled ← Pressed ← Selected ← Highlighted ← Normal
+```
+
+**`Selected` تسبق `Highlighted`.** فبمجرد أن يصير الزر محدَّدًا — بالكنترولر، أو
+بالماوس بعد إضافة `UISelectOnHover` — لا يدخل `Highlighted` أبدًا. وكليب `Selected`
+في كنترولرات عبير **فارغ** بينما كل التكبير في `Highlighted` وحده، فيختفي أي تفاعل.
+
+هذا يفسّر أيضًا لماذا لم يكن للكنترولر أي إبراز قبل ذلك أصلًا.
+
+**الحل في `UIPanel.RedirectEmptySelectedClip`:** يجعل زناد `Selected` يشير لحالة
+`Highlighted`. لكن **بشرط** أن يكون `Selected` فارغًا و`Highlighted` مليئًا:
+
+| الكنترولر | `Highlighted` | `Selected` | يُحوَّل؟ |
+|---|---|---|---|
+| `Play` / `Quit` / `Credits` / `Options` / `Back` / `Resume` / `Exit` | مليء | فارغ | ✔ |
+| `L1_Button` / `R1_Button` | **فارغ** | **مليء** | ✘ (معكوسان — تعميم التحويل يكسرهما) |
+
+### فخ ثانٍ: عنصر التحديد وحده يُنفّذ أمرًا
+
+`L1_Button` و `R1_Button` في الإعدادات عليهما `EventTrigger > Select → SetActive`
+(مرّتان لكل واحد). أي أن **مجرد تحديدهما يبدّل التبويب بلا أي كليك**.
+
+فلا يُركَّب عليهما `UISelectOnHover` وإلا صار مرور المؤشر فوقهما يقلب التبويبات وحده.
+`UIPanel.SelectionHasSideEffects` يكتشفهما تلقائيًا ويتخطاهما — يعملان بالكليك
+وبالكنترولر فقط.
+
+> القاعدة العامة: **لا تربط أمرًا على `Select`**، اربطه على `PointerClick` أو `Submit`.
+> `Select` تعني "وقع عليه المؤشر/التحديد"، لا "اختاره اللاعب".
+
+### الأصوات
+
+- صوت التحويم مربوط على `EventTrigger > PointerEnter` — أي بالماوس فقط أصلًا.
+  `UISelectOnHover.OnSelect` يناديه عند تنقّل الكنترولر ليُسمع هناك أيضًا.
+- **لا يُشغَّل** عند تحديد يفرضه فتح/إغلاق لوحة (`MenuManager.SelectionIsSilent`)،
+  وإلا سمعت نغمة زر عند بدء المشهد وعند كل فتح لوحة.
+- `MenuManager.ForceSelect` لا يعيد تحديد ما هو محدَّد أصلًا، فلا يتكرّر الصوت.
+- ⚠️ مصادر الصوت `Audio-Button-Hovor (1)` و `Audio-Button-Holder (2)` مكرّرة: نسخة تحت
+  `Pause-UI` (مطفأة مع اللوحة) ونسخة في الجذر. `PlayOneShot` على مصدر داخل كائن مطفأ
+  **لا يُصدر صوتًا**، فأزرار لوحة الإيقاف صامتة. اربطها بنسخة الجذر.
+
+### سلايدر الصوت لا يغيّر شيئًا
+
+`VolumeSlider` يعمل عبر `AudioManager.Instance`. ولم يكن هناك `AudioManager` في المشهد
+إطلاقًا، فكان `Instance` يساوي `null` والسلايدر لا يفعل شيئًا.
+
+الآن **`AudioManager` يُنشئ نفسه عند أول طلب** — لا يحتاج كائنًا في المشهد.
+
+| الحالة | Master | Music / SFX |
+|---|---|---|
+| بلا ميكسر (الوضع الحالي) | ✔ عبر `AudioListener.volume` — يخفض كل شيء بما فيه الموسيقى | ✘ تُحفظ فقط + تحذير في الكونسول |
+| مع `AudioMixer` مربوط | ✔ | ✔ |
+
+للفصل بين الموسيقى والمؤثرات لاحقًا: أنشئ الميكسر (قسم ١)، اربطه في خانة `Mixer`،
+و**عيّن `Output` لكل `AudioSource`** — حاليًا كلها `None (Audio Mixer Group)` فلا يمر
+صوت واحد عبر الميكسر.
+
+### فيضان تحذيرات `%` في الكونسول
+
+`%` هو حرف **`%`**، وخط `DK Crayon Crumble2 SDF` لا يحتوي عليه. كان
+`VolumeSlider` يكتب `"100%"` فيُطلق تحذيرًا **عند كل إطار من تحريك السلايدر**.
+
+صار اللاحقة في خانة `Value Suffix` وقيمتها الافتراضية فارغة. لو أردت علامة `%` فعلًا،
+أضف خط احتياطي في `Fallback Font Assets` داخل إعدادات TMP بدل كتابتها مباشرة.
+
+---
+
+## 10) جرد ربط الأزرار في Hub-Menu (فحص فعلي للسين)
+
+| الزر | `On Click` الحالي | الحكم |
+|---|---|---|
+| `Play_Button ` | PlayOneShot + `SceneLoader.LoadTargetScene` | ✔ (لكن المشهد غير مضاف للبناء) |
+| `Settings_Button ` | PlayOneShot + `MenuManager.Open → Settings_UI` | ✔ |
+| `Credits_Button ` | PlayOneShot + `MenuManager.Open → Credits_UI` | ✔ |
+| `Back_Button` (الكرِدِتس) | PlayOneShot + `MenuManager.Back` | ✔ |
+| **`Quit_Button `** | PlayOneShot **فقط** | ✘ **لا يخرج إطلاقًا** — أضف `SceneLoader.QuitGame` |
+| **`Back_Button1` (إعدادات القائمة)** | `Settings_UI.SetActive` + `Menu-UI.SetActive` | ✘ يتخطى المدير — استبدلهما بـ`MenuManager.Back` |
+| `Back_Button1` (إعدادات الإيقاف) | SetActive ×2 + `MenuManager.Back` | ⚠ مزدوج — احذف الـ SetActive |
+| `Settings_Button 2` (إيقاف) | SetActive ×2 | ⚠ قديم |
+| `Resume_Button` | `Pause-UI.SetActive` | ⚠ قديم — `MenuManager.CloseAll` |
+| `Exit_Button ` | `Pause_Menu.LoadMainMenu` → `LoadScene(0)` | ✘ المشهد 0 هو `SampleScene` لا `Hub-Menu` |
+
+**شبكة الأمان في الكود:** `UIPanel.OnEnable/OnDisable` تُصلح الحالة المرئية وترتيب اللوحات
+حتى لو غُيّرت اللوحة بـ`SetActive` مباشرة. لكنها علاج للعرض فقط — الربط الصحيح أفضل.
+
+### قائمة البناء ناقصة
+
+`ProjectSettings/EditorBuildSettings.asset` فيه `SampleScene` و `Loading` فقط.
+فـ`SceneLoader.LoadTargetScene` (المشهد `Hub`) سيرفض التحميل ويطبع خطأً واضحًا.
+أضف المشاهد من `File > Build Profiles > Scene List` — القسم 0 أعلاه.
+
+---
+
 ## سكربتات قديمة يُستغنى عنها
 
 `Main_Menu_AB` · `MENU` · `Load_Scene_Script` · `MainMenuController` · `Pause_Menu` · `Slider_Script` · `HoverScript`

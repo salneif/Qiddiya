@@ -8,16 +8,19 @@ public class PuzzleManager : MonoBehaviour
     [SerializeField] private float targetMinutes = 180f;
     [SerializeField] private float tolerance = 2f;
     [SerializeField] private bool debug;
-
-    // win animation
     [SerializeField] private Transform platform;
+    [SerializeField] private PlatformRiseStop platformStop;
     [SerializeField] private float rotateSpeed = 30f;
     [SerializeField] private float riseSpeed = 0.5f;
-    [SerializeField] private float riseHeight = 3f;
+    [SerializeField] private float riseHeight = 20f;
+    [SerializeField] private AudioSource platformAudio;
+    [SerializeField] private AudioClip startSound;
+    [SerializeField] private AudioClip riseLoop;
 
     public event Action OnPuzzleSolved;
 
     private bool _solved;
+    private bool _riseComplete;
     private float _risen;
 
     void OnEnable()
@@ -34,16 +37,33 @@ public class PuzzleManager : MonoBehaviour
 
     void Update()
     {
-        if (!_solved || platform == null) return;
+        if (!_solved || platform == null || _riseComplete) return;
+
+        if (platformStop != null && platformStop.Blocked)
+        {
+            finishRise();
+            return;
+        }
 
         platform.Rotate(0f, rotateSpeed * Time.deltaTime, 0f);
 
-        if (_risen < riseHeight)
+        float step = riseSpeed * Time.deltaTime;
+        if (_risen + step >= riseHeight)
         {
-            float step = Mathf.Min(riseSpeed * Time.deltaTime, riseHeight - _risen);
-            platform.position += Vector3.up * step;
-            _risen += step;
+            platform.position += Vector3.up * (riseHeight - _risen);
+            _risen = riseHeight;
+            finishRise();
+            return;
         }
+
+        platform.position += Vector3.up * step;
+        _risen += step;
+    }
+
+    void finishRise()
+    {
+        _riseComplete = true;
+        stopRiseLoop();
     }
 
     void onLeverChanged(Lever lever)
@@ -63,8 +83,30 @@ public class PuzzleManager : MonoBehaviour
         {
             _solved = true;
             Debug.Log("SOLVED");
+            playPlatformAudio();
             OnPuzzleSolved?.Invoke();
         }
+    }
+
+    void playPlatformAudio()
+    {
+        if (platformAudio == null) return;
+
+        if (startSound != null)
+            platformAudio.PlayOneShot(startSound);
+
+        if (riseLoop == null) return;
+
+        platformAudio.clip = riseLoop;
+        platformAudio.loop = true;
+        platformAudio.Play();
+    }
+
+    void stopRiseLoop()
+    {
+        if (platformAudio == null || !platformAudio.loop) return;
+        platformAudio.Stop();
+        platformAudio.loop = false;
     }
 
     public bool IsSolved => _solved;

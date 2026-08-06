@@ -126,6 +126,29 @@ public class FlagItem : MonoBehaviour
     }
 
     /// <summary>
+    /// يلصق العلم بلاعب فورًا بلا لمس التريغر — يستخدمها <see cref="FlagCarry"/>
+    /// لاستعادة الحمل عند بداية سين جديد، فيدخل اللاعب وهو حامله.
+    /// تطلق أحداث الالتقاط كالمعتاد، فتكبر الدائرة وتتبدّل الموسيقى وحدها.
+    /// </summary>
+    public void AttachTo(Transform player)
+    {
+        if (IsHeld || player == null) return;
+        PickUp(player);
+    }
+
+    /// <summary>
+    /// يقفل العلم في موضعه الحالي فلا يُلتقط مرة أخرى — للعلم المزروع في قاعدته
+    /// نهائيًا. (تعطيل الكولايدر وحده لا يكفي لأن ReturnHome يعيد تفعيله.)
+    /// </summary>
+    public void LockInPlace()
+    {
+        IsHeld = false;
+        holderKillable = null;
+        transform.SetParent(null);
+        if (pickupCollider != null) pickupCollider.enabled = false;
+    }
+
+    /// <summary>
     /// يضع العلم في نقطة المقبس — ينادى حصرًا من FlagSocket
     /// (لا توجد طريقة أخرى لترك العلم).
     /// </summary>

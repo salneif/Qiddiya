@@ -31,6 +31,9 @@ public class FlagSocket : MonoBehaviour
     [Tooltip("عند وضع العلم في هذا المقبس تحديدًا")]
     public UnityEvent onFlagPlacedHere;
 
+    /// <summary>العلم الذي يقبله هذا المقبس — يستخدمه <see cref="FlagBase"/> لقفله بعد الزرع.</summary>
+    public FlagItem Flag => flag;
+
     private bool playerInside;
 
     private void Reset()
