@@ -119,16 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!95 &13099760 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 8580747092853854330, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-  m_PrefabInstance: {fileID: 7127815602289805949}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &107651325 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 155197962420096804, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
-  m_PrefabInstance: {fileID: 870384909}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &203844586
 GameObject:
   m_ObjectHideFlags: 0
@@ -382,42 +372,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5663cd20e7cb8214ab48ad96b3146529, type: 3}
---- !u!1 &491218091 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8017891553713565822, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-  m_PrefabInstance: {fileID: 7127815602289805949}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &656164582
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 656164583}
-  m_Layer: 0
-  m_Name: EndPoint
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &656164583
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 656164582}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0, y: 1.0022, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1413020791}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &822397297
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -523,94 +477,15 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 268912960775744698, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 3468218546202418349, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
       propertyPath: m_Name
       value: Zipline
       objectReference: {fileID: 0}
-    - target: {fileID: 4576626751386048774, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
-      propertyPath: grip
-      value: 
-      objectReference: {fileID: 107651325}
-    - target: {fileID: 4576626751386048774, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
-      propertyPath: endpointTransform
-      value: 
-      objectReference: {fileID: 656164583}
-    - target: {fileID: 6560838092910369334, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1428.569
-      objectReference: {fileID: 0}
-    - target: {fileID: 6560838092910369334, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -1470
-      objectReference: {fileID: 0}
-    - target: {fileID: 6560838092910369334, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -587
-      objectReference: {fileID: 0}
-    - target: {fileID: 7173122688070011402, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7173122688070011402, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 6560838092910369334, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 656164583}
-    - targetCorrespondingSourceObject: {fileID: 7173122688070011402, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1187116440}
+    m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
---- !u!4 &870384910 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7173122688070011402, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
-  m_PrefabInstance: {fileID: 870384909}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &1187116439
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1187116440}
-  m_Layer: 0
-  m_Name: Point
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1187116440
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1187116439}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -720.6, y: -54.67, z: -6.58}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 870384910}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &1413020791 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6560838092910369334, guid: 4220ad44318c1b347b9c89615f5aa430, type: 3}
-  m_PrefabInstance: {fileID: 870384909}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1499458437
 GameObject:
   m_ObjectHideFlags: 0
@@ -17249,98 +17124,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 132322277452640566, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_Height
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.size
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[1].m_ActionId
-      value: 04b3895f-2046-47f5-946b-e88c958478ae
-      objectReference: {fileID: 0}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[2].m_ActionId
-      value: d26fac3c-1704-4acf-85d1-1bbef3b8b57d
-      objectReference: {fileID: 0}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[1].m_ActionName
-      value: 'DefulatController/Jump[/Keyboard/space]'
-      objectReference: {fileID: 0}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[2].m_ActionName
-      value: 'DefulatController/LadderMovement[/Keyboard/s,/Keyboard/w]'
-      objectReference: {fileID: 0}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[1].m_PersistentCalls.m_Calls.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[2].m_PersistentCalls.m_Calls.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[2].m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 8228169314593767981}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[2].m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 8228169314593767987}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_CallState
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[2].m_PersistentCalls.m_Calls.Array.data[0].m_CallState
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: OnInputJump
-      objectReference: {fileID: 0}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[2].m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: OnInputLadder
-      objectReference: {fileID: 0}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: A_CrouchAndJump, Assembly-CSharp
-      objectReference: {fileID: 0}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[2].m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: LadderController, Assembly-CSharp
-      objectReference: {fileID: 0}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: UnityEngine.Object, UnityEngine
-      objectReference: {fileID: 0}
-    - target: {fileID: 1526919308439671700, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: m_ActionEvents.Array.data[2].m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: UnityEngine.Object, UnityEngine
-      objectReference: {fileID: 0}
-    - target: {fileID: 2197621358410965187, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: jumpForce
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2197621358410965187, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: crouchWalkSpeed
-      value: 1
+    - target: {fileID: 4415379080658964846, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+      propertyPath: speed
+      value: 2.5
       objectReference: {fileID: 0}
     - target: {fileID: 4415379080658964846, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      propertyPath: crouchAndJumpSystem
-      value: 
-      objectReference: {fileID: 8228169314593767981}
+      propertyPath: zMoveSpeed
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4415379080658964846, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
+      propertyPath: normalWalkSpeed
+      value: 2.5
+      objectReference: {fileID: 0}
     - target: {fileID: 4435066882100454182, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
       propertyPath: m_Name
       value: Gameplay
@@ -17388,13 +17183,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8017891553713565822, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      insertIndex: 6
-      addedObject: {fileID: 8228169314593767987}
-    - targetCorrespondingSourceObject: {fileID: 8017891553713565822, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 8228169314593767993}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
 --- !u!4 &7132702390078078859
 Transform:
@@ -20204,51 +19993,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 9093604355590460308, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
   m_PrefabInstance: {fileID: 7127815602289805949}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &8228169314593767981 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2197621358410965187, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
-  m_PrefabInstance: {fileID: 7127815602289805949}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 491218091}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 83d687df42658204a90beb9c8f3e3f5c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::A_Crouch
---- !u!114 &8228169314593767987
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 491218091}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 70889113ca814594d96ee04abd098dd8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LadderController
-  AlreadyOnLadderNow: 0
-  timeToStopMovingTheplayer: 1
-  CurrentTimeTostopMovingTheplayer: 0
-  speedToGtOutOftheLadder: 0.5
-  climbSpeed: 1
-  animator: {fileID: 13099760}
---- !u!114 &8228169314593767993
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 491218091}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8a4b8e896201c3144b4f9056e792712f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::A_ZipLineSystem
-  WeAreInZipLine: 0
-  animator: {fileID: 13099760}
-  currentGrip: {fileID: 0}
-  ziplineSpeed: 5
 --- !u!1 &8230469993904197259
 GameObject:
   m_ObjectHideFlags: 0

@@ -15,6 +15,8 @@ public class Lever : MonoBehaviour
     [SerializeField] private float downAngle = 45f;
     [SerializeField] private float animSpeed = 8f;
     [SerializeField] private KeyCode interactKey = KeyCode.E;
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip interactClip;
 
     public event Action<Lever> OnLeverChanged;
 
@@ -46,6 +48,9 @@ public class Lever : MonoBehaviour
 
     void toggle()
     {
+        if (audioSource != null && interactClip != null)
+            audioSource.PlayOneShot(interactClip);
+
         if (_state == LeverState.Middle) _state = LeverState.Up;
         else if (_state == LeverState.Up) _state = LeverState.Down;
         else _state = LeverState.Middle;

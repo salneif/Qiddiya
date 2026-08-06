@@ -10,18 +10,27 @@ public class A_CrouchAndJump : MonoBehaviour
     // we will do that by event system 
     // here we will fire the event and tell movement code about it with the required varlibals
     public event Action<bool, float> OnCrouch;
-    public event Action<float> OnJump;
+    public event Action<float, bool , bool> OnJump;
 
 
     // we need to send some data with it 
     [Header("Crouch Numbers")]
     [SerializeField] private float crouchWalkSpeed;
-    [SerializeField] private bool isCrouching = false;
+     public bool isCrouching = false;
 
     [Header("Jump Numbers")]
     [SerializeField] private float jumpForce;
+    [SerializeField] private float jumpWindow = 0.5f;
+    [SerializeField] private float _currentWidow;
+    [SerializeField] private bool canJump;
+
+    [Header("Ref")]
+    [SerializeField] private A_Ballon a_Ballon;
+
+
 
     private CharacterController characterController;
+    private bool canDoubleJump = false;
 
 
     private void Awake()
@@ -31,6 +40,13 @@ public class A_CrouchAndJump : MonoBehaviour
     private void Start()
     {
         characterController = GetComponent<CharacterController>();
+        if(a_Ballon != null )
+        a_Ballon.OnBaloonPick += OnBaloonPick;
+    }
+
+    private void OnBaloonPick()
+    {
+        canDoubleJump = true;
     }
 
     public void OnInputCrouch(InputAction.CallbackContext context)
@@ -46,28 +62,38 @@ public class A_CrouchAndJump : MonoBehaviour
             {
                 isCrouching = true;
             }
-           
-        }
-       
-    }
 
+        }
+    }
+    private void Update()
+    {
+        if (PlayerController.instance != null)
+        {
+            if (!PlayerController.instance.IsGrounded)
+            {
+                if (_currentWidow >= 0)
+                {
+                    _currentWidow -= Time.deltaTime;
+                }
+                else
+                {
+                    canJump = false;
+                }
+            }
+            else
+            {
+                _currentWidow = jumpWindow;
+                canJump = true;
+            }
+        }
+    }
     public void OnInputJump(InputAction.CallbackContext context)
     {
-        
 
-        if(context.performed && !isCrouching && characterController.isGrounded)
+
+        if (context.performed && !isCrouching && (canJump || canDoubleJump))
         {
-            OnJump?.Invoke(jumpForce);
+            OnJump?.Invoke(jumpForce , canDoubleJump , canJump);
         }
-
-
-
-
-
-
-
-
-
-     
     }
 }

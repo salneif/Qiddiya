@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -14,10 +15,9 @@ public class PlayerController : MonoBehaviour
     public float acceleration = 35f;
     public float deceleration = 50f;
     public float zMoveSpeed = 2.5f;
-    public float zMin = -1f;
-    public float zMax = 2f;
     public float gravity = -20f;
     public float pushSpeedScale = 0.6f;
+    public bool cameraRelative = false;
     private float _currentSpeed;
     private float _currentZSpeed;
     private float _verticalVelocity;
@@ -27,6 +27,12 @@ public class PlayerController : MonoBehaviour
     private bool _inputEnabled = true;
     private BoxPusher _pusher;
     private bool _isInAir;
+    private TopDownCameraFollow _topDownCam;
+    private Vector3 _moveRight = Vector3.right;
+    private Vector3 _moveForward = Vector3.forward;
+    private int _lastRawX;
+    private int _lastRawZ;
+    private float _baseZMoveSpeed;
 
     private static readonly int SpeedHash = Animator.StringToHash("speed");
     private static readonly int GroundedHash = Animator.StringToHash("isGrounded");
@@ -43,8 +49,15 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float blendTimeMovement;
     private float _blendSpeed;
 
+    // double jump 
+    private bool alreadyDoubleJumped = false;
+
     // Ali - Conections
     [SerializeField] private A_CrouchAndJump crouchAndJumpSystem;
+
+    // ref 
+    [SerializeField] private A_PlayerDeath_WaterSection a_PlayerDeath;
+    
 
 
     private void Awake()
@@ -62,23 +75,65 @@ public class PlayerController : MonoBehaviour
     {
         characterController = GetComponent<CharacterController>();
         _pusher = GetComponent<BoxPusher>();
+        _baseZMoveSpeed = zMoveSpeed;
 
         crouchAndJumpSystem.OnCrouch += OnCrouch;
         crouchAndJumpSystem.OnJump += OnJump;
+
+        if (Camera.main != null)
+            _topDownCam = Camera.main.GetComponent<TopDownCameraFollow>();
+
+      
     }
 
-    private void OnJump(float jumpForce)
+    private void OnEnable()
+    {
+        if(a_PlayerDeath != null)
+        a_PlayerDeath.OnPlayerFall += OnPlayerFall;
+
+        A_Jumppad.OnJumppad += OnJumppad;
+
+    }
+
+  
+
+    private void OnDisable()
+    {
+        if(a_PlayerDeath != null)
+        a_PlayerDeath.OnPlayerFall -= OnPlayerFall;
+
+        A_Jumppad.OnJumppad -= OnJumppad;
+    }
+
+    private void OnPlayerFall()
+    {
+        characterController.Move(new Vector3(0,gravity,0));
+    }
+
+    private void OnJump(float jumpForce , bool canDoubleJump , bool canJump)
     {
         if (!CanMove)
         {
             return ;
         }
-       
-        _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
-        animator.SetTrigger("Jump");
-            
+        if (canJump)
+        {
+            _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
+            animator.SetTrigger("Jump");
+        }
+        else if(!characterController.isGrounded && canDoubleJump && !alreadyDoubleJumped)
+        {
+            _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
+            animator.SetTrigger("Jump2");
+            alreadyDoubleJumped = true;
+        }   
 
         
+    }
+    private void OnJumppad(float jumpForce)
+    {
+        _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
+        animator.SetTrigger("Jump");
     }
 
     private void OnCrouch(bool isCrouching, float CrouchMoveSpeed)
@@ -90,6 +145,7 @@ public class PlayerController : MonoBehaviour
         if(isCrouching)
         {
             speed = normalWalkSpeed;
+            zMoveSpeed = _baseZMoveSpeed;
             animator.SetBool("IsCrouch" , false);
             characterController.height = 1;
             characterController.center = Vector3.zero;
@@ -98,6 +154,7 @@ public class PlayerController : MonoBehaviour
         {
             animator.SetBool("IsCrouch", true);
             speed = CrouchMoveSpeed;
+            zMoveSpeed = CrouchMoveSpeed;
             characterController.height = 0.5f;
             characterController.center = new Vector3(0, -0.25f, 0);
         }
@@ -111,11 +168,41 @@ public class PlayerController : MonoBehaviour
 
         if (CanMove)
         {
-            move();
+            updateMoveBasis();
             zMove();
+            move();
             flip();
             updateAnimator();
         }
+
+        if (IsGrounded)
+        {
+            alreadyDoubleJumped = false;
+        }
+    }
+
+    void updateMoveBasis()
+    {
+        if (!cameraRelative)
+        {
+            _moveRight = Vector3.right;
+            _moveForward = Vector3.forward;
+            return;
+        }
+
+        int rx = _inputX > 0.01f ? 1 : (_inputX < -0.01f ? -1 : 0);
+        int rz = _inputZ > 0.01f ? 1 : (_inputZ < -0.01f ? -1 : 0);
+        if (rx == _lastRawX && rz == _lastRawZ) return;
+
+        _lastRawX = rx;
+        _lastRawZ = rz;
+
+        if (rx == 0 && rz == 0) return;
+
+        float yaw = _topDownCam != null ? _topDownCam.HeadingYaw : 0f;
+        Quaternion q = Quaternion.Euler(0f, yaw, 0f);
+        _moveRight = q * Vector3.right;
+        _moveForward = q * Vector3.forward;
     }
 
     void move()
@@ -133,31 +220,25 @@ public class PlayerController : MonoBehaviour
         float rate = Mathf.Abs(_inputX) > 0.01f ? acceleration : deceleration;
         _currentSpeed = Mathf.MoveTowards(_currentSpeed, target, rate * Time.deltaTime);
 
-        Vector3 finalMove = new Vector3(_currentSpeed, _verticalVelocity, _currentZSpeed);
-        characterController.Move(finalMove * Time.deltaTime);
+        Vector3 planar = _moveRight * _currentSpeed + _moveForward * _currentZSpeed;
+        Vector3 finalMove = new Vector3(planar.x, _verticalVelocity, planar.z);
+        if (characterController.enabled == true)
+        {
+            characterController.Move(finalMove * Time.deltaTime);
+        }
         _isGrounded = characterController.isGrounded;
     }
 
     void zMove()
     {
-        if (_pusher != null && _pusher.IsPushing) return;
-
-        float target = _inputZ * zMoveSpeed;
-        float rate = Mathf.Abs(_inputZ) > 0.01f ? acceleration : deceleration;
+        float target = (_pusher != null && _pusher.IsPushing) ? 0f : _inputZ * zMoveSpeed;
+        float rate = Mathf.Abs(target) > 0.01f ? acceleration : deceleration;
         _currentZSpeed = Mathf.MoveTowards(_currentZSpeed, target, rate * Time.deltaTime);
-
-         Vector3 pos = transform.position;
-          pos.z = Mathf.Clamp(pos.z + _currentZSpeed * Time.deltaTime, zMin, zMax);
-         transform.position = pos;
-
-       
-
-
     }
 
     void flip()
     {
-        Vector3 direction = new Vector3(_inputX,0,_inputZ);
+        Vector3 direction = _moveRight * _inputX + _moveForward * _inputZ;
         if (direction.magnitude < 0.01f) { return; }
         transform.rotation = Quaternion.LookRotation(direction);
 
@@ -185,14 +266,10 @@ public class PlayerController : MonoBehaviour
          animator.SetFloat("MovementBlend", _blendSpeed);
 
 
-        if(!IsGrounded)
+        bool isCurrentlyInAir = animator.GetBool("InAir");
+        if (isCurrentlyInAir != !IsGrounded)
         {
-            animator.SetBool("InAir" , true);
-        }
-        else
-        {
-            animator.SetBool("InAir", false);
-
+            animator.SetBool("InAir", !IsGrounded);
         }
         //Ali
 
