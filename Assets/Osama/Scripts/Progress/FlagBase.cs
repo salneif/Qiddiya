@@ -110,6 +110,21 @@ public class FlagBase : MonoBehaviour
         if (GameProgress.Instance.AllPlanted) onAllFlagsPlanted?.Invoke();
     }
 
+    /// <summary>
+    /// اختبار سريع: كليك يمين على اسم المكوّن أثناء اللعب → يزرع العلم فورًا
+    /// بلا ما تجيبه من مرحلته. لفحص سلسلة (تنوير الجزيرة + فتح الباب) وحدها.
+    /// </summary>
+    [ContextMenu("تجربة: ازرع هذا العلم الآن")]
+    private void DebugPlant()
+    {
+        if (!Application.isPlaying)
+        {
+            Debug.LogWarning("[FlagBase] التجربة تعمل أثناء Play فقط.", this);
+            return;
+        }
+        Plant();
+    }
+
     private void LockFlag()
     {
         if (!lockFlagAfterPlant || socket == null || socket.Flag == null) return;

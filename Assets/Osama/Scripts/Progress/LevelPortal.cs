@@ -48,14 +48,42 @@ public class LevelPortal : MonoBehaviour
              "بدونه يُحمَّل السين بلا تعتيم.")]
     [SerializeField] private ScreenFader fader;
 
+    [Header("عند الاقتراب")]
+    [Tooltip("مسافة الإحساس بالبوابة (متر). صفر = عطّل الاقتراب كله.")]
+    [SerializeField] private float approachDistance = 6f;
+    [Tooltip("مصدر الصوت — يُلتقط تلقائيًا من نفس الكائن إذا تُرك فارغًا")]
+    [SerializeField] private AudioSource audioSource;
+    [Tooltip("صوت مرة واحدة عند الاقتراب والبوابة مفتوحة (رنّة دعوة)")]
+    [SerializeField] private AudioClip approachSound;
+    [Tooltip("صوت مرة واحدة عند الاقتراب والبوابة مقفولة (قعقعة قفل)")]
+    [SerializeField] private AudioClip lockedApproachSound;
+    [Tooltip("صوت محاولة العبور وهي مقفولة (ضغط الزر بلا فايدة)")]
+    [SerializeField] private AudioClip blockedSound;
+    [Tooltip("همهمة مستمرة تعلو كلما اقتربت وتخفت كلما ابتعدت")]
+    [SerializeField] private AudioClip ambientLoop;
+    [Tooltip("أعلى مستوى للهمهمة (عند الوقوف على البوابة)")]
+    [Range(0f, 1f)] [SerializeField] private float ambientVolume = 0.6f;
+
     [Header("أحداث")]
     [Tooltip("لحظة بدء الانتقال (أوقف حركة اللاعب، شغّل صوتًا...)")]
     public UnityEvent onTransitionStarted;
     [Tooltip("عند محاولة العبور والشرط غير متحقق (صوت باب مقفول، تلميح...)")]
     public UnityEvent onBlocked;
+    [Tooltip("عند دخول مدى الاقتراب — أظهر تلميح \"اضغط E\"")]
+    public UnityEvent onPlayerApproached;
+    [Tooltip("عند الابتعاد — أخفِ التلميح")]
+    public UnityEvent onPlayerLeft;
+
+    /// <summary>هل شرط الفتح متحقق؟ (لا يشمل شرط حمل العلم — ذاك شرط خروج لا فتح)</summary>
+    public bool IsUnlocked => requirePlantedFlag == FlagId.None ||
+                              GameProgress.Instance.IsPlanted(requirePlantedFlag);
 
     private bool playerInside;
     private bool leaving;
+    private Transform player;
+    private bool playerNear;
+    private bool loopPlaying;
+    private AudioSource ambientSource;
 
     private void Reset()
     {
@@ -66,6 +94,7 @@ public class LevelPortal : MonoBehaviour
     private void Start()
     {
         if (fader == null) fader = FindFirstObjectByType<ScreenFader>();
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -83,10 +112,85 @@ public class LevelPortal : MonoBehaviour
 
     private void Update()
     {
+        UpdateApproach();
+
         if (!playerInside || leaving || activationKey == Key.None) return;
         if (Keyboard.current == null) return;
 
         if (Keyboard.current[activationKey].wasPressedThisFrame) TryGo();
+    }
+
+    /// <summary>
+    /// الإحساس بالبوابة بالمسافة لا بكولايدر ثانٍ — فيعمل حتى على بوابة بلا كولايدر
+    /// أصلًا، ولا يتعارض مع كولايدر البيس المجاور.
+    /// </summary>
+    private void UpdateApproach()
+    {
+        if (approachDistance <= 0f) return;
+
+        if (player == null)
+        {
+            var go = GameObject.FindGameObjectWithTag(playerTag);
+            if (go == null) return;
+            player = go.transform;
+        }
+
+        float dist = Vector3.Distance(player.position, transform.position);
+        bool near = dist <= approachDistance;
+
+        if (near && !playerNear)
+        {
+            playerNear = true;
+            Play(IsUnlocked ? approachSound : lockedApproachSound);
+            onPlayerApproached?.Invoke();
+        }
+        else if (!near && playerNear)
+        {
+            playerNear = false;
+            onPlayerLeft?.Invoke();
+        }
+
+        UpdateAmbient(near, dist);
+    }
+
+    /// <summary>
+    /// الهمهمة تخفت بالمسافة <b>بالكود</b> لا بالصوت ثلاثي الأبعاد — كاميرا اللعبة
+    /// بعيدة عن اللاعب، و Spatial Blend = 1 معها يعني صوتًا لا يُسمع (خطأ ١١ في الريدمي).
+    /// خلّ الـ AudioSource ثنائي الأبعاد ودع هذي الدالة تتولّى المسافة.
+    /// </summary>
+    private void UpdateAmbient(bool near, float dist)
+    {
+        if (ambientLoop == null) return;
+
+        // مصدر مستقل للهمهمة: لو شاركت المصدر مع الأصوات اللحظية لضرب صوت
+        // الاقتراب في حجم الهمهمة — وهو صفر تقريبًا عند حافة المدى، فما يُسمع أصلًا.
+        if (ambientSource == null)
+        {
+            ambientSource = gameObject.AddComponent<AudioSource>();
+            ambientSource.playOnAwake = false;
+            ambientSource.loop = true;
+            ambientSource.spatialBlend = 0f;
+            ambientSource.clip = ambientLoop;
+        }
+
+        if (near && !loopPlaying)
+        {
+            ambientSource.Play();
+            loopPlaying = true;
+        }
+        else if (!near && loopPlaying)
+        {
+            ambientSource.Stop();
+            loopPlaying = false;
+        }
+
+        if (loopPlaying)
+            ambientSource.volume = ambientVolume * (1f - Mathf.Clamp01(dist / approachDistance));
+    }
+
+    private void Play(AudioClip clip)
+    {
+        if (clip != null && audioSource != null) audioSource.PlayOneShot(clip);
     }
 
     /// <summary>يحاول الانتقال ويحترم الشروط — هذا ما يناديه التريغر والزر.</summary>
@@ -94,16 +198,17 @@ public class LevelPortal : MonoBehaviour
     {
         if (leaving) return;
 
-        var progress = GameProgress.Instance;
-
-        if (requirePlantedFlag != FlagId.None && !progress.IsPlanted(requirePlantedFlag))
+        if (!IsUnlocked)
         {
+            Play(blockedSound);
             onBlocked?.Invoke();
             return;
         }
 
-        if (requireCarriedFlag != FlagId.None && !progress.IsCarrying(requireCarriedFlag))
+        if (requireCarriedFlag != FlagId.None &&
+            !GameProgress.Instance.IsCarrying(requireCarriedFlag))
         {
+            Play(blockedSound);
             onBlocked?.Invoke();
             return;
         }
@@ -149,10 +254,19 @@ public class LevelPortal : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
+        // الأزرق = منطقة التفعيل (الكولايدر)
         var c = GetComponent<Collider>();
-        if (c == null) return;
+        if (c != null)
+        {
+            Gizmos.color = new Color(0.3f, 0.8f, 1f, 0.8f);
+            Gizmos.DrawWireCube(c.bounds.center, c.bounds.size);
+        }
 
-        Gizmos.color = new Color(0.3f, 0.8f, 1f, 0.8f);
-        Gizmos.DrawWireCube(c.bounds.center, c.bounds.size);
+        // البنفسجي = مدى الصوت والتلميح — دائمًا أوسع من منطقة التفعيل
+        if (approachDistance > 0f)
+        {
+            Gizmos.color = new Color(0.7f, 0.5f, 1f, 0.5f);
+            Gizmos.DrawWireSphere(transform.position, approachDistance);
+        }
     }
 }

@@ -138,6 +138,7 @@ public class GameProgress : MonoBehaviour
     }
 
     /// <summary>يمسح كل التقدّم — اربطه بزر "لعبة جديدة" في القائمة الرئيسية.</summary>
+    [ContextMenu("امسح كل التقدّم")]
     public void ResetProgress()
     {
         carriedFlag = FlagId.None;

@@ -7,6 +7,10 @@ public class WinSequence : MonoBehaviour
     [SerializeField] private CanvasGroup fadeOverlay;
     [SerializeField] private float holdDuration = 2f;
     [SerializeField] private float fadeDuration = 1.5f;
+    // [SerializeField] private GameObject collider1;
+    // [SerializeField] private GameObject collider2;
+    // [SerializeField] private GameObject collider3;
+    // [SerializeField] private GameObject collider4;
 
     public void Trigger()
     {
@@ -17,7 +21,7 @@ public class WinSequence : MonoBehaviour
     {
         player.SetInputEnabled(false);
 
-        yield return new WaitForSeconds(holdDuration);
+        // yield return new WaitForSeconds(holdDuration);
 
         if (fadeOverlay != null)
         {
@@ -30,5 +34,9 @@ public class WinSequence : MonoBehaviour
             }
             fadeOverlay.alpha = 1f;
         }
+        // collider1.SetActive(true);
+        // collider2.SetActive(true);
+        // collider3.SetActive(true);
+        // collider4.SetActive(true);
     }
 }
