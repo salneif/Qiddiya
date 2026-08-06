@@ -47,6 +47,10 @@ public class LevelPortal : MonoBehaviour
     [Tooltip("مموّه الشاشة — يُلتقط تلقائيًا من السين إذا تُرك فارغًا. " +
              "بدونه يُحمَّل السين بلا تعتيم.")]
     [SerializeField] private ScreenFader fader;
+    [Tooltip("يمسح كل التقدّم قبل الانتقال — فعّله في بوابة العودة للقائمة الرئيسية. " +
+             "بدونه تبدأ اللعبة التالية والأعلام الثلاثة مزروعة أصلًا، " +
+             "لأن GameProgress يعيش بين السينات ولا يموت إلا بإغلاق اللعبة.")]
+    [SerializeField] private bool resetProgressOnLeave = false;
 
     [Header("عند الاقتراب")]
     [Tooltip("مسافة الإحساس بالبوابة (متر). صفر = عطّل الاقتراب كله.")]
@@ -250,8 +254,11 @@ public class LevelPortal : MonoBehaviour
             yield break;
         }
 
-        // من أين جاء اللاعب — يقرأها PlayerSpawnRouter في الوجهة
-        GameProgress.Instance.SetLastScene(SceneManager.GetActiveScene().name);
+        if (resetProgressOnLeave)
+            GameProgress.Instance.ResetProgress();   // عودة للقائمة = لعبة جديدة
+        else
+            // من أين جاء اللاعب — يقرأها PlayerSpawnRouter في الوجهة
+            GameProgress.Instance.SetLastScene(SceneManager.GetActiveScene().name);
 
         if (fader != null) fader.FadeOutAndLoad(sceneName);
         else SceneManager.LoadSceneAsync(sceneName);
