@@ -18,8 +18,21 @@ public class FlagItem : MonoBehaviour
     [Header("الالتقاط")]
     [Tooltip("وسم اللاعب")]
     [SerializeField] private string playerTag = "Player";
-    [Tooltip("إزاحة العلم عن مركز اللاعب أثناء الحمل (فوق الرأس مثل CTF)")]
+    [Tooltip("إزاحة العلم عن مركز اللاعب أثناء الحمل فوق الرأس — تُستخدم فقط إذا أطفأت Carry On Back")]
     [SerializeField] private Vector3 holdOffset = new Vector3(0f, 1.8f, -0.15f);
+
+    [Header("الحمل على الظهر")]
+    [Tooltip("يُحمل العلم على ظهر اللاعب بدل فوق رأسه — ما يغطي الشخصية ولا يزعج. " +
+             "أطفئه ليرجع فوق الرأس (Hold Offset).")]
+    [SerializeField] private bool carryOnBack = true;
+    [Tooltip("موضع العلم على الظهر بالنسبة للاعب: Y = الارتفاع، Z سالب = وراه. " +
+             "لو طلع على جنبه بدل ظهره، انقل الرقم من Z إلى X.")]
+    [SerializeField] private Vector3 backOffset = new Vector3(0f, 1.1f, -0.45f);
+    [Tooltip("ميلان العلم على الظهر (درجات)")]
+    [SerializeField] private Vector3 backRotation = Vector3.zero;
+    [Tooltip("حجم العلم وهو محمول نسبةً لحجمه الأصلي. يرجع لحجمه كاملًا لحظة غرسه.")]
+    [Range(0.1f, 1f)]
+    [SerializeField] private float heldScale = 0.5f;
 
     [Header("العودة عند إعادة الضبط")]
     [Tooltip("نقطة عودة العلم عند الموت — عادة مقبسه. " +
@@ -52,6 +65,9 @@ public class FlagItem : MonoBehaviour
     public bool IsHeld { get; private set; }
 
     private Collider pickupCollider;
+    private Vector3 startScale;              // حجمه الأصلي في العالم — يرجع له عند الغرس
+    private bool hasStartScale;
+    private FlagItem primary;                // أول FlagItem على الكائن — مصدر إعدادات الحمل
     private Vector3 startPosition;
     private Quaternion startRotation;
     private PlayerKillable holderKillable;   // حامل العلم الحالي، لمراقبة موته
@@ -65,6 +81,9 @@ public class FlagItem : MonoBehaviour
         if (audioSource == null) audioSource = GetComponent<AudioSource>();
 
         startPosition = transform.position;
+        startScale = transform.lossyScale;
+        hasStartScale = true;
+        primary = GetComponents<FlagItem>()[0];
         startRotation = transform.rotation;
     }
 
@@ -81,7 +100,7 @@ public class FlagItem : MonoBehaviour
         bool wasHeld = IsHeld;
         IsHeld = false;
 
-        transform.SetParent(null);
+        Detach();
         transform.SetPositionAndRotation(
             returnPoint != null ? returnPoint.position : startPosition,
             returnPoint != null ? returnPoint.rotation : startRotation);
@@ -122,8 +141,7 @@ public class FlagItem : MonoBehaviour
         pickupCollider.enabled = false; // لا يُلتقط مرتين ولا يعيق الحركة
 
         transform.SetParent(player);
-        transform.localPosition = holdOffset;
-        transform.localRotation = Quaternion.identity;
+        ApplyCarryPose();
 
         Play(pickupSound);
         onPickedUp?.Invoke();
@@ -168,7 +186,7 @@ public class FlagItem : MonoBehaviour
         locked = true;
         IsHeld = false;
         holderKillable = null;
-        transform.SetParent(null);
+        Detach();
         if (pickupCollider == null) pickupCollider = GetComponent<Collider>();
         if (pickupCollider != null) pickupCollider.enabled = false;
     }
@@ -191,8 +209,48 @@ public class FlagItem : MonoBehaviour
         if (locked) return;
         if (IsHeld) { PlaceAt(point); return; }
 
-        transform.SetParent(null);
+        Detach();
         MoveToPlantPose(point);
+    }
+
+    /// <summary>
+    /// وضع العلم على اللاعب: على ظهره وأصغر، أو فوق رأسه إن أطفأت الحمل على الظهر.
+    /// الإعدادات من <b>أول</b> FlagItem على الكائن دائمًا — بريفابات الأعلام فيها نسخة
+    /// ثانية، وبدون هذا كانت قيمها الافتراضية تكتب فوق ما تضبطه في الأولى.
+    /// </summary>
+    private void ApplyCarryPose()
+    {
+        var s = primary != null ? primary : this;
+
+        if (s.carryOnBack)
+        {
+            transform.localPosition = s.backOffset;
+            transform.localRotation = Quaternion.Euler(s.backRotation);
+        }
+        else
+        {
+            transform.localPosition = s.holdOffset;
+            transform.localRotation = Quaternion.identity;
+        }
+
+        // من الحجم الأصلي لا الحالي، فتطبيقه مرتين (نسختا FlagItem) يعطي نفس النتيجة
+        if (hasStartScale) SetWorldScale(startScale * s.heldScale);
+    }
+
+    /// <summary>يضبط حجم العلم الفعلي في العالم مهما كان حجم أبيه.</summary>
+    private void SetWorldScale(Vector3 world)
+    {
+        Vector3 p = transform.parent != null ? transform.parent.lossyScale : Vector3.one;
+        transform.localScale = new Vector3(Div(world.x, p.x), Div(world.y, p.y), Div(world.z, p.z));
+    }
+
+    private static float Div(float a, float b) => Mathf.Abs(b) > 0.0001f ? a / b : a;
+
+    /// <summary>يفك العلم من اللاعب ويرجّع حجمه الأصلي.</summary>
+    private void Detach()
+    {
+        transform.SetParent(null);
+        if (hasStartScale) transform.localScale = startScale;
     }
 
     /// <summary>موضع الزرع: مكانه في المحرر لنسخ الهب، وإلا نقطة المقبس.</summary>
@@ -213,7 +271,7 @@ public class FlagItem : MonoBehaviour
         if (locked || !IsHeld) return;
 
         IsHeld = false;
-        transform.SetParent(null);
+        Detach();
         MoveToPlantPose(point);
         pickupCollider.enabled = true; // يمكن التقاطه من جديد
 
