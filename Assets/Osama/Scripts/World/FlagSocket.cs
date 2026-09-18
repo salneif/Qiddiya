@@ -23,6 +23,14 @@ public class FlagSocket : MonoBehaviour
     [Tooltip("زر الوضع عندما يكون اللاعب داخل المنطقة (إذا لم يكن تلقائيًا)")]
     [SerializeField] private Key placeKey = Key.E;
 
+    [Header("مكان الزرع")]
+    [Tooltip("لو كان العلم واقفًا في المحرر عند هذي القاعدة، يُزرع في مكانه ذاك بالضبط " +
+             "(نفس الموضع والدوران) — ما تشوفه في السين هو ما يصير في اللعب. " +
+             "وإلا يُزرع في نقطة التثبيت. لتعديل مكان الزرع: حرّك العلم نفسه فوق القاعدة.")]
+    [SerializeField] private bool plantWhereFlagStands = true;
+    [Tooltip("أقصى بُعد للعلم عن القاعدة (متر) ليُعتبر واقفًا عندها")]
+    [SerializeField] private float standRange = 3f;
+
     [Header("الشروط")]
     [Tooltip("وسم اللاعب")]
     [SerializeField] private string playerTag = "Player";
@@ -42,6 +50,32 @@ public class FlagSocket : MonoBehaviour
     private void Reset()
     {
         GetComponent<Collider>().isTrigger = true;
+    }
+
+    /// <summary>
+    /// في Start لا Awake: بعد أن يحفظ كل علم موضعه الأصلي، وقبل أن يحرّكه
+    /// <see cref="FlagCarry"/> (ترتيب تنفيذه 100). الحكم على مكان العلم لا على إعداداته،
+    /// فيصح سواء كان العلم مخفيًا حتى يُملك أو ظاهرًا للتجربة.
+    /// </summary>
+    private void Start()
+    {
+        if (!plantWhereFlagStands || flag == null || !FlagStandsHere(flag.transform.position)) return;
+
+        // كل نسخ FlagItem على العلم — المقبس مربوط بواحدة، والتقاطه يمر بها كلها
+        foreach (var f in flag.GetComponents<FlagItem>()) f.UseStartPoseWhenPlanted();
+    }
+
+    /// <summary>هل هذا الموضع عند القاعدة؟ قريب من نقطة التثبيت أو داخل منطقتها.</summary>
+    private bool FlagStandsHere(Vector3 position)
+    {
+        if (Vector3.Distance(position, PlacePoint.position) <= standRange) return true;
+
+        var zone = GetComponent<Collider>();
+        if (zone == null) return false;
+
+        Bounds b = zone.bounds;
+        b.Expand(standRange);
+        return b.Contains(position);
     }
 
     private void OnTriggerEnter(Collider other)

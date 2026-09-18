@@ -174,11 +174,13 @@ public class FlagItem : MonoBehaviour
     }
 
     /// <summary>
-    /// يُغرس العلم حيث وُضع في المحرر بدل نقطة المقبس — ينادى من <see cref="FlagCarry"/>
-    /// لنسخ الهب. هذي النسخ لا تظهر أبدًا في مكانها الأصلي إلا مزروعة، فمكانها في
-    /// المحرر هو بالضبط مكان زرعها: ما تشوفه في السين هو ما يصير في اللعب.
+    /// يُغرس العلم حيث وُضع في المحرر بدل نقطة المقبس — ينادى من <see cref="FlagSocket"/>
+    /// إذا كان العلم واقفًا عند قاعدته في السين: ما تشوفه في المحرر هو ما يصير في اللعب.
     /// </summary>
     public void UseStartPoseWhenPlanted() => plantAtStartPose = true;
+
+    /// <summary>هل يُغرس هذا العلم في مكانه الأصلي في المحرر؟</summary>
+    public bool PlantsAtStartPose => plantAtStartPose;
 
     /// <summary>
     /// يضع العلم في موضع زرعه فورًا ولو لم يكن محمولًا — للتجربة من الـ Inspector

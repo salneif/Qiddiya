@@ -11,13 +11,14 @@ using UnityEngine;
 /// | حالة العلم في الذاكرة | ما يحدث لهذي النسخة |
 /// |---|---|
 /// | محمول | يلتصق على رأس اللاعب فورًا (كأنه دخل السين وهو حامله) |
-/// | مزروع | نسخ الهب: تقف حيث وضعتها في المحرر مقفلة. غيرها: في <see cref="plantedPoint"/>، وإن لم تُحدَّد تختفي |
+/// | مزروع | واقف عند قاعدته في المحرر: يبقى هناك مقفلًا. غيره: في <see cref="plantedPoint"/>، وإن لم تُحدَّد يختفي |
 /// | لا هذا ولا ذاك | يبقى مكانه (سين مرحلته) أو يختفي (<see cref="IdleBehaviour"/>) |
 ///
 /// <b>الضبط:</b>
 ///  - في سين المرحلة: نسخة واحدة بـ<c>Stay In Place</c> في مكان أخذ العلم.
 ///  - في الهب: ثلاث نسخ بـ<c>Hide Until Owned</c>، كل واحدة واقفة فوق قاعدتها في المحرر
-///    — هناك بالضبط تُزرع (<c>Plant Where Authored</c>)، فلا حاجة لـ<c>Planted Point</c>.
+///    — هناك بالضبط تُزرع (<see cref="FlagSocket"/>: <c>Plant Where Flag Stands</c>)،
+///    فلا حاجة لـ<c>Planted Point</c>.
 ///  - في نسخ الهب أطفئ <c>Return On Holder Death</c> في FlagItem، وإلا رجع العلم
 ///    لموضعه الأول كل ما مات اللاعب وهو ماشٍ نحو القاعدة.
 /// </summary>
@@ -42,12 +43,8 @@ public class FlagCarry : MonoBehaviour
     [SerializeField] private IdleBehaviour whenNotOwned = IdleBehaviour.StayInPlace;
 
     [Header("بعد الزرع")]
-    [Tooltip("نسخ الهب (يختفي حتى يملكه اللاعب): العلم المزروع يقف بالضبط حيث وضعته في " +
-             "المحرر فوق قاعدته — لا في نقطة المقبس ولا Planted Point. لتعديل مكانه حرّك " +
-             "العلم نفسه في السين. أطفئه للطريقة القديمة.")]
-    [SerializeField] private bool plantWhereAuthored = true;
-    [Tooltip("موضع العلم وهو مزروع (نقطة القاعدة في الهب). يُتجاهل في نسخ الهب ما دام " +
-             "Plant Where Authored مفعّلًا. " +
+    [Tooltip("موضع العلم وهو مزروع (نقطة القاعدة في الهب). يُتجاهل إذا كان العلم واقفًا " +
+             "عند قاعدته في المحرر (Plant Where Flag Stands في FlagSocket). " +
              "اتركها فارغة في سينات المراحل ليختفي العلم بعد أن يُزرع في الهب.")]
     [SerializeField] private Transform plantedPoint;
 
@@ -64,17 +61,10 @@ public class FlagCarry : MonoBehaviour
     private FlagItem[] flags;   // كل نسخ FlagItem على الكائن (بريفابات الأعلام فيها نسختان)
     private GameProgress progress;
 
-    /// <summary>نسخة هب تُزرع حيث وُضعت في المحرر؟</summary>
-    private bool UsesAuthoredPose => plantWhereAuthored && whenNotOwned == IdleBehaviour.HideUntilOwned;
-
     private void Awake()
     {
         flags = GetComponents<FlagItem>();
         flag = flags.Length > 0 ? flags[0] : null;
-
-        // على كل النسخ: المقبس قد يكون مربوطًا بأي واحدة منها
-        if (UsesAuthoredPose)
-            foreach (var f in flags) f.UseStartPoseWhenPlanted();
     }
 
     private void OnEnable()
@@ -98,8 +88,8 @@ public class FlagCarry : MonoBehaviour
         // ١) مزروع أصلًا — يقف في قاعدته مقفلًا، أو يختفي إن كنّا في سين آخر
         if (progress.IsPlanted(flagId))
         {
-            // نسخة الهب واقفة أصلًا حيث وضعتها في المحرر — نقفلها مكانها
-            if (UsesAuthoredPose) { flag.LockInPlace(); return; }
+            // واقف أصلًا عند قاعدته في المحرر (قرّر ذلك FlagSocket.Start قبلنا) — نقفله مكانه
+            if (flag.PlantsAtStartPose) { flag.LockInPlace(); return; }
 
             if (plantedPoint == null) { gameObject.SetActive(false); return; }
 
