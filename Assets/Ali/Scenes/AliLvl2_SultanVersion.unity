@@ -438970,6 +438970,67 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ee6bd4cfac3c9ff4ba49f3ce3fd6ff99, type: 3}
+--- !u!1 &1898778756
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1898778758}
+  - component: {fileID: 1898778757}
+  m_Layer: 0
+  m_Name: GroundMark
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1898778757
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1898778756}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 289bbd59888b014ad5a25e9b0533108d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerGroundMarker
+  playerTag: Player
+  keepAcrossScenes: 1
+  radius: 0.45
+  color: {r: 0, g: 0, b: 0, a: 0.55}
+  softness: 0.447
+  material: {fileID: 0}
+  shrinkWithHeight: 1
+  fullShrinkHeight: 4
+  minSize: 0.434
+  onlyWhileMoving: 0
+  movingSpeedThreshold: 0.2
+  fadeSpeed: 6
+  groundLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  maxGroundDistance: 30
+  surfaceOffset: 0.02
+--- !u!4 &1898778758
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1898778756}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -3.22436, y: 8.68143, z: 187.57259}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1898955334
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -686638,3 +686699,4 @@ SceneRoots:
   - {fileID: 1382541109}
   - {fileID: 1982978796}
   - {fileID: 111206922}
+  - {fileID: 1898778758}

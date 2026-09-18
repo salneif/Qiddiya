@@ -119,6 +119,67 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &12852315
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 12852317}
+  - component: {fileID: 12852316}
+  m_Layer: 0
+  m_Name: groundMark
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &12852316
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 12852315}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 289bbd59888b014ad5a25e9b0533108d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerGroundMarker
+  playerTag: Player
+  keepAcrossScenes: 1
+  radius: 0.45
+  color: {r: 0, g: 0, b: 0, a: 0.55}
+  softness: 0.4
+  material: {fileID: 0}
+  shrinkWithHeight: 1
+  fullShrinkHeight: 4
+  minSize: 0.5
+  onlyWhileMoving: 0
+  movingSpeedThreshold: 0.2
+  fadeSpeed: 6
+  groundLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  maxGroundDistance: 30
+  surfaceOffset: 0.02
+--- !u!4 &12852317
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 12852315}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -212.64572, y: 0.35344, z: 41.08887}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &13637941
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8667,6 +8728,18 @@ PrefabInstance:
       propertyPath: audioSource
       value: 
       objectReference: {fileID: 962273908}
+    - target: {fileID: 387599515072942435, guid: f93e92cf426a9ea41a2664bc5383a3e9, type: 3}
+      propertyPath: popOffset.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 387599515072942435, guid: f93e92cf426a9ea41a2664bc5383a3e9, type: 3}
+      propertyPath: popOffset.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 387599515072942435, guid: f93e92cf426a9ea41a2664bc5383a3e9, type: 3}
+      propertyPath: triggerRange
+      value: 3.83
+      objectReference: {fileID: 0}
     - target: {fileID: 803274807419794682, guid: f93e92cf426a9ea41a2664bc5383a3e9, type: 3}
       propertyPath: m_Volume
       value: 0.122
@@ -8702,6 +8775,14 @@ PrefabInstance:
     - target: {fileID: 1573760956759964527, guid: f93e92cf426a9ea41a2664bc5383a3e9, type: 3}
       propertyPath: m_LocalPosition.z
       value: 20.14
+      objectReference: {fileID: 0}
+    - target: {fileID: 1842275831698651881, guid: f93e92cf426a9ea41a2664bc5383a3e9, type: 3}
+      propertyPath: MaxDistance
+      value: 5.24292
+      objectReference: {fileID: 0}
+    - target: {fileID: 1842275831698651881, guid: f93e92cf426a9ea41a2664bc5383a3e9, type: 3}
+      propertyPath: MinDistance
+      value: 1.2774658
       objectReference: {fileID: 0}
     - target: {fileID: 1844322944873601625, guid: f93e92cf426a9ea41a2664bc5383a3e9, type: 3}
       propertyPath: m_LocalPosition.x
@@ -8819,6 +8900,10 @@ PrefabInstance:
       propertyPath: popTarget
       value: 
       objectReference: {fileID: 1347424910}
+    - target: {fileID: 6194892743640263557, guid: f93e92cf426a9ea41a2664bc5383a3e9, type: 3}
+      propertyPath: triggerRange
+      value: 3.22
+      objectReference: {fileID: 0}
     - target: {fileID: 6254410175204167328, guid: f93e92cf426a9ea41a2664bc5383a3e9, type: 3}
       propertyPath: cycleDuration
       value: 2.36
@@ -134591,3 +134676,4 @@ SceneRoots:
   - {fileID: 1785590635}
   - {fileID: 543450651995203152}
   - {fileID: 914140435}
+  - {fileID: 12852317}
