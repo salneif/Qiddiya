@@ -64,7 +64,7 @@ public class WorldLever : MonoBehaviour
 
         if (player == null)
         {
-            var go = GameObject.FindGameObjectWithTag(playerTag);
+            var go = PlayerLocator.Find(playerTag);
             if (go != null) player = go.transform;
             if (player == null) return;
         }

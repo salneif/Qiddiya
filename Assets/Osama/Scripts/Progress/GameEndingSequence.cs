@@ -94,7 +94,7 @@ public class GameEndingSequence : MonoBehaviour
             foreach (var b in disableOnEnding)
                 if (b != null) b.enabled = false;
 
-        var go = GameObject.FindGameObjectWithTag(playerTag);
+        var go = PlayerLocator.Find(playerTag);
         if (go == null) return null;
 
         // تطفئة السكربت وحدها تترك الجسم ينزلق بسرعته الأخيرة
