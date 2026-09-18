@@ -111,7 +111,7 @@ public class FlagCarry : MonoBehaviour
         float t = 0f;
         while (t < playerSearchTimeout)
         {
-            var go = GameObject.FindGameObjectWithTag(playerTag);
+            var go = PlayerLocator.Find(playerTag);
             if (go != null)
             {
                 flag.AttachTo(go.transform);

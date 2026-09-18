@@ -43,7 +43,7 @@ public class PlayerSpawnRouter : MonoBehaviour
 
     private void Start()
     {
-        var playerGo = GameObject.FindGameObjectWithTag(playerTag);
+        var playerGo = PlayerLocator.Find(playerTag);
         if (playerGo == null)
         {
             Debug.LogWarning($"[PlayerSpawnRouter] ما وُجد كائن بوسم \"{playerTag}\".", this);

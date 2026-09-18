@@ -432,7 +432,7 @@ public class RatSwarm : MonoBehaviour
     {
         if (player == null)
         {
-            var go = GameObject.FindGameObjectWithTag(playerTag);
+            var go = PlayerLocator.Find(playerTag);
             if (go == null) return;
             player = go.transform;
         }

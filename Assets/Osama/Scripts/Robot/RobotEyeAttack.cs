@@ -73,7 +73,7 @@ public class RobotEyeAttack : MonoBehaviour
     {
         if (player == null && !string.IsNullOrEmpty(playerTag))
         {
-            var go = GameObject.FindGameObjectWithTag(playerTag);
+            var go = PlayerLocator.Find(playerTag);
             if (go != null) player = go.transform;
         }
         if (player != null && cachedKillable == null)
