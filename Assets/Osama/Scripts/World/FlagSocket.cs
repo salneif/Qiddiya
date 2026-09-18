@@ -34,6 +34,9 @@ public class FlagSocket : MonoBehaviour
     /// <summary>العلم الذي يقبله هذا المقبس — يستخدمه <see cref="FlagBase"/> لقفله بعد الزرع.</summary>
     public FlagItem Flag => flag;
 
+    /// <summary>نقطة تثبيت العلم الفعلية (المحددة أو هذا الكائن).</summary>
+    public Transform PlacePoint => placePoint != null ? placePoint : transform;
+
     private bool playerInside;
 
     private void Reset()
@@ -60,7 +63,7 @@ public class FlagSocket : MonoBehaviour
 
         if (autoPlace || keyPressed)
         {
-            flag.PlaceAt(placePoint != null ? placePoint : transform);
+            flag.PlaceAt(PlacePoint);
             onFlagPlacedHere?.Invoke();
         }
     }

@@ -112,7 +112,8 @@ public class FlagBase : MonoBehaviour
 
     /// <summary>
     /// اختبار سريع: كليك يمين على اسم المكوّن أثناء اللعب → يزرع العلم فورًا
-    /// بلا ما تجيبه من مرحلته. لفحص سلسلة (تنوير الجزيرة + فتح الباب) وحدها.
+    /// بلا ما تجيبه من مرحلته. لفحص سلسلة (تنوير الجزيرة + فتح الباب + البوابة) وحدها.
+    /// يُظهر العلم في قاعدته أيضًا، فتشوف مكان زرعه الحقيقي.
     /// </summary>
     [ContextMenu("تجربة: ازرع هذا العلم الآن")]
     private void DebugPlant()
@@ -122,7 +123,17 @@ public class FlagBase : MonoBehaviour
             Debug.LogWarning("[FlagBase] التجربة تعمل أثناء Play فقط.", this);
             return;
         }
+
+        // نسخة الهب مخفيّة حتى يملكها اللاعب — نظهرها في قاعدتها قبل الزرع
+        if (!IsPlanted && socket != null && socket.Flag != null)
+        {
+            var flag = socket.Flag;
+            if (!flag.gameObject.activeSelf) flag.gameObject.SetActive(true);
+            flag.SnapToPlanted(socket.PlacePoint);
+        }
+
         Plant();
+        Debug.Log($"[FlagBase] زُرع علم {flagId} للتجربة — البوابات التي تشترطه مفتوحة الآن.", this);
     }
 
     private void LockFlag()

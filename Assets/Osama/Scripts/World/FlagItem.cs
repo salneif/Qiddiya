@@ -55,6 +55,8 @@ public class FlagItem : MonoBehaviour
     private Vector3 startPosition;
     private Quaternion startRotation;
     private PlayerKillable holderKillable;   // حامل العلم الحالي، لمراقبة موته
+    private bool locked;                     // مزروع نهائيًا في قاعدته — لا يُلتقط ولا يرجع
+    private bool plantAtStartPose;           // يُغرس حيث وُضع في المحرر لا في نقطة المقبس
 
     private void Awake()
     {
@@ -73,6 +75,9 @@ public class FlagItem : MonoBehaviour
     /// </summary>
     public void ReturnHome()
     {
+        // العلم المزروع نهائيًا لا يرجع ولا يصير قابلًا للالتقاط من جديد
+        if (locked) return;
+
         bool wasHeld = IsHeld;
         IsHeld = false;
 
@@ -96,7 +101,7 @@ public class FlagItem : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (IsHeld || !other.CompareTag(playerTag)) return;
+        if (locked || IsHeld || !other.CompareTag(playerTag)) return;
         PickUp(other.transform);
     }
 
@@ -106,7 +111,7 @@ public class FlagItem : MonoBehaviour
     /// </summary>
     private void Update()
     {
-        if (!IsHeld || !returnOnHolderDeath) return;
+        if (locked || !IsHeld || !returnOnHolderDeath) return;
         if (holderKillable != null && holderKillable.IsDead) ReturnHome();
     }
 
@@ -142,20 +147,59 @@ public class FlagItem : MonoBehaviour
     /// </summary>
     public void AttachTo(Transform player)
     {
-        if (IsHeld || player == null) return;
+        if (locked || IsHeld || player == null) return;
         PickUp(player);
     }
 
     /// <summary>
     /// يقفل العلم في موضعه الحالي فلا يُلتقط مرة أخرى — للعلم المزروع في قاعدته
     /// نهائيًا. (تعطيل الكولايدر وحده لا يكفي لأن ReturnHome يعيد تفعيله.)
+    ///
+    /// يقفل <b>كل</b> نسخ FlagItem على نفس الكائن: لو وُجدت نسخة ثانية بالغلط، كانت
+    /// تبقى "حاملة" بعد الزرع، فترجّع العلم وتعيد تفعيل التقاطه أول ما يموت اللاعب.
     /// </summary>
     public void LockInPlace()
     {
+        foreach (var f in GetComponents<FlagItem>()) f.LockSelf();
+    }
+
+    private void LockSelf()
+    {
+        locked = true;
         IsHeld = false;
         holderKillable = null;
         transform.SetParent(null);
+        if (pickupCollider == null) pickupCollider = GetComponent<Collider>();
         if (pickupCollider != null) pickupCollider.enabled = false;
+    }
+
+    /// <summary>
+    /// يُغرس العلم حيث وُضع في المحرر بدل نقطة المقبس — ينادى من <see cref="FlagCarry"/>
+    /// لنسخ الهب. هذي النسخ لا تظهر أبدًا في مكانها الأصلي إلا مزروعة، فمكانها في
+    /// المحرر هو بالضبط مكان زرعها: ما تشوفه في السين هو ما يصير في اللعب.
+    /// </summary>
+    public void UseStartPoseWhenPlanted() => plantAtStartPose = true;
+
+    /// <summary>
+    /// يضع العلم في موضع زرعه فورًا ولو لم يكن محمولًا — للتجربة من الـ Inspector
+    /// (<see cref="FlagBase"/>). إن كان محمولًا يمر بالوضع العادي فتنطلق أحداثه.
+    /// </summary>
+    public void SnapToPlanted(Transform point)
+    {
+        if (locked) return;
+        if (IsHeld) { PlaceAt(point); return; }
+
+        transform.SetParent(null);
+        MoveToPlantPose(point);
+    }
+
+    /// <summary>موضع الزرع: مكانه في المحرر لنسخ الهب، وإلا نقطة المقبس.</summary>
+    private void MoveToPlantPose(Transform point)
+    {
+        if (plantAtStartPose || point == null)
+            transform.SetPositionAndRotation(startPosition, startRotation);
+        else
+            transform.SetPositionAndRotation(point.position, point.rotation);
     }
 
     /// <summary>
@@ -164,11 +208,11 @@ public class FlagItem : MonoBehaviour
     /// </summary>
     public void PlaceAt(Transform point)
     {
-        if (!IsHeld) return;
+        if (locked || !IsHeld) return;
 
         IsHeld = false;
         transform.SetParent(null);
-        transform.SetPositionAndRotation(point.position, point.rotation);
+        MoveToPlantPose(point);
         pickupCollider.enabled = true; // يمكن التقاطه من جديد
 
         Play(placeSound);
