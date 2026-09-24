@@ -25644,6 +25644,7 @@ GameObject:
   - component: {fileID: 3877192601686145415}
   - component: {fileID: 5097521166313398140}
   - component: {fileID: 6934325864543365943}
+  - component: {fileID: 6934325864543365944}
   m_Layer: 0
   m_Name: polySurface11
   m_TagString: Untagged
@@ -107150,6 +107151,30 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &6934325864543365944
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 358852258916619202}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6560592e5fb993ec448ae26faf2df65a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HintGlow
+  renderers: []
+  style: 0
+  speed: 1.2
+  minBrightness: 0.15
+  maxBrightness: 2.5
+  tint: {r: 1, g: 1, b: 1, a: 1}
+  hintLight: {fileID: 0}
+  stopWhenUsed: {fileID: 0}
+  stayOffAfterUse: 1
+  showDistance: 0
+  playerTag: Player
+  fadeSpeed: 3
 --- !u!1 &6936010159470151506
 GameObject:
   m_ObjectHideFlags: 0
