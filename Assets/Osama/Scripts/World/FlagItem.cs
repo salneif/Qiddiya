@@ -27,7 +27,7 @@ public class FlagItem : MonoBehaviour
     [SerializeField] private bool carryOnBack = true;
     [Tooltip("موضع العلم على الظهر بالنسبة للاعب: Y = الارتفاع، Z سالب = وراه. " +
              "لو طلع على جنبه بدل ظهره، انقل الرقم من Z إلى X.")]
-    [SerializeField] private Vector3 backOffset = new Vector3(0f, 1.1f, -0.45f);
+    [SerializeField] private Vector3 backOffset = new Vector3(-0.299f, 0.459f, -0.187f);
     [Tooltip("ميلان العلم على الظهر (درجات)")]
     [SerializeField] private Vector3 backRotation = Vector3.zero;
     [Tooltip("اسم كائن داخل اللاعب يُعلَّق عليه العلم — الشنطة أو عظمة الظهر مثلًا. " +
