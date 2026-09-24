@@ -52,6 +52,11 @@ public class HintGlow : MonoBehaviour
     [SerializeField] private string playerTag = "Player";
     [Tooltip("سرعة ظهور واختفاء اللمعة — تمنع الانطفاء المفاجئ")]
     [SerializeField] private float fadeSpeed = 3f;
+    [Tooltip("قوة الإضاءة وهو مطفي، نسبةً لإضاءة الماتيريال الأصلية. " +
+             "صفر = مظلم تمامًا حتى يولع (لبوابة تشع دائمًا وتبيها تظل مطفية حتى يستحقها اللاعب). " +
+             "1 = يبقى بإضاءته الأصلية كما كان.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float offBrightness = 1f;
     [Tooltip("يبدأ مطفيًا حتى يُنادى StartHint — اربطه بحدث مثل FlagBase.On Planted " +
              "ليولع الشيء لحظة زرع العلم لا قبلها.")]
     [SerializeField] private bool startStopped = false;
@@ -123,7 +128,8 @@ public class HintGlow : MonoBehaviour
     {
         weight = Mathf.MoveTowards(weight, WantsGlow() ? 1f : 0f, fadeSpeed * Time.deltaTime);
 
-        if (weight <= 0f)
+        // مطفي وبإضاءته الأصلية = لا شيء نفعله، فنرجّع الماتيريال كما هو تمامًا
+        if (weight <= 0f && offBrightness >= 0.999f)
         {
             if (applied) Restore();
             return;
@@ -172,8 +178,9 @@ public class HintGlow : MonoBehaviour
         {
             if (t.renderer == null) continue;
 
+            Color off = t.baseEmission * offBrightness;
             Color glow = t.baseEmission * tint * brightness;
-            Color final = Color.Lerp(t.baseEmission, glow, weight);
+            Color final = Color.Lerp(off, glow, weight);
 
             // نقرأ البلوك الحالي أولًا حتى لا نمسح قيمًا وضعها سكربت آخر
             t.renderer.GetPropertyBlock(block);

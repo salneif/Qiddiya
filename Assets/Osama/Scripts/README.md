@@ -165,6 +165,10 @@ AudioSource
 - ينبض بقوة الـ Emission الموجودة في الماتيريال عبر `MaterialPropertyBlock` — لا يغيّر الماتيريال المشتركة ويشتغل في البلد
 - `Stop When Used` = المرفاع (`RemoteSlideControl`) → ينطفي أول ما يمسكه اللاعب
 - `Style`: نبض ناعم / وميض لمبات • `Show Distance` = يلمع فقط لما يقرب اللاعب (صفر = دائمًا)
+- `Off Brightness` = إضاءته وهو مطفي. صفر = مظلم تمامًا حتى يولع — لمجسّم يشع دائمًا
+  وتريده يبقى مطفأً حتى يستحقه اللاعب. مع `Start Stopped` ✅ و`StartHint` من حدث
+  (`FlagBarrier.On Unblocked` مثلًا)
+- إضاءة ثابتة بلا نبض: اجعل `Min Brightness` = `Max Brightness`
 - لو الماتيريال بلا Emission مفعّل يطبع تحذيرًا في الكونسول
 
 **`FadeTeleport`** — نقل داخل السين مع تعتيم، ينقل من نقطة اللمس بالضبط:
