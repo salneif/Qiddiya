@@ -41,6 +41,10 @@ public class HintGlow : MonoBehaviour
     [Header("ضوء مرافق (اختياري)")]
     [Tooltip("Light ينبض مع اللمعة فيضيء ما حول اللوحة فعليًا. ينطفي مع انطفاء التلميح.")]
     [SerializeField] private Light hintLight;
+    [Tooltip("أضواء إضافية تتدرّج معه — لبوابة حولها عدة أضواء تولع سوية. " +
+             "⚠️ لا تطفئ كائناتها ولا تضعها في Show When Open، وإلا ولعت دفعة واحدة؛ " +
+             "اتركها شغّالة وهذا السكربت يبدأ بإطفاء شدّتها ثم يرفعها بالتدريج.")]
+    [SerializeField] private Light[] extraLights;
 
     [Header("متى يلمع")]
     [Tooltip("المقبض الذي تدلّ عليه اللوحة — أول ما يمسكه اللاعب ينطفي التلميح")]
@@ -73,6 +77,7 @@ public class HintGlow : MonoBehaviour
     private Target[] targets;
     private MaterialPropertyBlock block;
     private float lightBaseIntensity;
+    private float[] extraBaseIntensities;
     private float weight;   // 0 = شكل الماتيريال الأصلي بالضبط، 1 = لمعة كاملة
     private bool applied;   // هل غيّرنا شيئًا يحتاج إرجاعًا؟
     private bool used;      // أمسك اللاعب المقبض مرة على الأقل
@@ -104,6 +109,17 @@ public class HintGlow : MonoBehaviour
         {
             lightBaseIntensity = hintLight.intensity;
             hintLight.intensity = 0f;
+        }
+
+        if (extraLights != null)
+        {
+            extraBaseIntensities = new float[extraLights.Length];
+            for (int i = 0; i < extraLights.Length; i++)
+            {
+                if (extraLights[i] == null) continue;
+                extraBaseIntensities[i] = extraLights[i].intensity;
+                extraLights[i].intensity = 0f;
+            }
         }
     }
 
@@ -193,7 +209,7 @@ public class HintGlow : MonoBehaviour
             t.renderer.SetPropertyBlock(block);
         }
 
-        if (hintLight != null) hintLight.intensity = lightBaseIntensity * brightness * w;
+        SetLights(brightness * w);
         applied = true;
     }
 
@@ -217,8 +233,21 @@ public class HintGlow : MonoBehaviour
             }
         }
 
-        if (hintLight != null) hintLight.intensity = 0f;
+        SetLights(0f);
         applied = false;
+    }
+
+    /// <summary>يضبط شدّة كل الأضواء المرافقة نسبةً لشدّتها الأصلية.</summary>
+    private void SetLights(float factor)
+    {
+        if (hintLight != null) hintLight.intensity = lightBaseIntensity * factor;
+
+        if (extraLights == null || extraBaseIntensities == null) return;
+        for (int i = 0; i < extraLights.Length; i++)
+        {
+            if (extraLights[i] == null || i >= extraBaseIntensities.Length) continue;
+            extraLights[i].intensity = extraBaseIntensities[i] * factor;
+        }
     }
 
     /// <summary>يطفي التلميح نهائيًا — اربطه بأي حدث (WorldLever.onActivated، PuzzleButton.onPressed...).</summary>
