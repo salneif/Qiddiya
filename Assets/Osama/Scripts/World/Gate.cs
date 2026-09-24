@@ -65,6 +65,10 @@ public class Gate : MonoBehaviour
     [Tooltip("صوت متكرّر طوال الحركة، يسكت لحظة الوصول (احتكاك، سلاسل...). " +
              "⚠️ لو استخدمته خلّ صوت الفتح قصيرًا — سكوت الحركة يقطع ما قبله على نفس المصدر.")]
     [SerializeField] private AudioClip movingLoop;
+    [Tooltip("مدة الحركة = طول مقطع الصوت بالضبط، فتصل البوابة مع آخر لحظة منه. " +
+             "يتجاهل Speed و Rotation Speed ما دام للاتجاه مقطعٌ. " +
+             "صوت الفتح يضبط زمن الفتح، وصوت الإغلاق يضبط زمن الإغلاق.")]
+    [SerializeField] private bool matchMovementToSound = false;
 
     [Header("أحداث")]
     public UnityEvent onOpened;
@@ -77,6 +81,9 @@ public class Gate : MonoBehaviour
     private bool initialized;
     private bool loopPlaying;
     private Transform player;
+
+    private float totalSlide;     // مسافة الانزلاق الكاملة
+    private float totalAngle;     // زاوية الدوران الكاملة
 
     // وضع المفصلة
     private bool usesHinge;
@@ -112,6 +119,9 @@ public class Gate : MonoBehaviour
         closedPos = transform.position;
         closedRot = transform.rotation;
         openRot = closedRot * Quaternion.Euler(openRotation);
+
+        totalSlide = openOffset.magnitude;
+        totalAngle = Quaternion.Angle(closedRot, openRot);
 
         usesHinge = TryGetHingeAxis(out rotAngle, out rotAxis);
         if (usesHinge)
@@ -179,6 +189,32 @@ public class Gate : MonoBehaviour
         else if (closeWhenPlayerLeaves && dist > openWhenPlayerWithin + closeMargin) Close();
     }
 
+    /// <summary>
+    /// مدة الحركة المطلوبة للاتجاه الحالي (ثواني)، أو صفر إن لم نربطها بالصوت.
+    /// </summary>
+    private float SoundDuration()
+    {
+        if (!matchMovementToSound) return 0f;
+
+        AudioClip clip = isOpen ? openSound : closeSound;
+        return clip != null ? clip.length : 0f;
+    }
+
+    /// <summary>سرعة الانزلاق الآن — محسوبة من طول الصوت إن رُبطت به.</summary>
+    private float SlideSpeedNow()
+    {
+        float d = SoundDuration();
+        return d > 0.01f && totalSlide > 0.0001f ? totalSlide / d : speed;
+    }
+
+    /// <summary>سرعة الدوران الآن — محسوبة من طول الصوت إن رُبطت به.</summary>
+    private float TurnSpeedNow()
+    {
+        float d = SoundDuration();
+        float angle = usesHinge ? rotAngle : totalAngle;
+        return d > 0.01f && angle > 0.01f ? angle / d : rotationSpeed;
+    }
+
     /// <summary>الحركة القديمة: انزلاق ودوران حول المركز كلٌّ بسرعته.</summary>
     private bool StepLinear()
     {
@@ -186,9 +222,9 @@ public class Gate : MonoBehaviour
         Quaternion targetRot = isOpen ? openRot : closedRot;
 
         transform.position = Vector3.MoveTowards(transform.position, targetPos,
-                                                 speed * Time.deltaTime);
+                                                 SlideSpeedNow() * Time.deltaTime);
         transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot,
-                                                      rotationSpeed * Time.deltaTime);
+                                                      TurnSpeedNow() * Time.deltaTime);
 
         // == على الكواتيرنيون مقارنة تقريبية، فنفحص الزاوية صراحةً
         return transform.position == targetPos &&
@@ -203,10 +239,10 @@ public class Gate : MonoBehaviour
     {
         float target = isOpen ? 1f : 0f;
 
-        float dist = openOffset.magnitude;
-        slideT = dist < 0.0001f ? target
-                                : Mathf.MoveTowards(slideT, target, speed / dist * Time.deltaTime);
-        rotT = Mathf.MoveTowards(rotT, target, rotationSpeed / rotAngle * Time.deltaTime);
+        slideT = totalSlide < 0.0001f ? target
+                                      : Mathf.MoveTowards(slideT, target,
+                                                          SlideSpeedNow() / totalSlide * Time.deltaTime);
+        rotT = Mathf.MoveTowards(rotT, target, TurnSpeedNow() / rotAngle * Time.deltaTime);
 
         Vector3 pos = PoseAt(slideT, rotT, out Quaternion rot);
         transform.SetPositionAndRotation(pos, rot);
