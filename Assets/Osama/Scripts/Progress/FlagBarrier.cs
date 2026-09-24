@@ -22,6 +22,9 @@ public class FlagBarrier : MonoBehaviour
     [Tooltip("الكائنات التي تُطفأ عند الفتح (الكولايدر المانع، مؤثر، لافتة...). " +
              "اتركها فارغة لتُطفأ كولايدرات هذا الكائن نفسه.")]
     [SerializeField] private GameObject[] blockers;
+    [Tooltip("كائنات تُشغَّل لحظة الفتح وتبقى شغّالة في كل زيارة بعدها — الأنميشن " +
+             "والأضواء والمؤثرات التي تولع عند زرع العلم. أطفئها في المحرر لتبدأ مخفيّة.")]
+    [SerializeField] private GameObject[] showWhenOpen;
 
     [Header("تلميح للاعب وهو مقفول")]
     [Tooltip("مصدر الصوت — يُلتقط تلقائيًا من نفس الكائن")]
@@ -62,6 +65,7 @@ public class FlagBarrier : MonoBehaviour
         bool planted = GameProgress.Instance.IsPlanted(requirePlantedFlag);
         IsOpen = planted;
         SetBlockersActive(!planted);
+        SetRevealedActive(planted);
 
         if (planted) onRestoredOpen?.Invoke();
     }
@@ -73,6 +77,7 @@ public class FlagBarrier : MonoBehaviour
 
         IsOpen = true;
         SetBlockersActive(false);
+        SetRevealedActive(true);
 
         if (unblockSound != null && audioSource != null) audioSource.PlayOneShot(unblockSound);
         onUnblocked?.Invoke();
@@ -98,6 +103,14 @@ public class FlagBarrier : MonoBehaviour
             onBlockedApproach?.Invoke();
         }
         playerNear = near;
+    }
+
+    /// <summary>يشغّل ما يُكشف عند الفتح — الأنميشن والأضواء المستقلة عن الباب.</summary>
+    private void SetRevealedActive(bool value)
+    {
+        if (showWhenOpen == null) return;
+        foreach (var go in showWhenOpen)
+            if (go != null) go.SetActive(value);
     }
 
     private void SetBlockersActive(bool value)

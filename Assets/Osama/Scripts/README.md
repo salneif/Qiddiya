@@ -481,6 +481,8 @@ grep -rl "class الاسم\b" Assets --include='*.cs'
 - كائن فارغ + `Collider` (ليس Trigger) يسدّ المدخل + السكربت، بلا `Mesh Renderer`
 - `Require Planted Flag` = العلم المطلوب، وكفى — يقرأ `GameProgress` بنفسه فيفتح لحظة
   الزرع ويبقى مفتوحًا في كل زيارة قادمة بلا صوت (استعادة صامتة عبر `On Restored Open`)
+- `Show When Open` = كائنات الأنميشن والأضواء التي تولع لحظة الفتح وتبقى شغّالة في
+  الزيارات القادمة (أطفئها في المحرر لتبدأ مخفيّة) — بلا ربط أي حدث
 - `Blocked Sound` + `On Blocked Approach` = تلميح للاعب أنه يحتاج العلم
 - `On Unblocked` → `HintGlow.StartHint` مثلًا، فيولع المدخل لحظة انفتاحه
 
