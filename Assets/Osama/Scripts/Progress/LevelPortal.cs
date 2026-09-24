@@ -47,6 +47,11 @@ public class LevelPortal : MonoBehaviour
     [Tooltip("مموّه الشاشة — يُلتقط تلقائيًا من السين إذا تُرك فارغًا. " +
              "بدونه يُحمَّل السين بلا تعتيم.")]
     [SerializeField] private ScreenFader fader;
+    [Tooltip("يجمّد اللاعب لحظة بدء الانتقال، فلا يكمل مشيه أثناء التعتيم ويتعدّى الباب " +
+             "قبل أن ينتقل. يستخدم قائمة Disable On Death في PlayerKillable، فلا يحتاج ضبطًا.")]
+    [SerializeField] private bool freezePlayerOnTransition = true;
+    [Tooltip("سكربتات إضافية تتعطّل لحظة الانتقال (متابعة الكاميرا مثلًا) — اختياري")]
+    [SerializeField] private MonoBehaviour[] disableOnTransition;
     [Tooltip("يمسح كل التقدّم قبل الانتقال — فعّله في بوابة العودة للقائمة الرئيسية. " +
              "بدونه تبدأ اللعبة التالية والأعلام الثلاثة مزروعة أصلًا، " +
              "لأن GameProgress يعيش بين السينات ولا يموت إلا بإغلاق اللعبة.")]
@@ -237,12 +242,17 @@ public class LevelPortal : MonoBehaviour
     {
         onTransitionStarted?.Invoke();
 
+        // أولًا التجميد ثم التأخير: بدونه يكمل اللاعب مشيه طوال التأخير والتعتيم،
+        // فيطلع من الباب ويقف بعيدًا عنه لحظة تحميل السين — يبدو كأنه ما انتقل
+        FreezePlayer(true);
+
         if (delay > 0f) yield return new WaitForSeconds(delay);
 
         if (string.IsNullOrEmpty(sceneName))
         {
             Debug.LogError("[LevelPortal] اسم السين فارغ.", this);
             leaving = false;
+            FreezePlayer(false);
             yield break;
         }
 
@@ -251,6 +261,7 @@ public class LevelPortal : MonoBehaviour
             Debug.LogError($"[LevelPortal] السين \"{sceneName}\" غير موجود في قائمة مشاهد " +
                            $"البناء — أضِفه من File → Build Profiles → Scene List.", this);
             leaving = false;
+            FreezePlayer(false);
             yield break;
         }
 
@@ -262,6 +273,32 @@ public class LevelPortal : MonoBehaviour
 
         if (fader != null) fader.FadeOutAndLoad(sceneName);
         else SceneManager.LoadSceneAsync(sceneName);
+    }
+
+    /// <summary>
+    /// يجمّد حركة اللاعب حول الانتقال ويرجّعها إذا فشل الانتقال، فلا يعلق اللاعب
+    /// بلا حركة في سين لم يتغيّر.
+    /// </summary>
+    private void FreezePlayer(bool freeze)
+    {
+        if (disableOnTransition != null)
+            foreach (var b in disableOnTransition)
+                if (b != null) b.enabled = !freeze;
+
+        if (!freezePlayerOnTransition) return;
+
+        if (player == null)
+        {
+            var go = PlayerLocator.Find(playerTag);
+            if (go == null) return;
+            player = go.transform;
+        }
+
+        var killable = player.GetComponentInParent<PlayerKillable>();
+        if (killable == null) return;
+
+        if (freeze) killable.FreezeControl();
+        else killable.UnfreezeControl();
     }
 
     private void OnDrawGizmosSelected()
