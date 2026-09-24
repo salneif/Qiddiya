@@ -38,6 +38,12 @@ public class PlatformRideAssist : MonoBehaviour
     [SerializeField] private bool onlyWhileMoving = true;
     [Tooltip("أقل سرعة للمنصّة (متر/ثانية) تُحسب حركة")]
     [SerializeField] private float movingThreshold = 0.05f;
+    [Tooltip("يحرّك اللاعب عبر CharacterController فتوقفه الجدران. " +
+             "⚠️ يكسر قفزه على المنصّة، لأن حركة أفقية في نهاية الإطار تجعل " +
+             "isGrounded = false فيظنّ سكربته أنه في الهواء. لا تشغّله إلا لو دخل في جدار.")]
+    [SerializeField] private bool respectCollisions = false;
+    [Tooltip("مع الخيار أعلاه: دفعة صغيرة للأسفل تُبقيه ملامسًا للأرض فيظل قادرًا على القفز")]
+    [SerializeField] private float groundStick = 0.02f;
 
     private Transform player;
     private CharacterController controller;
@@ -109,12 +115,16 @@ public class PlatformRideAssist : MonoBehaviour
         return Flatten(p - c).sqrMagnitude <= zoneRadius * zoneRadius;
     }
 
-    /// <summary>يحرّك اللاعب باحترام الاصطدامات إن كان عليه CharacterController.</summary>
+    /// <summary>
+    /// يحرّك اللاعب. الافتراضي تحريك الـ Transform مباشرة لا CharacterController.Move:
+    /// نداء Move بحركة أفقية في نهاية الإطار يجعل isGrounded = false، فيظنّ سكربت
+    /// اللاعب أنه في الهواء ولا يقدر يقفز وهو واقف على المنصّة.
+    /// </summary>
     private void MovePlayer(Vector3 delta)
     {
-        if (controller != null && controller.enabled)
+        if (respectCollisions && controller != null && controller.enabled)
         {
-            controller.Move(delta);
+            controller.Move(delta + Vector3.down * groundStick);
             return;
         }
         player.position += delta;

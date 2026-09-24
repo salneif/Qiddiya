@@ -72,6 +72,10 @@ public class Gate : MonoBehaviour
     [Tooltip("يستخدم المقاطع لضبط المدة فقط بلا تشغيلها — للنصف الثاني من فتحة بنصفين: " +
              "يتحرك بنفس مدة أخيه بالضبط بلا أن يتكرر الصوت مرتين.")]
     [SerializeField] private bool soundTimingOnly = false;
+    [Tooltip("مستوى صوت البوابة. مفيد خصوصًا مع المصدر الذي يُنشأ تلقائيًا — " +
+             "ما تقدر تخفّضه من الـ Inspector لأنه ما يوجد قبل التشغيل.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float soundVolume = 1f;
 
     [Header("أحداث")]
     public UnityEvent onOpened;
@@ -343,7 +347,7 @@ public class Gate : MonoBehaviour
     private void Play(AudioClip clip)
     {
         if (soundTimingOnly) return;
-        if (clip != null && audioSource != null) audioSource.PlayOneShot(clip);
+        if (clip != null && audioSource != null) audioSource.PlayOneShot(clip, soundVolume);
     }
 
     private void UpdateMovingSound(bool moving)
@@ -354,6 +358,7 @@ public class Gate : MonoBehaviour
         {
             audioSource.clip = movingLoop;
             audioSource.loop = true;
+            audioSource.volume = soundVolume;
             audioSource.Play();
             loopPlaying = true;
         }
