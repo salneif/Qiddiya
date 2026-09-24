@@ -112,6 +112,7 @@ public class HintGlow : MonoBehaviour
             hintLight.intensity = 0f;
         }
 
+        WarnAboutFlicker(hintLight);
         if (extraLights != null)
         {
             extraBaseIntensities = new float[extraLights.Length];
@@ -120,6 +121,7 @@ public class HintGlow : MonoBehaviour
                 if (extraLights[i] == null) continue;
                 extraBaseIntensities[i] = extraLights[i].intensity;
                 extraLights[i].intensity = 0f;
+                WarnAboutFlicker(extraLights[i]);
             }
         }
     }
@@ -239,6 +241,21 @@ public class HintGlow : MonoBehaviour
 
         SetLights(0f);
         applied = false;
+    }
+
+    /// <summary>
+    /// <see cref="LightFlicker"/> على نفس الضوء يكتب شدّته كل إطار، فيلغي تدرّجنا
+    /// ويولّعه قبل أوانه. نحذّر بدل أن يقضي أحدهم ساعة يبحث عن السبب.
+    /// </summary>
+    private void WarnAboutFlicker(Light light)
+    {
+        if (light == null) return;
+
+        var flicker = light.GetComponent<LightFlicker>();
+        if (flicker == null || !flicker.enabled) return;
+
+        Debug.LogWarning($"[HintGlow] الضوء \"{light.name}\" عليه LightFlicker شغّال — " +
+                         "هو يكتب شدّة الضوء كل إطار فيلغي التدرّج. أطفئه.", light);
     }
 
     /// <summary>يضبط شدّة كل الأضواء المرافقة نسبةً لشدّتها الأصلية.</summary>
