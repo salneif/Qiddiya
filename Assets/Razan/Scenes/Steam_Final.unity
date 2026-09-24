@@ -5560,6 +5560,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3153298663758288828, guid: d715cc654343141cda1e4086e4822739, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 39.05
+      objectReference: {fileID: 0}
     - target: {fileID: 3781814550815214699, guid: d715cc654343141cda1e4086e4822739, type: 3}
       propertyPath: m_LocalPosition.x
       value: -31.01
@@ -105676,7 +105680,7 @@ MonoBehaviour:
   mode: 1
   overrideOffset: {x: 0, y: 1, z: 1}
   overrideRotation: {x: 0, y: 0, z: 0}
-  absolutePosition: {x: 21.78, y: 16.1, z: -27}
+  absolutePosition: {x: 21.78, y: 14.8, z: -27}
   absoluteRotation: {x: 20, y: 2.9999971, z: 0}
   transitionSpeed: 5
   lockXPosition: 0
@@ -218845,7 +218849,7 @@ MonoBehaviour:
   mode: 1
   overrideOffset: {x: 0, y: 1, z: 1}
   overrideRotation: {x: 0, y: 0, z: 0}
-  absolutePosition: {x: 25.6, y: 13.9, z: -27.1}
+  absolutePosition: {x: 25.6, y: 13.1, z: -27.1}
   absoluteRotation: {x: 20, y: 2.9999971, z: 0}
   transitionSpeed: 5
   lockXPosition: 0
@@ -378605,6 +378609,7 @@ GameObject:
   - component: {fileID: 4126707685733738132}
   - component: {fileID: 5549117085371728371}
   - component: {fileID: 6126296393723126452}
+  - component: {fileID: 7903355481512628735}
   m_Layer: 0
   m_Name: polySurface206
   m_TagString: Metal
@@ -482258,6 +482263,27 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2891563017581048678}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &7903355481512628735
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5190895012597637385}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1236.0592, y: 37.874855, z: 1256.4829}
+  m_Center: {x: -9972.037, y: 3010.835, z: -884.8058}
 --- !u!4 &7904671955558831629
 Transform:
   m_ObjectHideFlags: 0
