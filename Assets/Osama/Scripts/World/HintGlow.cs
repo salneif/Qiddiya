@@ -52,6 +52,9 @@ public class HintGlow : MonoBehaviour
     [SerializeField] private string playerTag = "Player";
     [Tooltip("سرعة ظهور واختفاء اللمعة — تمنع الانطفاء المفاجئ")]
     [SerializeField] private float fadeSpeed = 3f;
+    [Tooltip("يبدأ مطفيًا حتى يُنادى StartHint — اربطه بحدث مثل FlagBase.On Planted " +
+             "ليولع الشيء لحظة زرع العلم لا قبلها.")]
+    [SerializeField] private bool startStopped = false;
 
     private struct Target
     {
@@ -71,6 +74,7 @@ public class HintGlow : MonoBehaviour
 
     private void Awake()
     {
+        stopped = startStopped;
         block = new MaterialPropertyBlock();
 
         if (renderers == null || renderers.Length == 0)
