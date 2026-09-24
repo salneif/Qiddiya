@@ -42,6 +42,19 @@ public class Gate : MonoBehaviour
     [Tooltip("تبدأ مفتوحة؟")]
     [SerializeField] private bool startOpen = false;
 
+    [Header("الفتح عند الاقتراب")]
+    [Tooltip("تنفتح وحدها لما يقرب اللاعب من هذي المسافة (متر). صفر = لا تفتح إلا بالأحداث.")]
+    [SerializeField] private float openWhenPlayerWithin = 0f;
+    [Tooltip("ترجع تنغلق لما يبتعد اللاعب. أطفئه لتبقى مفتوحة بعد أول مرة.")]
+    [SerializeField] private bool closeWhenPlayerLeaves = true;
+    [Tooltip("مسافة إضافية قبل الإغلاق (متر) — تمنع فتحًا وإغلاقًا متكررين على الحد")]
+    [SerializeField] private float closeMargin = 0.75f;
+    [Tooltip("نقطة قياس المسافة — اتركها فارغة ليُقاس من هذا الكائن. " +
+             "لبابين يفتحان معًا (فتحة بنصفين): اربط الاثنين بنفس النقطة في مركزها.")]
+    [SerializeField] private Transform measureFrom;
+    [Tooltip("وسم اللاعب")]
+    [SerializeField] private string playerTag = "Player";
+
     [Header("الصوت")]
     [Tooltip("مصدر الصوت — يُلتقط تلقائيًا من نفس الكائن إذا تُرك فارغًا")]
     [SerializeField] private AudioSource audioSource;
@@ -63,6 +76,7 @@ public class Gate : MonoBehaviour
     private bool wasOpen;
     private bool initialized;
     private bool loopPlaying;
+    private Transform player;
 
     // وضع المفصلة
     private bool usesHinge;
@@ -85,6 +99,15 @@ public class Gate : MonoBehaviour
         initialized = true;
 
         if (audioSource == null) audioSource = GetComponent<AudioSource>();
+
+        // بلا مصدر صوت ما يُسمع شيء — ننشئه تلقائيًا إذا حطيت مقطعًا.
+        // ثنائي الأبعاد عمدًا: كاميرا اللعبة بعيدة، والصوت ثلاثي الأبعاد معها لا يُسمع (خطأ ١١).
+        if (audioSource == null && (openSound != null || closeSound != null || movingLoop != null))
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+            audioSource.spatialBlend = 0f;
+        }
 
         closedPos = transform.position;
         closedRot = transform.rotation;
@@ -121,6 +144,8 @@ public class Gate : MonoBehaviour
 
     private void Update()
     {
+        UpdateProximity();
+
         bool arrived = usesHinge ? StepHinge() : StepLinear();
         UpdateMovingSound(moving: !arrived);
 
@@ -130,6 +155,28 @@ public class Gate : MonoBehaviour
             wasOpen = isOpen;
             if (isOpen) onOpened?.Invoke(); else onClosed?.Invoke();
         }
+    }
+
+    /// <summary>
+    /// تفتح وحدها عند اقتراب اللاعب وتنغلق عند ابتعاده. الإغلاق له هامش إضافي،
+    /// فلا تتأرجح البوابة فتحًا وإغلاقًا واللاعب واقف على حد المسافة.
+    /// </summary>
+    private void UpdateProximity()
+    {
+        if (openWhenPlayerWithin <= 0f) return;
+
+        if (player == null)
+        {
+            var go = PlayerLocator.Find(playerTag);
+            if (go == null) return;
+            player = go.transform;
+        }
+
+        Transform origin = measureFrom != null ? measureFrom : transform;
+        float dist = Vector3.Distance(player.position, origin.position);
+
+        if (dist <= openWhenPlayerWithin) Open();
+        else if (closeWhenPlayerLeaves && dist > openWhenPlayerWithin + closeMargin) Close();
     }
 
     /// <summary>الحركة القديمة: انزلاق ودوران حول المركز كلٌّ بسرعته.</summary>
@@ -284,6 +331,14 @@ public class Gate : MonoBehaviour
     /// </summary>
     private void OnDrawGizmosSelected()
     {
+        // مدى الفتح التلقائي
+        if (openWhenPlayerWithin > 0f)
+        {
+            Transform origin = measureFrom != null ? measureFrom : transform;
+            Gizmos.color = new Color(0.4f, 0.7f, 1f, 0.5f);
+            Gizmos.DrawWireSphere(origin.position, openWhenPlayerWithin);
+        }
+
         // في وضع اللعب نرسم من الوضع المغلق الأصلي لا من موضعه الحالي
         bool useStored = Application.isPlaying && initialized;
         Vector3 basePos = useStored ? closedPos : transform.position;
