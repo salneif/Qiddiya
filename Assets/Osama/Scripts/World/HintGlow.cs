@@ -102,7 +102,8 @@ public class HintGlow : MonoBehaviour
         }
         targets = list.ToArray();
 
-        if (targets.Length == 0)
+        bool hasLights = hintLight != null || (extraLights != null && extraLights.Length > 0);
+        if (targets.Length == 0 && !hasLights)
             Debug.LogWarning("[HintGlow] ما في مجسّم ماتيريالته فيها Emission مفعّل تحت " + name +
                              " — فعّل Emission في الماتيريال أو استخدم خانة الضوء المرافق.", this);
 
