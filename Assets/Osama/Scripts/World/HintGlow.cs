@@ -50,7 +50,9 @@ public class HintGlow : MonoBehaviour
     [Tooltip("يلمع فقط لما يكون اللاعب أقرب من هذه المسافة (متر). صفر = دائمًا")]
     [SerializeField] private float showDistance = 0f;
     [SerializeField] private string playerTag = "Player";
-    [Tooltip("سرعة ظهور واختفاء اللمعة — تمنع الانطفاء المفاجئ")]
+    [Tooltip("سرعة ظهور واختفاء اللمعة: 1 ÷ المدة بالثواني. " +
+             "1 = ثانية، 0.25 = أربع ثوانٍ، 3 = ثلث ثانية. " +
+             "والظهور يبدأ وينتهي بنعومة فلا يقفز اللون دفعة واحدة.")]
     [SerializeField] private float fadeSpeed = 3f;
     [Tooltip("قوة الإضاءة وهو مطفي، نسبةً لإضاءة الماتيريال الأصلية. " +
              "صفر = مظلم تمامًا حتى يولع (لبوابة تشع دائمًا وتبيها تظل مطفية حتى يستحقها اللاعب). " +
@@ -174,13 +176,16 @@ public class HintGlow : MonoBehaviour
 
     private void Apply(float brightness)
     {
+        // تنعيم التقدّم: يبدأ الولوع بهدوء ويستقر بهدوء بدل قفزة خطية
+        float w = Mathf.SmoothStep(0f, 1f, weight);
+
         foreach (var t in targets)
         {
             if (t.renderer == null) continue;
 
             Color off = t.baseEmission * offBrightness;
             Color glow = t.baseEmission * tint * brightness;
-            Color final = Color.Lerp(off, glow, weight);
+            Color final = Color.Lerp(off, glow, w);
 
             // نقرأ البلوك الحالي أولًا حتى لا نمسح قيمًا وضعها سكربت آخر
             t.renderer.GetPropertyBlock(block);
@@ -188,7 +193,7 @@ public class HintGlow : MonoBehaviour
             t.renderer.SetPropertyBlock(block);
         }
 
-        if (hintLight != null) hintLight.intensity = lightBaseIntensity * brightness * weight;
+        if (hintLight != null) hintLight.intensity = lightBaseIntensity * brightness * w;
         applied = true;
     }
 
