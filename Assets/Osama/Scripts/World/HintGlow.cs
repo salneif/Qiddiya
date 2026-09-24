@@ -281,6 +281,26 @@ public class HintGlow : MonoBehaviour
         used = false;
     }
 
+    /// <summary>
+    /// تجربة أثناء Play: كليك يمين على اسم المكوّن. لو ما تغيّر شيء على الشاشة،
+    /// فالمجسّم الذي تراه يشع ليس هذا — غالبًا مجسّم آخر يشارك نفس الخامة.
+    /// </summary>
+    [ContextMenu("تجربة: ولّع الآن")]
+    private void DebugStart()
+    {
+        if (!Application.isPlaying) { Debug.LogWarning("[HintGlow] التجربة أثناء Play فقط.", this); return; }
+        StartHint();
+        Debug.Log($"[HintGlow] ولّعت \"{name}\" — عدد المجسّمات المتأثرة: {(targets != null ? targets.Length : 0)}.", this);
+    }
+
+    [ContextMenu("تجربة: اطفئ الآن")]
+    private void DebugStop()
+    {
+        if (!Application.isPlaying) { Debug.LogWarning("[HintGlow] التجربة أثناء Play فقط.", this); return; }
+        StopHint();
+        Debug.Log($"[HintGlow] أطفأت \"{name}\" — لو ما تغيّر شيء فالشاع مجسّم آخر.", this);
+    }
+
     private void OnDisable()
     {
         weight = 0f;
