@@ -69,6 +69,9 @@ public class Gate : MonoBehaviour
              "يتجاهل Speed و Rotation Speed ما دام للاتجاه مقطعٌ. " +
              "صوت الفتح يضبط زمن الفتح، وصوت الإغلاق يضبط زمن الإغلاق.")]
     [SerializeField] private bool matchMovementToSound = false;
+    [Tooltip("يستخدم المقاطع لضبط المدة فقط بلا تشغيلها — للنصف الثاني من فتحة بنصفين: " +
+             "يتحرك بنفس مدة أخيه بالضبط بلا أن يتكرر الصوت مرتين.")]
+    [SerializeField] private bool soundTimingOnly = false;
 
     [Header("أحداث")]
     public UnityEvent onOpened;
@@ -109,7 +112,8 @@ public class Gate : MonoBehaviour
 
         // بلا مصدر صوت ما يُسمع شيء — ننشئه تلقائيًا إذا حطيت مقطعًا.
         // ثنائي الأبعاد عمدًا: كاميرا اللعبة بعيدة، والصوت ثلاثي الأبعاد معها لا يُسمع (خطأ ١١).
-        if (audioSource == null && (openSound != null || closeSound != null || movingLoop != null))
+        if (!soundTimingOnly && audioSource == null &&
+            (openSound != null || closeSound != null || movingLoop != null))
         {
             audioSource = gameObject.AddComponent<AudioSource>();
             audioSource.playOnAwake = false;
@@ -338,12 +342,13 @@ public class Gate : MonoBehaviour
 
     private void Play(AudioClip clip)
     {
+        if (soundTimingOnly) return;
         if (clip != null && audioSource != null) audioSource.PlayOneShot(clip);
     }
 
     private void UpdateMovingSound(bool moving)
     {
-        if (movingLoop == null || audioSource == null) return;
+        if (soundTimingOnly || movingLoop == null || audioSource == null) return;
 
         if (moving && !loopPlaying)
         {
