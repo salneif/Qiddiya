@@ -168,7 +168,7 @@ AudioSource
 - `Off Brightness` = إضاءته وهو مطفي. صفر = مظلم تمامًا حتى يولع — لمجسّم يشع دائمًا
   وتريده يبقى مطفأً حتى يستحقه اللاعب. مع `Start Stopped` ✅ و`StartHint` من حدث
   (`FlagBarrier.On Unblocked` مثلًا)
-- إضاءة ثابتة بلا نبض: اجعل `Min Brightness` = `Max Brightness`
+- `Style` = **ثابت بلا نبض** لشيء يولع مرة ويظل شاعًا بقوة `Max Brightness`
 - `Hint Light` + `Extra Lights` = أضواء تتدرّج مع اللمعان. **لا تطفئ كائناتها ولا تضعها في
   `FlagBarrier.Show When Open`** — التشغيل بالكائن يولّعها دفعة واحدة. اتركها شغّالة،
   والسكربت يطفئ شدّتها في البداية ثم يرفعها بالتدريج

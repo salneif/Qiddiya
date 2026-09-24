@@ -18,7 +18,8 @@ public class HintGlow : MonoBehaviour
     public enum Style
     {
         [InspectorName("نبض ناعم")] Pulse,
-        [InspectorName("وميض لمبات")] Blink
+        [InspectorName("وميض لمبات")] Blink,
+        [InspectorName("ثابت بلا نبض")] Steady
     }
 
     private static readonly int EmissionId = Shader.PropertyToID("_EmissionColor");
@@ -183,6 +184,9 @@ public class HintGlow : MonoBehaviour
     /// <summary>موجة من 0 إلى 1 حسب شكل اللمعة.</summary>
     private float Wave()
     {
+        // ثابت: يشع بـ Max Brightness بلا حركة — يولع مرة ويظل
+        if (style == Style.Steady) return 1f;
+
         float t = Time.time * speed;
         if (style == Style.Blink)
             return Mathf.Repeat(t, 1f) < 0.5f ? 1f : 0f;
