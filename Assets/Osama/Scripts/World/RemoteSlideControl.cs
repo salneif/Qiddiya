@@ -317,7 +317,9 @@ public class RemoteSlideControl : MonoBehaviour
     private void Place(SpriteRenderer r, Vector3 pos, Quaternion rot)
     {
         r.transform.SetPositionAndRotation(pos, rot);
-        r.transform.localScale = Vector3.one * keysSize;
+        // الحجم بفضاء العالم مهما كان تكبير الكائن الأب
+        Vector3 s = transform.lossyScale;
+        r.transform.localScale = new Vector3(Div(keysSize, s.x), Div(keysSize, s.y), Div(keysSize, s.z));
         r.color = new Color(1f, 1f, 1f, keysAlpha);
         r.enabled = true;
     }
@@ -348,6 +350,8 @@ public class RemoteSlideControl : MonoBehaviour
         r.enabled = false;
         return r;
     }
+
+    private static float Div(float a, float b) => Mathf.Abs(b) > 0.0001f ? a / b : a;
 
     private static Camera ResolveCamera()
     {

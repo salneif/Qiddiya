@@ -315,7 +315,8 @@ public class FlagBaseBeacon : MonoBehaviour
 
         Vector3 pos = anchor.position + Vector3.up * promptHeight;
         text.position = pos;
-        text.localScale = Vector3.one * promptSize;
+        // الحجم بفضاء العالم: القاعدة نفسها مكبّرة ×20، فبدون القسمة تطلع العلامة عملاقة
+        text.localScale = WorldScale(promptSize);
 
         // يواجه الكاميرا دائمًا فيُقرأ من أي زاوية
         if (cam != null)
@@ -342,6 +343,13 @@ public class FlagBaseBeacon : MonoBehaviour
             if (c != null && c.isActiveAndEnabled) return c;
 
         return null;
+    }
+
+    /// <summary>مقياس محلي يعطي هذا الحجم في العالم مهما كان تكبير الأب.</summary>
+    private Vector3 WorldScale(float size)
+    {
+        Vector3 s = transform.lossyScale;
+        return new Vector3(SafeDiv(size, s.x), SafeDiv(size, s.y), SafeDiv(size, s.z));
     }
 
     private static float SafeDiv(float a, float b) => Mathf.Abs(b) > 0.0001f ? a / b : a;
