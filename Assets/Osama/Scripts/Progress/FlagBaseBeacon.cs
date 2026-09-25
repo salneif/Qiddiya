@@ -66,6 +66,8 @@ public class FlagBaseBeacon : MonoBehaviour
     private MaterialPropertyBlock block;
 
     private TextMeshPro prompt;
+    private TextMesh legacyPrompt;      // بديل لو ما في خط TMP معيّن
+    private MeshRenderer promptRenderer;
 
     private float ringAlpha;
     private float promptAlpha;
@@ -138,21 +140,54 @@ public class FlagBaseBeacon : MonoBehaviour
         return mesh;
     }
 
-    /// <summary>حرف الزر وحده بلا كلمة "اضغط" — أوضح وأقل ضجيجًا.</summary>
+    /// <summary>
+    /// حرف الزر وحده بلا كلمة "اضغط" — أوضح وأقل ضجيجًا.
+    ///
+    /// TextMeshPro بلا خط معيّن لا يرسم شيئًا ويملأ الكونسول تحذيرات، وإعدادات TMP
+    /// في هذا المشروع بلا خط افتراضي. فنحمّل خط المشروع من Resources، وإن لم يوجد
+    /// نسقط على TextMesh القديم بخط يونيتي المدمج — يشتغل دائمًا وفي البلد أيضًا.
+    /// </summary>
     private void BuildPrompt()
     {
         var go = new GameObject("FlagBaseBeacon_Key");
         go.layer = 2;
         go.transform.SetParent(transform, false);
 
-        prompt = go.AddComponent<TextMeshPro>();
-        prompt.text = KeyLabel();
-        prompt.alignment = TextAlignmentOptions.Center;
-        prompt.fontSize = 6f;
-        prompt.enableWordWrapping = false;
-        prompt.color = color;
-        prompt.rectTransform.sizeDelta = new Vector2(2f, 2f);
-        prompt.GetComponent<MeshRenderer>().enabled = false;
+        TMP_FontAsset font = TMP_Settings.defaultFontAsset;
+        if (font == null) font = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+        if (font == null) font = Resources.Load<TMP_FontAsset>("Fonts & Materials/Roboto-Bold SDF");
+
+        if (font != null)
+        {
+            prompt = go.AddComponent<TextMeshPro>();
+            prompt.font = font;
+            prompt.text = KeyLabel();
+            prompt.alignment = TextAlignmentOptions.Center;
+            prompt.fontSize = 6f;
+            prompt.enableWordWrapping = false;
+            prompt.color = color;
+            prompt.rectTransform.sizeDelta = new Vector2(2f, 2f);
+        }
+        else
+        {
+            legacyPrompt = go.AddComponent<TextMesh>();
+            legacyPrompt.text = KeyLabel();
+            legacyPrompt.anchor = TextAnchor.MiddleCenter;
+            legacyPrompt.alignment = TextAlignment.Center;
+            legacyPrompt.fontSize = 64;
+            legacyPrompt.characterSize = 0.12f;
+            legacyPrompt.color = color;
+
+            var builtin = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (builtin != null)
+            {
+                legacyPrompt.font = builtin;
+                go.GetComponent<MeshRenderer>().sharedMaterial = builtin.material;
+            }
+        }
+
+        promptRenderer = go.GetComponent<MeshRenderer>();
+        if (promptRenderer != null) promptRenderer.enabled = false;
     }
 
     /// <summary>حرف زر الوضع من المقبس، أو E إن لم يوجد.</summary>
@@ -181,9 +216,11 @@ public class FlagBaseBeacon : MonoBehaviour
         if (wantPrompt && !promptReported)
         {
             promptReported = true;
-            Debug.Log($"[FlagBaseBeacon] الحرف \"{prompt.text}\" يفترض أن يظهر فوق " +
-                      $"{anchor.name} — خط TMP: {(prompt.font != null ? prompt.font.name : "مفقود")}، " +
-                      $"كاميرا: {(cam != null ? cam.name : "غير موجودة")}.", this);
+            string label = prompt != null ? prompt.text : (legacyPrompt != null ? legacyPrompt.text : "?");
+            string fontName = prompt != null && prompt.font != null ? prompt.font.name
+                            : legacyPrompt != null ? "TextMesh المدمج" : "مفقود";
+            Debug.Log($"[FlagBaseBeacon] الحرف \"{label}\" يظهر فوق {anchor.name} — " +
+                      $"الخط: {fontName}، الكاميرا: {(cam != null ? cam.name : "غير موجودة")}.", this);
         }
 
         ringAlpha = Mathf.MoveTowards(ringAlpha, wantRing ? 1f : 0f, fadeSpeed * Time.deltaTime);
@@ -241,27 +278,30 @@ public class FlagBaseBeacon : MonoBehaviour
 
     private void DrawPrompt()
     {
-        if (prompt == null) return;
+        if (promptRenderer == null) return;
 
-        var renderer = prompt.GetComponent<MeshRenderer>();
+        Transform text = promptRenderer.transform;
         if (promptAlpha <= 0.001f)
         {
-            renderer.enabled = false;
+            promptRenderer.enabled = false;
             return;
         }
 
         if (cam == null || !cam.isActiveAndEnabled) cam = ResolveCamera();
 
         Vector3 pos = anchor.position + Vector3.up * promptHeight;
-        prompt.transform.position = pos;
-        prompt.transform.localScale = Vector3.one * promptSize;
+        text.position = pos;
+        text.localScale = Vector3.one * promptSize;
 
         // يواجه الكاميرا دائمًا فيُقرأ من أي زاوية
         if (cam != null)
-            prompt.transform.rotation = Quaternion.LookRotation(pos - cam.transform.position, Vector3.up);
+            text.rotation = Quaternion.LookRotation(pos - cam.transform.position, Vector3.up);
 
-        prompt.color = new Color(color.r, color.g, color.b, promptAlpha);
-        renderer.enabled = true;
+        Color c = new Color(color.r, color.g, color.b, promptAlpha);
+        if (prompt != null) prompt.color = c;
+        if (legacyPrompt != null) legacyPrompt.color = c;
+
+        promptRenderer.enabled = true;
     }
 
     /// <summary>
