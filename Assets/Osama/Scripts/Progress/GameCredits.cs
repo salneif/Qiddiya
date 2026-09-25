@@ -19,6 +19,10 @@ using UnityEngine.UI;
 /// ⚠️ سكربت تتبّع الكاميرا لازم يكون في <see cref="disableOnCredits"/>، وإلا شدّ
 /// الكاميرا لللاعب كل إطار وما بعدت خطوة.
 ///
+/// كل شيء ثلاثي الأبعاد: الأسماء والأدوار على <b>منصّة</b> في العالم لا على واجهة
+/// مسطّحة فوق الشاشة، والمودلات تقف معها على نفس المنصّة. المنصّة معلّقة بالكاميرا
+/// فتبقى في الكادر وهي تبعد، بينما يتراجع الهب خلفها.
+///
 /// الأسماء لاتينية: خط يونيتي المدمج بلا حروف عربية، ويونيتي لا يشكّل العربية
 /// (الحروف تنفصل وتنعكس). تبي عربي؟ اعمل صورة PNG لكل اسم وحطّها في
 /// <see cref="Section.nameImage"/> — الصورة تسبق النص.
@@ -48,11 +52,11 @@ public class GameCredits : MonoBehaviour
         [Tooltip("كائن فيه مودلات هذا الشخص — يُفعّل طوال الفقرة ثم يُطفأ")]
         public GameObject showcase;
 
-        [Tooltip("يعلّق المودلات أمام الكاميرا فتمشي معها وهي تبعد")]
+        [Tooltip("يحطّ المودلات على منصّة الكريديت فتبقى في الكادر والكاميرا تبعد")]
         public bool showcaseInFrontOfCamera = true;
 
-        [Tooltip("مكان المودلات بالنسبة للكاميرا (Z موجب = أمامها)")]
-        public Vector3 showcaseOffset = new Vector3(0f, -0.4f, 6f);
+        [Tooltip("مكانها على المنصّة — صفر = مركز المنصّة فوق الاسم مباشرة")]
+        public Vector3 showcaseOffset = Vector3.zero;
 
         [Tooltip("دوران المودلات حول نفسها (درجة/ثانية) — صفر يوقفه")]
         public float showcaseSpin = 14f;
@@ -83,6 +87,14 @@ public class GameCredits : MonoBehaviour
     [Tooltip("تظل موجّهة لللاعب وهي تبعد")]
     [SerializeField] private bool keepLookingAtPlayer = true;
 
+    [Header("منصّة الكريديت (3D)")]
+    [Tooltip("مكان المنصّة أمام الكاميرا: Z موجب = أمامها. قرّبها إن تداخلت مع مبانٍ")]
+    [SerializeField] private Vector3 stageOffset = new Vector3(0f, 0.2f, 6f);
+    [Tooltip("حجم نص المنصّة في العالم — كبّره إن طلعت الأسماء صغيرة")]
+    [SerializeField] private float stageScale = 0.0028f;
+    [Tooltip("نزول الاسم تحت مركز المنصّة (متر) — المودلات فوقه")]
+    [SerializeField] private float nameDrop = 1.3f;
+
     [Header("الفقرات")]
     [Tooltip("تُملأ بالافتراضي إن تُركت فارغة")]
     [SerializeField] private List<Section> sections = new List<Section>();
@@ -112,7 +124,8 @@ public class GameCredits : MonoBehaviour
         new Section { title = "ALI",    role = "TWILIGHT",                 duration = 8f  },
     };
 
-    private Canvas canvas;
+    private Transform stage;
+    private Canvas nameCanvas;
     private Image blackout;
     private Image nameImage;
     private Text nameText;
@@ -148,12 +161,15 @@ public class GameCredits : MonoBehaviour
         if (sections == null || sections.Count == 0)
             sections = new List<Section>(DefaultSections());
 
-        Build();
+        BuildOverlay();
         Transform player = FreezePlayer();
         PlayMusic();
 
         Transform cam = cameraToPull != null ? cameraToPull
                       : (Camera.main != null ? Camera.main.transform : null);
+
+        if (cam != null) BuildStage(cam);
+        else Debug.LogWarning("[GameCredits] ما لقيت كاميرا — بلا كاميرا لا منصّة ولا حركة.", this);
 
         // الكاميرا تمشي على خطها الخاص بالتوازي مع الفقرات: تبعد أثناء فقرات
         // العرض ثم ترجع أثناء البقية، فلا تنتظر فقرة معيّنة ولا تتقطّع بينها
@@ -187,6 +203,7 @@ public class GameCredits : MonoBehaviour
         while (t < hold)
         {
             t += Time.deltaTime;
+            TuneStage();   // تُقرأ كل إطار ليظهر أثر تعديل القيم أثناء التشغيل
             if (showcase != null && section.showcaseSpin != 0f)
                 showcase.Rotate(Vector3.up, section.showcaseSpin * Time.deltaTime, Space.World);
             yield return null;
@@ -201,7 +218,7 @@ public class GameCredits : MonoBehaviour
         }
     }
 
-    /// <summary>يُظهر مودلات الفقرة، ويعلّقها بالكاميرا لتمشي معها وهي تبعد.</summary>
+    /// <summary>يُظهر مودلات الفقرة على المنصّة، فتبقى في الكادر والكاميرا تبعد.</summary>
     private Transform ShowModels(Section section, Transform cam)
     {
         if (section.showcase == null) return null;
@@ -209,14 +226,27 @@ public class GameCredits : MonoBehaviour
         Transform showcase = section.showcase.transform;
         section.showcase.SetActive(true);
 
-        if (section.showcaseInFrontOfCamera && cam != null)
+        if (section.showcaseInFrontOfCamera && stage != null)
         {
-            showcase.SetParent(cam, false);
+            showcase.SetParent(stage, false);
             showcase.localPosition = section.showcaseOffset;
             showcase.localRotation = Quaternion.identity;
         }
 
         return showcase;
+    }
+
+    /// <summary>يعيد قراءة قيم المنصّة كل إطار — لا بريفاب، فالضبط يتم أثناء التشغيل.</summary>
+    private void TuneStage()
+    {
+        if (stage == null) return;
+
+        stage.localPosition = stageOffset;
+        if (nameCanvas == null) return;
+
+        Transform block = nameCanvas.transform;
+        block.localPosition = new Vector3(0f, -nameDrop, 0f);
+        block.localScale = Vector3.one * stageScale;
     }
 
     private void SetName(Section section)
@@ -386,45 +416,68 @@ public class GameCredits : MonoBehaviour
     // ───────────────────────────── الواجهة ─────────────────────────────
 
     /// <summary>
-    /// كانفس يُبنى بالكود، فلا يحتاج بريفابًا ولا ربطًا في السين.
-    ///
-    /// النص بـ<c>UI.Text</c> وخط يونيتي المدمج لا TextMeshPro: إعدادات TMP في هذا
-    /// المشروع بلا خط افتراضي ومادّة خطّه بشيدر مفقود، فيرسم مربّعات وردية.
+    /// التعتيم الأخير وحده فوق الشاشة — هذا الشيء الوحيد الذي يجب أن يغطّيها كاملة،
+    /// فلا معنى لجعله ثلاثي الأبعاد.
     /// </summary>
-    private void Build()
+    private void BuildOverlay()
     {
-        var root = new GameObject("GameCredits_UI", typeof(RectTransform));
+        var root = new GameObject("GameCredits_Fade", typeof(RectTransform));
         root.transform.SetParent(transform, false);
 
-        canvas = root.AddComponent<Canvas>();
+        var canvas = root.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 4000;   // تحت شاشة التحميل (5000) وفوق واجهات السين
 
-        var scaler = root.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
-        scaler.matchWidthOrHeight = 0.5f;
+        blackout = NewImage(root.transform, "Blackout", new Color(0f, 0f, 0f, 0f));
+        Stretch(blackout.rectTransform);
+    }
+
+    /// <summary>
+    /// منصّة الكريديت في العالم: الاسم والدور والمودلات كلها أجسام ثلاثية الأبعاد
+    /// لها عمق ومنظور، لا واجهة مسطّحة ملصوقة على الشاشة.
+    ///
+    /// معلّقة بالكاميرا لا موضوعة في السين: الكاميرا تبعد عشرات الأمتار، ولو كانت
+    /// المنصّة ثابتة في مكانها لصغرت حتى تختفي. هكذا تبقى في الكادر بحجمها بينما
+    /// يتراجع الهب خلفها — وهذا هو المقصود من ابتعاد الكاميرا.
+    ///
+    /// النص بـ<c>UI.Text</c> على كانفس <c>World Space</c> وخط يونيتي المدمج، لا
+    /// TextMeshPro: إعدادات TMP في هذا المشروع بلا خط افتراضي ومادّة خطّه بشيدر
+    /// مفقود، فيرسم مربّعات وردية.
+    /// </summary>
+    private void BuildStage(Transform cam)
+    {
+        var root = new GameObject("GameCredits_Stage");
+        stage = root.transform;
+        stage.SetParent(cam, false);
+        stage.localPosition = stageOffset;
+        stage.localRotation = Quaternion.identity;
 
         var block = new GameObject("Names", typeof(RectTransform));
-        block.transform.SetParent(root.transform, false);
+        block.transform.SetParent(stage, false);
+        block.transform.localPosition = new Vector3(0f, -nameDrop, 0f);
+
+        nameCanvas = block.AddComponent<Canvas>();
+        nameCanvas.renderMode = RenderMode.WorldSpace;
+        nameCanvas.worldCamera = cam.GetComponent<Camera>();
+
+        var rect = (RectTransform)block.transform;
+        rect.sizeDelta = new Vector2(1600f, 420f);
+        rect.localScale = Vector3.one * stageScale;
+
         nameGroup = block.AddComponent<CanvasGroup>();
         nameGroup.alpha = 0f;
-        Stretch((RectTransform)block.transform);
 
         nameImage = NewImage(block.transform, "NameImage", Color.white);
         nameImage.rectTransform.anchorMin = nameImage.rectTransform.anchorMax = new Vector2(0.5f, 0f);
         nameImage.rectTransform.pivot = new Vector2(0.5f, 0f);
-        nameImage.rectTransform.anchoredPosition = new Vector2(0f, 190f);
+        nameImage.rectTransform.anchoredPosition = new Vector2(0f, 90f);
         nameImage.enabled = false;
 
         Font font = BuiltinFont();
-        nameText = NewText(block.transform, font, 68, FontStyle.Bold, 250f,
+        nameText = NewText(block.transform, font, 68, FontStyle.Bold, 110f,
                            new Color(1f, 1f, 1f, 0.95f));
-        roleText = NewText(block.transform, font, 26, FontStyle.Normal, 190f,
-                           new Color(1f, 0.92f, 0.7f, 0.8f));
-
-        blackout = NewImage(root.transform, "Blackout", new Color(0f, 0f, 0f, 0f));
-        Stretch(blackout.rectTransform);
+        roleText = NewText(block.transform, font, 26, FontStyle.Normal, 50f,
+                           new Color(1f, 0.92f, 0.7f, 0.85f));
     }
 
     private Text NewText(Transform parent, Font font, int size, FontStyle style,
