@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -36,7 +35,7 @@ public class LoadingOverlay : MonoBehaviour
         [Tooltip("اسم الصورة داخل Osama/Resources/Loading بلا امتداد")]
         public string imageName;
 
-        [Tooltip("ما يُكتب تحت البار — بالحروف اللاتينية لأن الخط المدمج بلا عربية")]
+        [Tooltip("ما يُكتب تحت البار — لاتيني، فخط يونيتي المدمج بلا حروف عربية")]
         public string title;
 
         public Destination(string sceneName, string imageName, string title)
@@ -107,7 +106,7 @@ public class LoadingOverlay : MonoBehaviour
     private RectTransform barFill;
     private RectTransform runner;
     private Image runnerImage;
-    private TextMeshProUGUI label;
+    private Text label;
 
     private Sprite[] runFrames;
     private float fill;
@@ -259,34 +258,59 @@ public class LoadingOverlay : MonoBehaviour
     }
 
     /// <summary>
-    /// اسم الوجهة تحت البار. إعدادات TMP في هذا المشروع بلا خط افتراضي، وبلا خط
-    /// لا يرسم شيئًا ويملأ الكونسول تحذيرات — فإن لم نجد خطًا نُسقط النص كله.
+    /// اسم الوجهة تحت البار بـ<c>UI.Text</c> وخط يونيتي المدمج، لا TextMeshPro.
+    ///
+    /// TMP رسم مربّعات وردية: إعدادات TMP في هذا المشروع بلا خط افتراضي، والخط
+    /// المحمَّل من Resources مادّته بشيدر مفقود — والوردي في يونيتي معناه شيدر ضائع.
+    /// الخط المدمج يمر على شيدر الواجهة العادي فيشتغل في المحرر والبلد بلا أي أصل
+    /// ولا إعدادات، وهذا كل المطلوب من سطر واحد تحت بار التحميل.
     /// </summary>
     private void BuildLabel()
     {
         if (!showTitle) return;
 
-        TMP_FontAsset font = TMP_Settings.defaultFontAsset;
-        if (font == null) font = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
-        if (font == null) font = Resources.Load<TMP_FontAsset>("Fonts & Materials/Roboto-Bold SDF");
-        if (font == null) return;
+        Font font = BuiltinFont();
+        if (font == null)
+        {
+            Debug.LogWarning("[LoadingOverlay] ما لقيت خطًا مدمجًا — الشاشة بلا نص.");
+            return;
+        }
 
         var go = new GameObject("Title", typeof(RectTransform));
         go.transform.SetParent(transform, false);
 
-        label = go.AddComponent<TextMeshProUGUI>();
+        label = go.AddComponent<Text>();
         label.font = font;
-        label.alignment = TextAlignmentOptions.Center;
-        label.fontSize = 30f;
-        label.characterSpacing = 12f;
+        label.fontSize = 28;
+        label.fontStyle = FontStyle.Bold;
+        label.alignment = TextAnchor.UpperCenter;
         label.color = new Color(1f, 1f, 1f, 0.85f);
         label.raycastTarget = false;
+        label.horizontalOverflow = HorizontalWrapMode.Overflow;
+        label.verticalOverflow = VerticalWrapMode.Overflow;
 
         RectTransform rect = label.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
         rect.pivot = new Vector2(0.5f, 1f);
         rect.anchoredPosition = new Vector2(0f, barBottom - 18f);
         rect.sizeDelta = new Vector2(1200f, 48f);
+    }
+
+    /// <summary>خط يونيتي المدمج — موجود في كل بناء بلا استيراد.</summary>
+    private static Font BuiltinFont()
+    {
+        // الاسم تغيّر في 2022.2: Arial.ttf صار LegacyRuntime.ttf، وطلب الاسم القديم
+        // يطبع خطأ في الكونسول — فلا نجرّبه، ونسقط على خط النظام إن غاب
+        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        if (font == null) font = Font.CreateDynamicFontFromOSFont("Arial", 28);
+        return font;
+    }
+
+    /// <summary>مسافة بين الحروف — UI.Text بلا تباعد، فنفرّقها بأنفسنا.</summary>
+    private static string Spaced(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+        return string.Join(" ", text.ToCharArray());
     }
 
     private Image NewImage(string name, Color color)
@@ -450,7 +474,7 @@ public class LoadingOverlay : MonoBehaviour
         art.enabled = sprite != null;
         dim.color = new Color(0f, 0f, 0f, artDim);
 
-        if (label != null) label.text = destination.title;
+        if (label != null) label.text = Spaced(destination.title);
     }
 
     /// <summary>
