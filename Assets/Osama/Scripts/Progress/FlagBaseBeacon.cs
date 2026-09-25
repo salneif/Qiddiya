@@ -53,7 +53,9 @@ public class FlagBaseBeacon : MonoBehaviour
     [Tooltip("المسافة التي يظهر عندها الحرف (متر)")]
     [SerializeField] private float promptDistance = 3f;
     [Tooltip("ارتفاع الحرف فوق نقطة الزرع (متر)")]
-    [SerializeField] private float promptHeight = 1.8f;
+    [SerializeField] private float promptHeight = 1.05f;
+    [Tooltip("مسافة التلاشي قبل حد الظهور (متر): تخفّ تدريجيًا كلما ابتعدت بدل أن تنطفئ فجأة")]
+    [SerializeField] private float promptFadeBand = 1.5f;
     [Tooltip("حجم العلامة — صغّره حتى تصير خفيفة على العين")]
     [SerializeField] private float promptSize = 0.35f;
     [Tooltip("تختفي الدائرة وهو قريب فلا يزدحم المشهد")]
@@ -225,6 +227,7 @@ public class FlagBaseBeacon : MonoBehaviour
     {
         bool wantRing = false;
         bool wantPrompt = false;
+        float promptTarget = 0f;
 
         if (ShouldGuide())
         {
@@ -234,6 +237,14 @@ public class FlagBaseBeacon : MonoBehaviour
             // المقبس قد يكون على كائن آخر — غيابه لا يمنع الحرف، فالزر الافتراضي E
             wantPrompt = close && (socket == null || !socket.AutoPlace);
             wantRing = !(close && hideRingWhenClose);
+
+            // تخفّ بالتدريج داخل آخر شريط من المدى، فلا تنطفئ دفعة واحدة على الحد
+            if (wantPrompt)
+            {
+                float band = Mathf.Max(0.01f, promptFadeBand);
+                float fadeStart = Mathf.Max(0f, promptDistance - band);
+                promptTarget = Mathf.SmoothStep(0f, 1f, 1f - Mathf.Clamp01((distance - fadeStart) / band));
+            }
         }
 
         if (wantPrompt && !promptReported)
@@ -248,7 +259,7 @@ public class FlagBaseBeacon : MonoBehaviour
         }
 
         ringAlpha = Mathf.MoveTowards(ringAlpha, wantRing ? 1f : 0f, fadeSpeed * Time.deltaTime);
-        promptAlpha = Mathf.MoveTowards(promptAlpha, wantPrompt ? 1f : 0f, fadeSpeed * Time.deltaTime);
+        promptAlpha = Mathf.MoveTowards(promptAlpha, promptTarget, fadeSpeed * Time.deltaTime);
 
         DrawRing();
         DrawPrompt();
