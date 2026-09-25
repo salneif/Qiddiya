@@ -146890,6 +146890,8 @@ MonoBehaviour:
   requireCarriedFlag: 1
   playerTag: Player
   activationKey: 0
+  ignoreTriggerAfterLoad: 1
+  useLoadingScreen: 1
   fader: {fileID: 1400478913}
   freezePlayerOnTransition: 1
   disableOnTransition: []
@@ -170120,6 +170122,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ScreenFader
   fadeDuration: 1
   fadeInOnStart: 1
+  useLoadingScreen: 1
 --- !u!225 &1400478914
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -438446,7 +438449,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
-  m_Volume: 1
+  m_Volume: 0.611
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -438490,7 +438493,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -505979,7 +505982,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
-  m_Volume: 1
+  m_Volume: 0.611
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -506023,7 +506026,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0

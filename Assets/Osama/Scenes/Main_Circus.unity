@@ -3564,11 +3564,14 @@ MonoBehaviour:
   maxBrightness: 2.5
   tint: {r: 1, g: 1, b: 1, a: 1}
   hintLight: {fileID: 0}
+  extraLights: []
   stopWhenUsed: {fileID: 0}
   stayOffAfterUse: 1
   showDistance: 0
   playerTag: Player
   fadeSpeed: 3
+  offBrightness: 1
+  startStopped: 0
 --- !u!1 &536387024
 GameObject:
   m_ObjectHideFlags: 0
@@ -7814,11 +7817,14 @@ MonoBehaviour:
   maxBrightness: 2.5
   tint: {r: 1, g: 1, b: 1, a: 1}
   hintLight: {fileID: 0}
+  extraLights: []
   stopWhenUsed: {fileID: 0}
   stayOffAfterUse: 1
   showDistance: 0
   playerTag: Player
   fadeSpeed: 3
+  offBrightness: 1
+  startStopped: 0
 --- !u!1 &936204610
 GameObject:
   m_ObjectHideFlags: 0
@@ -10294,11 +10300,14 @@ MonoBehaviour:
   maxBrightness: 2.5
   tint: {r: 0.7199875, g: 0.8980392, b: 0.15686274, a: 1}
   hintLight: {fileID: 0}
+  extraLights: []
   stopWhenUsed: {fileID: 1430840666}
   stayOffAfterUse: 1
   showDistance: 0
   playerTag: Player
   fadeSpeed: 3
+  offBrightness: 1
+  startStopped: 0
 --- !u!4 &1218098020 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6071028492919895154, guid: 6212900a5d244ba4cb761fadd58ff7a9, type: 3}
@@ -10561,11 +10570,14 @@ MonoBehaviour:
   maxBrightness: 2.5
   tint: {r: 1, g: 1, b: 1, a: 1}
   hintLight: {fileID: 0}
+  extraLights: []
   stopWhenUsed: {fileID: 0}
   stayOffAfterUse: 1
   showDistance: 0
   playerTag: Player
   fadeSpeed: 3
+  offBrightness: 1
+  startStopped: 0
 --- !u!1001 &1293679487
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13703,11 +13715,14 @@ MonoBehaviour:
   maxBrightness: 2.5
   tint: {r: 0.72156864, g: 0.8980392, b: 0.15686275, a: 1}
   hintLight: {fileID: 0}
+  extraLights: []
   stopWhenUsed: {fileID: 1430840666}
   stayOffAfterUse: 1
   showDistance: 0
   playerTag: Player
   fadeSpeed: 3
+  offBrightness: 1
+  startStopped: 0
 --- !u!1 &1624351460
 GameObject:
   m_ObjectHideFlags: 0
@@ -17819,6 +17834,8 @@ MonoBehaviour:
   playerTag: Player
   activationKey: 0
   fader: {fileID: 0}
+  freezePlayerOnTransition: 1
+  disableOnTransition: []
   resetProgressOnLeave: 0
   approachDistance: 6
   audioSource: {fileID: 0}
