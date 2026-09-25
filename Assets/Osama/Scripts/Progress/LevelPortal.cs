@@ -44,8 +44,11 @@ public class LevelPortal : MonoBehaviour
     [SerializeField] private Key activationKey = Key.None;
 
     [Header("الانتقال")]
+    [Tooltip("شاشة التحميل: صورة الوجهة وبار يركض عليه علي. إن أُطفئت رجع الانتقال " +
+             "للتعتيم الأسود وحده.")]
+    [SerializeField] private bool useLoadingScreen = true;
     [Tooltip("مموّه الشاشة — يُلتقط تلقائيًا من السين إذا تُرك فارغًا. " +
-             "بدونه يُحمَّل السين بلا تعتيم.")]
+             "بدونه يُحمَّل السين بلا تعتيم. لا يُستعمل مع شاشة التحميل.")]
     [SerializeField] private ScreenFader fader;
     [Tooltip("يجمّد اللاعب لحظة بدء الانتقال، فلا يكمل مشيه أثناء التعتيم ويتعدّى الباب " +
              "قبل أن ينتقل. يستخدم قائمة Disable On Death في PlayerKillable، فلا يحتاج ضبطًا.")]
@@ -270,6 +273,9 @@ public class LevelPortal : MonoBehaviour
         else
             // من أين جاء اللاعب — يقرأها PlayerSpawnRouter في الوجهة
             GameProgress.Instance.SetLastScene(SceneManager.GetActiveScene().name);
+
+        // الشاشة تتولّى التعتيم بنفسها، فلا نجمع تعتيمين فوق بعض
+        if (useLoadingScreen && LoadingOverlay.Go(sceneName)) yield break;
 
         if (fader != null) fader.FadeOutAndLoad(sceneName);
         else SceneManager.LoadSceneAsync(sceneName);
