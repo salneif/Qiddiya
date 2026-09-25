@@ -43,9 +43,11 @@ public class FlagBaseBeacon : MonoBehaviour
     [SerializeField] private float groundOffset = 0.03f;
 
     [Header("علامة الزر عند الاقتراب")]
-    [Tooltip("صورة تظهر فوق القاعدة عند الاقتراب (أيقونة زر E مثلًا). " +
-             "اتركها فارغة وفعّل Show Key Letter لعرض الحرف نصًّا بدلًا منها.")]
+    [Tooltip("صورة تظهر فوق القاعدة عند الاقتراب. اتركها فارغة لتُستخدم أيقونة الزر " +
+             "الجاهزة في Osama/Resources (KeyE).")]
     [SerializeField] private Sprite promptSprite;
+    [Tooltip("لوّن الصورة بلون العلم. أطفئه لتبقى الأيقونة بيضاء كما هي.")]
+    [SerializeField] private bool tintPrompt = false;
     [Tooltip("اعرض حرف الزر نصًّا. أطفئه إن كنت تستخدم صورة، أو إن لم ترد شيئًا فوق القاعدة.")]
     [SerializeField] private bool showKeyLetter = false;
     [Tooltip("المسافة التي يظهر عندها الحرف (متر)")]
@@ -159,12 +161,14 @@ public class FlagBaseBeacon : MonoBehaviour
         go.layer = 2;
         go.transform.SetParent(transform, false);
 
+        if (promptSprite == null) promptSprite = Resources.Load<Sprite>("KeyE");
+
         // صورة؟ أبسط وأوضح من النص ولا تحتاج خطوطًا
         if (promptSprite != null)
         {
             spritePrompt = go.AddComponent<SpriteRenderer>();
             spritePrompt.sprite = promptSprite;
-            spritePrompt.color = color;
+            spritePrompt.color = tintPrompt ? color : Color.white;
             promptRenderer = spritePrompt;
             promptRenderer.enabled = false;
             return;
@@ -320,7 +324,8 @@ public class FlagBaseBeacon : MonoBehaviour
         Color c = new Color(color.r, color.g, color.b, promptAlpha);
         if (prompt != null) prompt.color = c;
         if (legacyPrompt != null) legacyPrompt.color = c;
-        if (spritePrompt != null) spritePrompt.color = c;
+        if (spritePrompt != null)
+            spritePrompt.color = tintPrompt ? c : new Color(1f, 1f, 1f, promptAlpha);
 
         promptRenderer.enabled = true;
     }

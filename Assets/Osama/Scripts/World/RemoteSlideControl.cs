@@ -68,6 +68,25 @@ public class RemoteSlideControl : MonoBehaviour
     [Tooltip("[Crank] سرعة اللفّ (درجة/ثانية)")]
     [SerializeField] private float crankSpeed = 220f;
 
+    [Header("أيقونات الاتجاه أثناء الإمساك")]
+    [Tooltip("تظهر أيقونتا A و D فوق المرفاع بعد الضغط على زر الإمساك، فيعرف اللاعب " +
+             "أن الأزرار هي التي تحرّك الهدف.")]
+    [SerializeField] private bool showDirectionKeys = true;
+    [Tooltip("أيقونة اليسار — تُحمَّل KeyA من Osama/Resources إن تُركت فارغة")]
+    [SerializeField] private Sprite leftKeyIcon;
+    [Tooltip("أيقونة اليمين — تُحمَّل KeyD من Osama/Resources إن تُركت فارغة")]
+    [SerializeField] private Sprite rightKeyIcon;
+    [Tooltip("مكان ظهور الأيقونتين — يُستخدم المقبض أو هذا الكائن إن تُرك فارغًا")]
+    [SerializeField] private Transform keysAnchor;
+    [Tooltip("ارتفاع الأيقونتين فوق النقطة (متر)")]
+    [SerializeField] private float keysHeight = 1.2f;
+    [Tooltip("المسافة بين الأيقونتين (متر)")]
+    [SerializeField] private float keysSpacing = 0.45f;
+    [Tooltip("حجم الأيقونة")]
+    [SerializeField] private float keysSize = 0.3f;
+    [Tooltip("سرعة ظهورهما واختفائهما")]
+    [SerializeField] private float keysFadeSpeed = 6f;
+
     [Header("صوت المرفاع (عند يدك)")]
     [SerializeField] private AudioSource audioSource;
     [Tooltip("صوت آلية المرفاع الذي تديره")]
@@ -99,6 +118,10 @@ public class RemoteSlideControl : MonoBehaviour
     private float currentOffset;
     private Quaternion handleRest;
 
+    private SpriteRenderer leftIconRenderer, rightIconRenderer;
+    private Camera keysCamera;
+    private float keysAlpha;
+
     /// <summary>عطّلنا حركة اللاعب ثم مات — ننتظر بعثه لنعيدها بدل أن نحرّره وهو ميت.</summary>
     private bool restorePending;
 
@@ -118,6 +141,8 @@ public class RemoteSlideControl : MonoBehaviour
             audioSource.Play();
         }
     }
+
+    private void LateUpdate() => UpdateDirectionKeys();
 
     private void Update()
     {
@@ -252,6 +277,86 @@ public class RemoteSlideControl : MonoBehaviour
         Quaternion wanted = handleRest * Quaternion.Euler(maxTilt * direction);
         handle.localRotation = Quaternion.Slerp(handle.localRotation, wanted,
                                                 Time.deltaTime * handleSpeed);
+    }
+
+    /// <summary>
+    /// أيقونتا A و D فوق المرفاع ما دام اللاعب ماسكًا — تُنشآن عند أول حاجة إليهما،
+    /// وتواجهان الكاميرا، وتتلاشيان عند تركه.
+    /// </summary>
+    private void UpdateDirectionKeys()
+    {
+        if (!showDirectionKeys) return;
+
+        keysAlpha = Mathf.MoveTowards(keysAlpha, IsEngaged ? 1f : 0f, keysFadeSpeed * Time.deltaTime);
+
+        if (keysAlpha <= 0.001f)
+        {
+            if (leftIconRenderer != null) leftIconRenderer.enabled = false;
+            if (rightIconRenderer != null) rightIconRenderer.enabled = false;
+            return;
+        }
+
+        if (leftIconRenderer == null) BuildDirectionKeys();
+        if (leftIconRenderer == null) return;
+
+        if (keysCamera == null || !keysCamera.isActiveAndEnabled) keysCamera = ResolveCamera();
+
+        Transform origin = keysAnchor != null ? keysAnchor : (handle != null ? handle : transform);
+        Vector3 centre = origin.position + Vector3.up * keysHeight;
+
+        // يمينًا ويسارًا بالنسبة للكاميرا، فتطابق الأيقونتان اتجاه الحركة على الشاشة
+        Vector3 right = keysCamera != null ? keysCamera.transform.right : Vector3.right;
+        Quaternion face = keysCamera != null
+            ? Quaternion.LookRotation(centre - keysCamera.transform.position, Vector3.up)
+            : Quaternion.identity;
+
+        Place(leftIconRenderer, centre - right * (keysSpacing * 0.5f), face);
+        Place(rightIconRenderer, centre + right * (keysSpacing * 0.5f), face);
+    }
+
+    private void Place(SpriteRenderer r, Vector3 pos, Quaternion rot)
+    {
+        r.transform.SetPositionAndRotation(pos, rot);
+        r.transform.localScale = Vector3.one * keysSize;
+        r.color = new Color(1f, 1f, 1f, keysAlpha);
+        r.enabled = true;
+    }
+
+    private void BuildDirectionKeys()
+    {
+        if (leftKeyIcon == null) leftKeyIcon = Resources.Load<Sprite>("KeyA");
+        if (rightKeyIcon == null) rightKeyIcon = Resources.Load<Sprite>("KeyD");
+        if (leftKeyIcon == null || rightKeyIcon == null)
+        {
+            Debug.LogWarning("[RemoteSlideControl] ما لقيت أيقونتي KeyA و KeyD في Osama/Resources.", this);
+            showDirectionKeys = false;
+            return;
+        }
+
+        leftIconRenderer = NewIcon("KeyHint_A", leftKeyIcon);
+        rightIconRenderer = NewIcon("KeyHint_D", rightKeyIcon);
+    }
+
+    private SpriteRenderer NewIcon(string name, Sprite sprite)
+    {
+        var go = new GameObject(name);
+        go.layer = 2; // Ignore Raycast
+        go.transform.SetParent(transform, false);
+
+        var r = go.AddComponent<SpriteRenderer>();
+        r.sprite = sprite;
+        r.enabled = false;
+        return r;
+    }
+
+    private static Camera ResolveCamera()
+    {
+        if (Camera.main != null) return Camera.main;
+
+        foreach (var c in Camera.allCameras)
+            if (c != null && c.isActiveAndEnabled) return c;
+
+        return null;
     }
 
     private void UpdateSound(float direction)
