@@ -86,6 +86,16 @@ public class RemoteSlideControl : MonoBehaviour
     [SerializeField] private float keysSize = 0.3f;
     [Tooltip("سرعة ظهورهما واختفائهما")]
     [SerializeField] private float keysFadeSpeed = 6f;
+    [Tooltip("أيقونة E فوق المرفاع قبل الإمساك، تدعو اللاعب للضغط")]
+    [SerializeField] private bool showApproachKey = true;
+    [Tooltip("أيقونة الإمساك — تُحمَّل KeyE من Osama/Resources إن تُركت فارغة")]
+    [SerializeField] private Sprite approachKeyIcon;
+    [Tooltip("المسافة التي تظهر عندها أيقونة E (متر)")]
+    [SerializeField] private float approachKeyDistance = 3.5f;
+    [Tooltip("آخر متر من المسافة تخفّ فيه الأيقونة بالتدريج")]
+    [SerializeField] private float approachFadeBand = 1.2f;
+    [Tooltip("تختفي أيقونة E نهائيًا بعد أول استخدام — تعلّم اللاعب وانتهى دورها")]
+    [SerializeField] private bool hideApproachKeyAfterUse = true;
 
     [Header("صوت المرفاع (عند يدك)")]
     [SerializeField] private AudioSource audioSource;
@@ -118,9 +128,11 @@ public class RemoteSlideControl : MonoBehaviour
     private float currentOffset;
     private Quaternion handleRest;
 
-    private SpriteRenderer leftIconRenderer, rightIconRenderer;
+    private SpriteRenderer leftIconRenderer, rightIconRenderer, approachIconRenderer;
     private Camera keysCamera;
     private float keysAlpha;
+    private float approachAlpha;
+    private bool usedOnce;
 
     /// <summary>عطّلنا حركة اللاعب ثم مات — ننتظر بعثه لنعيدها بدل أن نحرّره وهو ميت.</summary>
     private bool restorePending;
@@ -285,14 +297,19 @@ public class RemoteSlideControl : MonoBehaviour
     /// </summary>
     private void UpdateDirectionKeys()
     {
-        if (!showDirectionKeys) return;
+        if (IsEngaged) usedOnce = true;
 
-        keysAlpha = Mathf.MoveTowards(keysAlpha, IsEngaged ? 1f : 0f, keysFadeSpeed * Time.deltaTime);
+        keysAlpha = Mathf.MoveTowards(keysAlpha, showDirectionKeys && IsEngaged ? 1f : 0f,
+                                      keysFadeSpeed * Time.deltaTime);
+        approachAlpha = Mathf.MoveTowards(approachAlpha, ApproachKeyTarget(),
+                                          keysFadeSpeed * Time.deltaTime);
 
-        if (keysAlpha <= 0.001f)
+        bool anything = keysAlpha > 0.001f || approachAlpha > 0.001f;
+        if (!anything)
         {
             if (leftIconRenderer != null) leftIconRenderer.enabled = false;
             if (rightIconRenderer != null) rightIconRenderer.enabled = false;
+            if (approachIconRenderer != null) approachIconRenderer.enabled = false;
             return;
         }
 
@@ -304,23 +321,61 @@ public class RemoteSlideControl : MonoBehaviour
         Transform origin = keysAnchor != null ? keysAnchor : (handle != null ? handle : transform);
         Vector3 centre = origin.position + Vector3.up * keysHeight;
 
+        // E قبل الإمساك، وA/D بعده — لا يجتمعان
+        if (approachIconRenderer != null)
+        {
+            if (approachAlpha > 0.001f)
+            {
+                Quaternion faceE = keysCamera != null
+                    ? Quaternion.LookRotation(centre - keysCamera.transform.position, Vector3.up)
+                    : Quaternion.identity;
+                Place(approachIconRenderer, centre, faceE, approachAlpha);
+            }
+            else approachIconRenderer.enabled = false;
+        }
+
+        if (keysAlpha <= 0.001f)
+        {
+            leftIconRenderer.enabled = false;
+            rightIconRenderer.enabled = false;
+            return;
+        }
+
         // يمينًا ويسارًا بالنسبة للكاميرا، فتطابق الأيقونتان اتجاه الحركة على الشاشة
         Vector3 right = keysCamera != null ? keysCamera.transform.right : Vector3.right;
         Quaternion face = keysCamera != null
             ? Quaternion.LookRotation(centre - keysCamera.transform.position, Vector3.up)
             : Quaternion.identity;
 
-        Place(leftIconRenderer, centre - right * (keysSpacing * 0.5f), face);
-        Place(rightIconRenderer, centre + right * (keysSpacing * 0.5f), face);
+        Place(leftIconRenderer, centre - right * (keysSpacing * 0.5f), face, keysAlpha);
+        Place(rightIconRenderer, centre + right * (keysSpacing * 0.5f), face, keysAlpha);
     }
 
-    private void Place(SpriteRenderer r, Vector3 pos, Quaternion rot)
+    /// <summary>
+    /// شدّة أيقونة E: تظهر واللاعب قريب وغير ماسك، وتخفّ بالتدريج مع ابتعاده،
+    /// وتختفي نهائيًا بعد أول استخدام إن شئت — فلا تبقى تلمّح لشيء تعلّمه.
+    /// </summary>
+    private float ApproachKeyTarget()
+    {
+        if (!showApproachKey || IsEngaged || player == null) return 0f;
+        if (hideApproachKeyAfterUse && usedOnce) return 0f;
+
+        Transform origin = keysAnchor != null ? keysAnchor : (handle != null ? handle : transform);
+        float distance = Vector3.Distance(player.position, origin.position);
+        if (distance > approachKeyDistance) return 0f;
+
+        float band = Mathf.Max(0.01f, approachFadeBand);
+        float fadeStart = Mathf.Max(0f, approachKeyDistance - band);
+        return Mathf.SmoothStep(0f, 1f, 1f - Mathf.Clamp01((distance - fadeStart) / band));
+    }
+
+    private void Place(SpriteRenderer r, Vector3 pos, Quaternion rot, float alpha)
     {
         r.transform.SetPositionAndRotation(pos, rot);
         // الحجم بفضاء العالم مهما كان تكبير الكائن الأب
         Vector3 s = transform.lossyScale;
         r.transform.localScale = new Vector3(Div(keysSize, s.x), Div(keysSize, s.y), Div(keysSize, s.z));
-        r.color = new Color(1f, 1f, 1f, keysAlpha);
+        r.color = new Color(1f, 1f, 1f, alpha);
         r.enabled = true;
     }
 
@@ -337,6 +392,9 @@ public class RemoteSlideControl : MonoBehaviour
 
         leftIconRenderer = NewIcon("KeyHint_A", leftKeyIcon);
         rightIconRenderer = NewIcon("KeyHint_D", rightKeyIcon);
+
+        if (approachKeyIcon == null) approachKeyIcon = Resources.Load<Sprite>("KeyE");
+        if (approachKeyIcon != null) approachIconRenderer = NewIcon("KeyHint_E", approachKeyIcon);
     }
 
     private SpriteRenderer NewIcon(string name, Sprite sprite)
