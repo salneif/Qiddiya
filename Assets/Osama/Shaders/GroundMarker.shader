@@ -10,6 +10,7 @@ Shader "Osama/GroundMarker"
     {
         _Color ("Color", Color) = (0, 0, 0, 0.55)
         _Softness ("Edge Softness", Range(0.01, 1)) = 0.4
+        _Ring ("Ring Width (0 = solid dot)", Range(0, 1)) = 0
     }
 
     SubShader
@@ -41,6 +42,7 @@ Shader "Osama/GroundMarker"
             CBUFFER_START(UnityPerMaterial)
                 float4 _Color;
                 float  _Softness;
+                float  _Ring;
             CBUFFER_END
 
             struct Attributes
@@ -69,6 +71,14 @@ Shader "Osama/GroundMarker"
                 float d = length(input.uv - 0.5) * 2.0;
                 float edge = saturate(1.0 - _Softness);
                 float alpha = 1.0 - smoothstep(edge, 1.0, d);
+
+                // حلقة: نقصّ المنتصف فتبقى حافة دائرية فقط
+                if (_Ring > 0.001)
+                {
+                    float inner = saturate(1.0 - _Ring);
+                    alpha *= smoothstep(inner - _Softness, inner, d);
+                }
+
                 return half4(_Color.rgb, _Color.a * alpha);
             }
             ENDHLSL
