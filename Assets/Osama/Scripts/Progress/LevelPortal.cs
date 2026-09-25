@@ -42,6 +42,10 @@ public class LevelPortal : MonoBehaviour
     [SerializeField] private string playerTag = "Player";
     [Tooltip("زر التفعيل وأنت داخل المنطقة (None = ينتقل تلقائيًا بمجرد الدخول)")]
     [SerializeField] private Key activationKey = Key.None;
+    [Tooltip("يتجاهل التريغر أول هذي الثواني بعد تحميل السين. نقطة ظهور اللاعب عائدًا " +
+             "من المرحلة تكون ملاصقة للباب، فبدونها يظهر داخل البوابة فترجّعه من حيث " +
+             "أتى في نفس اللحظة — حلقة لا تنتهي. صفر = السلوك القديم.")]
+    [SerializeField] private float ignoreTriggerAfterLoad = 1f;
 
     [Header("الانتقال")]
     [Tooltip("شاشة التحميل: صورة الوجهة وبار يركض عليه علي. إن أُطفئت رجع الانتقال " +
@@ -91,6 +95,7 @@ public class LevelPortal : MonoBehaviour
                               GameProgress.Instance.IsPlanted(requirePlantedFlag);
 
     private bool playerInside;
+    private bool armed = true;
     private bool leaving;
     private Transform player;
     private bool playerNear;
@@ -114,19 +119,28 @@ public class LevelPortal : MonoBehaviour
         if (!other.CompareTag(playerTag)) return;
         playerInside = true;
 
+        // ظهر داخل البوابة لا مشى إليها — لا ترجّعه، وانتظر حتى يخرج ويعود بنفسه
+        if (Time.timeSinceLevelLoad < ignoreTriggerAfterLoad)
+        {
+            armed = false;
+            return;
+        }
+
         if (activationKey == Key.None) TryGo();
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag(playerTag)) playerInside = false;
+        if (!other.CompareTag(playerTag)) return;
+        playerInside = false;
+        armed = true;   // خرج ثم عاد = نيّة حقيقية للعبور
     }
 
     private void Update()
     {
         UpdateApproach();
 
-        if (!playerInside || leaving || activationKey == Key.None) return;
+        if (!playerInside || !armed || leaving || activationKey == Key.None) return;
         if (Keyboard.current == null) return;
 
         if (Keyboard.current[activationKey].wasPressedThisFrame) TryGo();
