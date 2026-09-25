@@ -29,7 +29,7 @@ public class FlagBaseBeacon : MonoBehaviour
     [Tooltip("لا تظهر إلا واللاعب حامل علم هذي القاعدة. أطفئه لتظهر دائمًا حتى قبل أن يملكه.")]
     [SerializeField] private bool onlyWhenCarrying = true;
     [Tooltip("نصف قطر الدائرة (متر)")]
-    [SerializeField] private float ringRadius = 1.6f;
+    [SerializeField] private float ringRadius = 0.6f;
     [Tooltip("سماكة الحلقة — 1 يجعلها قرصًا ممتلئًا")]
     [Range(0.05f, 1f)]
     [SerializeField] private float ringWidth = 0.25f;
@@ -42,13 +42,18 @@ public class FlagBaseBeacon : MonoBehaviour
     [Tooltip("ارتفاع الدائرة عن الأرض — يمنع وميضها مع الأرضية")]
     [SerializeField] private float groundOffset = 0.03f;
 
-    [Header("حرف الزر عند الاقتراب")]
+    [Header("علامة الزر عند الاقتراب")]
+    [Tooltip("صورة تظهر فوق القاعدة عند الاقتراب (أيقونة زر E مثلًا). " +
+             "اتركها فارغة وفعّل Show Key Letter لعرض الحرف نصًّا بدلًا منها.")]
+    [SerializeField] private Sprite promptSprite;
+    [Tooltip("اعرض حرف الزر نصًّا. أطفئه إن كنت تستخدم صورة، أو إن لم ترد شيئًا فوق القاعدة.")]
+    [SerializeField] private bool showKeyLetter = false;
     [Tooltip("المسافة التي يظهر عندها الحرف (متر)")]
     [SerializeField] private float promptDistance = 3f;
     [Tooltip("ارتفاع الحرف فوق نقطة الزرع (متر)")]
     [SerializeField] private float promptHeight = 1.8f;
-    [Tooltip("حجم الحرف")]
-    [SerializeField] private float promptSize = 1.4f;
+    [Tooltip("حجم العلامة — صغّره حتى تصير خفيفة على العين")]
+    [SerializeField] private float promptSize = 0.35f;
     [Tooltip("تختفي الدائرة وهو قريب فلا يزدحم المشهد")]
     [SerializeField] private bool hideRingWhenClose = true;
 
@@ -67,7 +72,8 @@ public class FlagBaseBeacon : MonoBehaviour
 
     private TextMeshPro prompt;
     private TextMesh legacyPrompt;      // بديل لو ما في خط TMP معيّن
-    private MeshRenderer promptRenderer;
+    private SpriteRenderer spritePrompt;
+    private Renderer promptRenderer;
 
     private float ringAlpha;
     private float promptAlpha;
@@ -153,6 +159,19 @@ public class FlagBaseBeacon : MonoBehaviour
         go.layer = 2;
         go.transform.SetParent(transform, false);
 
+        // صورة؟ أبسط وأوضح من النص ولا تحتاج خطوطًا
+        if (promptSprite != null)
+        {
+            spritePrompt = go.AddComponent<SpriteRenderer>();
+            spritePrompt.sprite = promptSprite;
+            spritePrompt.color = color;
+            promptRenderer = spritePrompt;
+            promptRenderer.enabled = false;
+            return;
+        }
+
+        if (!showKeyLetter) return;   // لا صورة ولا حرف — الدائرة وحدها تكفي
+
         TMP_FontAsset font = TMP_Settings.defaultFontAsset;
         if (font == null) font = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
         if (font == null) font = Resources.Load<TMP_FontAsset>("Fonts & Materials/Roboto-Bold SDF");
@@ -216,11 +235,12 @@ public class FlagBaseBeacon : MonoBehaviour
         if (wantPrompt && !promptReported)
         {
             promptReported = true;
-            string label = prompt != null ? prompt.text : (legacyPrompt != null ? legacyPrompt.text : "?");
-            string fontName = prompt != null && prompt.font != null ? prompt.font.name
-                            : legacyPrompt != null ? "TextMesh المدمج" : "مفقود";
-            Debug.Log($"[FlagBaseBeacon] الحرف \"{label}\" يظهر فوق {anchor.name} — " +
-                      $"الخط: {fontName}، الكاميرا: {(cam != null ? cam.name : "غير موجودة")}.", this);
+            string what = spritePrompt != null ? $"صورة {promptSprite.name}"
+                        : prompt != null ? $"حرف {prompt.text}"
+                        : legacyPrompt != null ? $"حرف {legacyPrompt.text}"
+                        : "لا شيء (بلا صورة ولا حرف)";
+            Debug.Log($"[FlagBaseBeacon] العلامة فوق {anchor.name}: {what} — " +
+                      $"الكاميرا: {(cam != null ? cam.name : "غير موجودة")}.", this);
         }
 
         ringAlpha = Mathf.MoveTowards(ringAlpha, wantRing ? 1f : 0f, fadeSpeed * Time.deltaTime);
@@ -300,6 +320,7 @@ public class FlagBaseBeacon : MonoBehaviour
         Color c = new Color(color.r, color.g, color.b, promptAlpha);
         if (prompt != null) prompt.color = c;
         if (legacyPrompt != null) legacyPrompt.color = c;
+        if (spritePrompt != null) spritePrompt.color = c;
 
         promptRenderer.enabled = true;
     }
