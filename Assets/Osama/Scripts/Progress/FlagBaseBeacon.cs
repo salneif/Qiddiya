@@ -69,11 +69,14 @@ public class FlagBaseBeacon : MonoBehaviour
 
     private float ringAlpha;
     private float promptAlpha;
+    private bool promptReported;
 
     private void Awake()
     {
         if (flagBase == null) flagBase = GetComponent<FlagBase>();
         if (socket == null) socket = GetComponent<FlagSocket>();
+        if (socket == null) socket = GetComponentInParent<FlagSocket>();
+        if (socket == null) socket = GetComponentInChildren<FlagSocket>(true);
         if (anchor == null && socket != null) anchor = socket.PlacePoint;
         if (anchor == null) anchor = transform;
 
@@ -170,8 +173,17 @@ public class FlagBaseBeacon : MonoBehaviour
             float distance = Vector3.Distance(player.position, anchor.position);
             bool close = distance <= promptDistance;
 
-            wantPrompt = close && socket != null && !socket.AutoPlace;
+            // المقبس قد يكون على كائن آخر — غيابه لا يمنع الحرف، فالزر الافتراضي E
+            wantPrompt = close && (socket == null || !socket.AutoPlace);
             wantRing = !(close && hideRingWhenClose);
+        }
+
+        if (wantPrompt && !promptReported)
+        {
+            promptReported = true;
+            Debug.Log($"[FlagBaseBeacon] الحرف \"{prompt.text}\" يفترض أن يظهر فوق " +
+                      $"{anchor.name} — خط TMP: {(prompt.font != null ? prompt.font.name : "مفقود")}، " +
+                      $"كاميرا: {(cam != null ? cam.name : "غير موجودة")}.", this);
         }
 
         ringAlpha = Mathf.MoveTowards(ringAlpha, wantRing ? 1f : 0f, fadeSpeed * Time.deltaTime);
@@ -238,7 +250,7 @@ public class FlagBaseBeacon : MonoBehaviour
             return;
         }
 
-        if (cam == null) cam = Camera.main;
+        if (cam == null || !cam.isActiveAndEnabled) cam = ResolveCamera();
 
         Vector3 pos = anchor.position + Vector3.up * promptHeight;
         prompt.transform.position = pos;
@@ -250,6 +262,20 @@ public class FlagBaseBeacon : MonoBehaviour
 
         prompt.color = new Color(color.r, color.g, color.b, promptAlpha);
         renderer.enabled = true;
+    }
+
+    /// <summary>
+    /// كاميرا العرض: <c>Camera.main</c> تعود null إن لم يكن أحد موسومًا MainCamera،
+    /// وعندها يبقى الحرف بدورانه الأصلي فيُرى من حرفه — أي لا يُرى.
+    /// </summary>
+    private Camera ResolveCamera()
+    {
+        if (Camera.main != null) return Camera.main;
+
+        foreach (var c in Camera.allCameras)
+            if (c != null && c.isActiveAndEnabled) return c;
+
+        return null;
     }
 
     private static float SafeDiv(float a, float b) => Mathf.Abs(b) > 0.0001f ? a / b : a;
