@@ -41,6 +41,10 @@ public class PauseMenuManager : MonoBehaviour
         if (pauseCanvas != null)
         {
             pauseCanvas.enabled = isPaused;
+            if(isPaused )
+           Time.timeScale = 0;
+           else
+           Time.timeScale = 1;
         }
 
         // Deselect the button so EventSystem doesn't lock Escape key input
