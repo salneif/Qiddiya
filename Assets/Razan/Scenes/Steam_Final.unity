@@ -129439,6 +129439,8 @@ MonoBehaviour:
     m_Bits: 4294967295
   visibility: 3.5
   autoGlow: 1
+  hazardMark: 0
+  hazardMarkLift: 0.9
   color: {r: 1, g: 0.25, b: 0.05, a: 0.75}
   ring: 0.55
   softness: 0.3
@@ -130357,6 +130359,8 @@ MonoBehaviour:
     m_Bits: 4294967295
   visibility: 3.5
   autoGlow: 1
+  hazardMark: 0
+  hazardMarkLift: 0.9
   color: {r: 1, g: 0.25, b: 0.05, a: 0.75}
   ring: 0.55
   softness: 0.3
@@ -130371,6 +130375,21 @@ MonoBehaviour:
   warningVolume: 0.5
   hearingRange: 12
   playerTag: Player
+--- !u!4 &1053223353
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1443214277}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -43.5, y: 7.995, z: -2.943}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1054495364
 GameObject:
   m_ObjectHideFlags: 0
@@ -130961,6 +130980,8 @@ MonoBehaviour:
     m_Bits: 4294967295
   visibility: 3.5
   autoGlow: 1
+  hazardMark: 0
+  hazardMarkLift: 0.9
   color: {r: 1, g: 0.25, b: 0.05, a: 0.75}
   ring: 0.55
   softness: 0.3
@@ -136515,6 +136536,48 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1104301670
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1443214277}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95d35b21d5644c2d9912b062cc5b9492, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WarningCard
+  card: {fileID: 21300000, guid: 5b407ee77a494418aff6456394e9379d, type: 3}
+  cardFromResources: 
+  widthOfScreen: 0.45
+  backdrop: 0.6
+  blurBackground: 1
+  blurAmount: 10
+  showNear: []
+  nearDistance: 7
+  showOnTrigger: 0
+  playerTag: Player
+  onlyOnce: 1
+  delay: 0.15
+  pauseGame: 1
+  anyKeySkips: 1
+  autoHideAfter: 0
+  minShowTime: 0.4
+  skipHint: PRESS ANY KEY
+  fadeIn: 0.35
+  fadeOut: 0.3
+  slide: 1
+  slideDistance: 1.1
+  showSound: {fileID: 8300000, guid: a79b8dfed3aa6ae4f97fb82ad74010e4, type: 3}
+  hideSound: {fileID: 0}
+  soundVolume: 0.7
+  onShown:
+    m_PersistentCalls:
+      m_Calls: []
+  onDismissed:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!65 &1106835008
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -148815,6 +148878,8 @@ MonoBehaviour:
     m_Bits: 4294967295
   visibility: 3.5
   autoGlow: 1
+  hazardMark: 0
+  hazardMarkLift: 0.9
   color: {r: 1, g: 0.25, b: 0.05, a: 0.75}
   ring: 0.55
   softness: 0.3
@@ -148986,6 +149051,21 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 5302568919011541938, guid: 69229dd3198209342bf2841e79d752be, type: 3}
+--- !u!4 &1256507558
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1972925857}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -50.17, y: 7.93, z: -1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1258653981
 GameObject:
   m_ObjectHideFlags: 0
@@ -176299,6 +176379,23 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0d857f3c946a24b2b9c3c45bcc61143f, type: 3}
+--- !u!1 &1443214277
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1053223353}
+  - component: {fileID: 1104301670}
+  m_Layer: 0
+  m_Name: RobotWarningCard
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!4 &1445610742 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8940225917214355961, guid: 7db9e788ff463ea44ab5b16c2eb684e3, type: 3}
@@ -182590,6 +182687,48 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 3861478300804232965, guid: 69229dd3198209342bf2841e79d752be, type: 3}
+--- !u!114 &1522388729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1972925857}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95d35b21d5644c2d9912b062cc5b9492, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WarningCard
+  card: {fileID: 21300000, guid: 27f473d51b9746c5a240c083072064f7, type: 3}
+  cardFromResources: 
+  widthOfScreen: 0.45
+  backdrop: 0.6
+  blurBackground: 1
+  blurAmount: 10
+  showNear: []
+  nearDistance: 6
+  showOnTrigger: 0
+  playerTag: Player
+  onlyOnce: 1
+  delay: 0.15
+  pauseGame: 1
+  anyKeySkips: 1
+  autoHideAfter: 0
+  minShowTime: 0.4
+  skipHint: PRESS ANY KEY
+  fadeIn: 0.25
+  fadeOut: 0.2
+  slide: 1
+  slideDistance: 1.1
+  showSound: {fileID: 8300000, guid: a79b8dfed3aa6ae4f97fb82ad74010e4, type: 3}
+  hideSound: {fileID: 0}
+  soundVolume: 0.7
+  onShown:
+    m_PersistentCalls:
+      m_Calls: []
+  onDismissed:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1532754236
 GameObject:
   m_ObjectHideFlags: 0
@@ -188965,6 +189104,8 @@ MonoBehaviour:
     m_Bits: 4294967295
   visibility: 3.5
   autoGlow: 1
+  hazardMark: 0
+  hazardMarkLift: 0.9
   color: {r: 1, g: 0.25, b: 0.05, a: 0.75}
   ring: 0.55
   softness: 0.3
@@ -213605,6 +213746,8 @@ MonoBehaviour:
     m_Bits: 4294967295
   visibility: 3.5
   autoGlow: 1
+  hazardMark: 0
+  hazardMarkLift: 0.9
   color: {r: 1, g: 0.25, b: 0.05, a: 0.75}
   ring: 0.55
   softness: 0.3
@@ -234269,6 +234412,23 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &1972925857
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1256507558}
+  - component: {fileID: 1522388729}
+  m_Layer: 0
+  m_Name: LavaWarningCard
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!64 &1986298503
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -510774,144 +510934,3 @@ SceneRoots:
   - {fileID: 287329079}
   - {fileID: 1256507558}
   - {fileID: 1053223353}
---- !u!1 &1972925857
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1256507558}
-  - component: {fileID: 1522388729}
-  m_Layer: 0
-  m_Name: LavaWarningCard
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1256507558
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1972925857}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -34, y: 11, z: -1}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1522388729
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1972925857}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 95d35b21d5644c2d9912b062cc5b9492, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WarningCard
-  card: {fileID: 21300000, guid: 27f473d51b9746c5a240c083072064f7, type: 3}
-  cardFromResources: 
-  widthOfScreen: 0.45
-  backdrop: 0.6
-  blurBackground: 1
-  blurAmount: 10
-  showNear: []
-  nearDistance: 6
-  showOnTrigger: 0
-  playerTag: Player
-  onlyOnce: 1
-  delay: 0.15
-  pauseGame: 1
-  anyKeySkips: 1
-  autoHideAfter: 0
-  minShowTime: 0.4
-  skipHint: PRESS ANY KEY
-  fadeIn: 0.25
-  fadeOut: 0.2
-  onShown:
-    m_PersistentCalls:
-      m_Calls: []
-  onDismissed:
-    m_PersistentCalls:
-      m_Calls: []
---- !u!1 &1443214277
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1053223353}
-  - component: {fileID: 1104301670}
-  m_Layer: 0
-  m_Name: RobotWarningCard
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1053223353
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1443214277}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -34, y: 11, z: -1}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1104301670
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1443214277}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 95d35b21d5644c2d9912b062cc5b9492, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WarningCard
-  card: {fileID: 21300000, guid: 5b407ee77a494418aff6456394e9379d, type: 3}
-  cardFromResources: 
-  widthOfScreen: 0.45
-  backdrop: 0.6
-  blurBackground: 1
-  blurAmount: 10
-  showNear:
-  - {fileID: 6388003619142452329}
-  nearDistance: 25
-  showOnTrigger: 0
-  playerTag: Player
-  onlyOnce: 1
-  delay: 0.15
-  pauseGame: 1
-  anyKeySkips: 1
-  autoHideAfter: 0
-  minShowTime: 0.4
-  skipHint: PRESS ANY KEY
-  fadeIn: 0.35
-  fadeOut: 0.3
-  slide: 1
-  slideDistance: 1.1
-  onShown:
-    m_PersistentCalls:
-      m_Calls: []
-  onDismissed:
-    m_PersistentCalls:
-      m_Calls: []
