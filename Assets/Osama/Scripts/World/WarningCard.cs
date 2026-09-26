@@ -24,11 +24,21 @@ public class WarningCard : MonoBehaviour
     [Tooltip("أو: اسم الصورة داخل Osama/Resources إن تُركت الخانة فارغة")]
     [SerializeField] private string cardFromResources = "";
     [Tooltip("أكبر عرض تأخذه من الشاشة")]
-    [Range(0.2f, 1f)] [SerializeField] private float widthOfScreen = 0.62f;
+    [Range(0.2f, 1f)] [SerializeField] private float widthOfScreen = 0.45f;
     [Tooltip("تعتيم خلف اللوحة ليبرز محتواها — صفر يلغيه")]
-    [Range(0f, 1f)] [SerializeField] private float backdrop = 0.65f;
+    [Range(0f, 1f)] [SerializeField] private float backdrop = 0.6f;
+    [Tooltip("يغبّش المشهد خلف اللوحة. لقطةٌ واحدة تُصغَّر ثم تُعرض مكبّرة — واللعبة " +
+             "متوقّفة فالمشهد ساكن ولقطة واحدة تكفي، بلا أي كلفة كل إطار")]
+    [SerializeField] private bool blurBackground = true;
+    [Tooltip("قوة التغبيش: كم مرّة تُصغَّر اللقطة. أكبر = أغبش")]
+    [Range(2, 24)] [SerializeField] private int blurAmount = 10;
 
     [Header("متى تظهر")]
+    [Tooltip("تظهر عند اقتراب اللاعب من أيٍّ من هذي الكائنات — بديل عن الكولايدر. " +
+             "تعمل من أي اتجاه، فلا تحتاج معرفة الطريق الذي يدخل منه اللاعب")]
+    [SerializeField] private Transform[] showNear;
+    [Tooltip("مسافة الاقتراب (متر)")]
+    [SerializeField] private float nearDistance = 14f;
     [Tooltip("تظهر عند دخول اللاعب كولايدر هذا الكائن")]
     [SerializeField] private bool showOnTrigger = true;
     [SerializeField] private string playerTag = "Player";
@@ -62,6 +72,9 @@ public class WarningCard : MonoBehaviour
     private Image backdropImage;
     private Image cardImage;
     private Text hint;
+    private Transform player;
+    private Texture2D blurred;
+    private Sprite blurSprite;
     private bool shown;
     private bool busy;
 
@@ -78,6 +91,28 @@ public class WarningCard : MonoBehaviour
         }
 
         Build();
+    }
+
+    private void Update()
+    {
+        if (showNear == null || showNear.Length == 0) return;
+        if (busy || (onlyOnce && shown)) return;
+
+        if (player == null)
+        {
+            var go = PlayerLocator.Find(playerTag);
+            if (go == null) return;
+            player = go.transform;
+        }
+
+        foreach (Transform target in showNear)
+        {
+            if (target == null) continue;
+            if (Vector3.Distance(player.position, target.position) > nearDistance) continue;
+
+            Show();
+            return;
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -99,6 +134,9 @@ public class WarningCard : MonoBehaviour
         busy = true;
 
         if (delay > 0f) yield return new WaitForSecondsRealtime(delay);
+
+        // قبل إظهار الكانفس: وإلا صوّرنا اللوحة نفسها داخل خلفيتها
+        if (blurBackground) yield return CaptureBlur();
 
         canvas.enabled = true;
         group.blocksRaycasts = true;
@@ -132,8 +170,74 @@ public class WarningCard : MonoBehaviour
 
         group.blocksRaycasts = false;
         canvas.enabled = false;
+        ReleaseBlur();
         busy = false;
         onDismissed?.Invoke();
+    }
+
+    /// <summary>
+    /// يلتقط الشاشة مرّة ويصغّرها، ثم تُعرض مكبّرة فتبدو مغبّشة — الترشيح الخطّي
+    /// للبطاقة يقوم بالتنعيم. واللعبة متوقّفة فالمشهد لا يتغيّر، فلقطة واحدة تكفي
+    /// ولا نحتاج تغبيشًا حيًّا كل إطار.
+    /// </summary>
+    private IEnumerator CaptureBlur()
+    {
+        yield return new WaitForEndOfFrame();   // القراءة قبل نهاية الإطار تعطي شاشة نصف مرسومة
+
+        Texture2D shot = null;
+        try { shot = ScreenCapture.CaptureScreenshotAsTexture(); }
+        catch (System.Exception e) { Debug.LogWarning($"[WarningCard] ما قدرت ألتقط الخلفية: {e.Message}", this); }
+
+        if (shot == null) yield break;
+
+        blurred = Shrink(shot, Mathf.Max(2, blurAmount));
+        Destroy(shot);
+
+        if (blurred == null) yield break;
+
+        blurSprite = Sprite.Create(blurred, new Rect(0f, 0f, blurred.width, blurred.height),
+                                   new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+
+        backdropImage.sprite = blurSprite;
+        backdropImage.type = Image.Type.Simple;
+        float dim = 1f - backdrop * 0.85f;
+        backdropImage.color = new Color(dim, dim, dim, 1f);
+    }
+
+    private static Texture2D Shrink(Texture2D source, int divisor)
+    {
+        int w = Mathf.Max(1, source.width / divisor);
+        int h = Mathf.Max(1, source.height / divisor);
+
+        source.filterMode = FilterMode.Bilinear;
+        RenderTexture rt = RenderTexture.GetTemporary(w, h, 0);
+        rt.filterMode = FilterMode.Bilinear;
+        Graphics.Blit(source, rt);
+
+        RenderTexture previous = RenderTexture.active;
+        RenderTexture.active = rt;
+
+        var small = new Texture2D(w, h, TextureFormat.RGB24, false);
+        small.ReadPixels(new Rect(0f, 0f, w, h), 0, 0);
+        small.Apply();
+        small.filterMode = FilterMode.Bilinear;   // التكبير الخطّي هو التغبيش نفسه
+        small.wrapMode = TextureWrapMode.Clamp;
+
+        RenderTexture.active = previous;
+        RenderTexture.ReleaseTemporary(rt);
+        return small;
+    }
+
+    private void ReleaseBlur()
+    {
+        if (backdropImage != null)
+        {
+            backdropImage.sprite = null;
+            backdropImage.color = new Color(0f, 0f, 0f, backdrop);
+        }
+
+        if (blurSprite != null) { Destroy(blurSprite); blurSprite = null; }
+        if (blurred != null) { Destroy(blurred); blurred = null; }
     }
 
     private static bool Pressed()
@@ -247,7 +351,7 @@ public class WarningCard : MonoBehaviour
 
         cardImage.rectTransform.sizeDelta = new Vector2(width, height);
 
-        if (backdropImage != null)
+        if (backdropImage != null && backdropImage.sprite == null)
             backdropImage.color = new Color(0f, 0f, 0f, backdrop);
     }
 
@@ -287,15 +391,22 @@ public class WarningCard : MonoBehaviour
     {
         delay = Mathf.Max(0f, delay);
         minShowTime = Mathf.Max(0f, minShowTime);
+        nearDistance = Mathf.Max(0.5f, nearDistance);
         autoHideAfter = Mathf.Max(0f, autoHideAfter);
     }
 
     private void OnDrawGizmosSelected()
     {
         var c = GetComponent<Collider>();
-        if (c == null) return;
+        if (c != null)
+        {
+            Gizmos.color = new Color(1f, 0.85f, 0.2f, 0.4f);
+            Gizmos.DrawWireCube(c.bounds.center, c.bounds.size);
+        }
 
-        Gizmos.color = new Color(1f, 0.85f, 0.2f, 0.4f);
-        Gizmos.DrawWireCube(c.bounds.center, c.bounds.size);
+        if (showNear == null) return;
+        Gizmos.color = new Color(1f, 0.85f, 0.2f, 0.35f);
+        foreach (Transform target in showNear)
+            if (target != null) Gizmos.DrawWireSphere(target.position, nearDistance);
     }
 }
