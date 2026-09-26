@@ -510942,3 +510942,61 @@ SceneRoots:
   - {fileID: 287329079}
   - {fileID: 1256507558}
   - {fileID: 1053223353}
+  - {fileID: 1164029600}
+--- !u!1 &1688649392
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1164029600}
+  - component: {fileID: 1757315628}
+  m_Layer: 0
+  m_Name: ClockPuzzleHint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1164029600
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1688649392}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1757315628
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1688649392}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e97e8ef1fda4b8c8a7055e0f2926f05, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ClockPuzzleHint
+  hourHand: {fileID: 6322896145930034700}
+  minuteHand: {fileID: 1830411679990164899}
+  targetMinutes: 180
+  tolerance: 2
+  showGhostHands: 1
+  ghostColor: {r: 1, g: 0.85, b: 0.35, a: 1}
+  ghostScale: 0.92
+  ghostPulse: 0.8
+  tintByDistance: 1
+  warmRange: 240
+  nearColor: {r: 1, g: 0.7, b: 0.2, a: 1}
+  solvedColor: {r: 1, g: 1, b: 1, a: 1}
+  hideGhostsWhenSolved: 1
