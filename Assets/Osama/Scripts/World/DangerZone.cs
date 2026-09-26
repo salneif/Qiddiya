@@ -40,6 +40,14 @@ public class DangerZone : MonoBehaviour
     [Tooltip("طبقات الأرض — Nothing = كل شيء ما عدا التريغرات")]
     [SerializeField] private LayerMask floorLayers = ~0;
 
+    [Header("الوضوح")]
+    [Tooltip("مضاعف عام لكل ما يُرى: حجم العلامة وشدّة الضوء ومدى انتشاره والتوهّج. " +
+             "ارفعه حتى يصرخ الخطر، ونزّله إن طغى على المشهد")]
+    [SerializeField] private float visibility = 3.5f;
+    [Tooltip("يلقى رِندَرات الفخّ بنفسه إن تُركت القائمة فارغة: كل ما يتقاطع مع صندوق " +
+             "القتل من رِندَرات الكائن الأب — أي الحِمَم والقِدر، لا الممشى كله")]
+    [SerializeField] private bool autoGlow = true;
+
     [Header("الشكل")]
     [Tooltip("لون الخطر")]
     [SerializeField] private Color color = new Color(1f, 0.25f, 0.05f, 0.75f);
@@ -91,6 +99,8 @@ public class DangerZone : MonoBehaviour
             return;
         }
 
+        if (autoGlow && (glowRenderers == null || glowRenderers.Length == 0)) FindGlowRenderers();
+
         BuildMarker();
         BuildLight();
         BuildSound();
@@ -134,7 +144,7 @@ public class DangerZone : MonoBehaviour
         if (marker == null || area == null) return;
 
         Bounds bounds = area.bounds;
-        float side = Mathf.Max(bounds.size.x, bounds.size.z) + margin * 2f;
+        float side = (Mathf.Max(bounds.size.x, bounds.size.z) + margin * 2f) * Vis;
 
         float y = bounds.min.y + groundOffset;
         if (dropToFloor)
@@ -165,7 +175,7 @@ public class DangerZone : MonoBehaviour
 
             dangerLight = go.AddComponent<Light>();
             dangerLight.type = LightType.Point;
-            dangerLight.range = Mathf.Max(area.bounds.size.x, area.bounds.size.z) + 4f;
+            dangerLight.range = (Mathf.Max(area.bounds.size.x, area.bounds.size.z) + 4f) * Vis;
             dangerLight.shadows = LightShadows.None;   // فخّ صغير لا يستحق ظلالًا
         }
 
@@ -202,18 +212,44 @@ public class DangerZone : MonoBehaviour
             markerRenderer.SetPropertyBlock(block);
         }
 
-        if (dangerLight != null) dangerLight.intensity = lightIntensity * strength;
+        if (dangerLight != null) dangerLight.intensity = lightIntensity * Vis * strength;
 
         Glow(strength);
         Warn();
     }
+
+    /// <summary>
+    /// يلتقط رِندَرات الفخّ بنفسه: من رِندَرات الكائن الأب، ما يتقاطع حيّزه مع صندوق
+    /// القتل. التقاطع شرطٌ مقصود — الأب قد يكون الممشى كله، ولا نريد أن يتوهّج.
+    /// </summary>
+    private void FindGlowRenderers()
+    {
+        Transform root = transform.parent != null ? transform.parent : transform;
+        Bounds box = area.bounds;
+        box.Expand(0.5f);
+
+        var found = new System.Collections.Generic.List<Renderer>();
+        foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+        {
+            if (renderer == null || renderer == markerRenderer) continue;
+            if (!box.Intersects(renderer.bounds)) continue;
+            found.Add(renderer);
+        }
+
+        glowRenderers = found.ToArray();
+        if (glowRenderers.Length == 0)
+            Debug.Log($"[DangerZone] «{name}»: ما لقيت رِندَرات داخل صندوق القتل — " +
+                      "اسحب رِندَرات الحِمَم في Glow Renderers لو أردت توهّجها.", this);
+    }
+
+    private float Vis => Mathf.Max(0.1f, visibility);
 
     /// <summary>توهّج على رِندَرات الحِمَم بـ MaterialPropertyBlock، فلا تُمسّ مادّتها المشتركة.</summary>
     private void Glow(float strength)
     {
         if (glowRenderers == null || glowRenderers.Length == 0) return;
 
-        Color emission = color * (glowStrength * strength);
+        Color emission = color * (glowStrength * Vis * strength);
         foreach (Renderer renderer in glowRenderers)
         {
             if (renderer == null) continue;
@@ -244,6 +280,7 @@ public class DangerZone : MonoBehaviour
     private void OnValidate()
     {
         margin = Mathf.Max(0f, margin);
+        visibility = Mathf.Max(0.1f, visibility);
         dropDistance = Mathf.Max(0.1f, dropDistance);
         hearingRange = Mathf.Max(0.5f, hearingRange);
         pulsesPerSecond = Mathf.Max(0f, pulsesPerSecond);
