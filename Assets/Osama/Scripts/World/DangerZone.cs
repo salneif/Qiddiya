@@ -47,9 +47,9 @@ public class DangerZone : MonoBehaviour
     [Tooltip("يلقى رِندَرات الفخّ بنفسه إن تُركت القائمة فارغة: كل ما يتقاطع مع صندوق " +
              "القتل من رِندَرات الكائن الأب — أي الحِمَم والقِدر، لا الممشى كله")]
     [SerializeField] private bool autoGlow = true;
-    [Tooltip("علامة تحذير تطفو فوق الفخّ وتواجه الكاميرا دائمًا. هذي الوحيدة التي لا " +
-             "يحجبها شيء ولا تعتمد على أرض تحت الفخّ ولا على ماتيريال يقبل التوهّج")]
-    [SerializeField] private bool hazardMark = true;
+    [Tooltip("حلقة تطفو فوق الفخّ وتواجه الكاميرا. مطفأة: بدت مشوّهة فوق القدور، " +
+             "ولوحة WarningCard قبل البركان الأول تعلّم اللاعب أفضل منها")]
+    [SerializeField] private bool hazardMark = false;
     [Tooltip("ارتفاع علامة التحذير فوق أعلى الفخّ، بنسبة من حجمه")]
     [SerializeField] private float hazardMarkLift = 0.9f;
 
