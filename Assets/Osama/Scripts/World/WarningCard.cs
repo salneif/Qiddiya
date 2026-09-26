@@ -83,6 +83,16 @@ public class WarningCard : MonoBehaviour
     private Image backdropImage;
     private Image cardImage;
     private Text hint;
+    /// <summary>
+    /// اللوحة المعروضة الآن. لوحتان متقاربتان (تحذير الحِمَم والروبوت على بعد أمتار)
+    /// كانتا ستُعرضان فوق بعض، والأخطر: كلٌّ منهما تحفظ <c>Time.timeScale</c> قبلها
+    /// وترجّعه بعدها — فالثانية تحفظ صفرًا وترجّعه، فتبقى اللعبة متوقّفة للأبد.
+    /// </summary>
+    private static WarningCard active;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics() => active = null;
+
     private AudioSource audioSource;
     private Transform player;
     private Texture2D blurred;
@@ -144,6 +154,10 @@ public class WarningCard : MonoBehaviour
     public void Show()
     {
         if (busy || (onlyOnce && shown)) return;
+
+        // لوحة أخرى معروضة: لا نعلّمها معروضة، فيعيد Update المحاولة بعد أن تُغلق
+        if (active != null && active != this) return;
+
         shown = true;
         StartCoroutine(Routine());
     }
@@ -151,6 +165,7 @@ public class WarningCard : MonoBehaviour
     private IEnumerator Routine()
     {
         busy = true;
+        active = this;
 
         if (delay > 0f) yield return new WaitForSecondsRealtime(delay);
 
@@ -193,6 +208,7 @@ public class WarningCard : MonoBehaviour
         canvas.enabled = false;
         ReleaseBlur();
         busy = false;
+        if (active == this) active = null;
         onDismissed?.Invoke();
     }
 
