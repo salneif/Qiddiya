@@ -52,9 +52,11 @@ public class PlayerController : MonoBehaviour
 
     // double jump 
     private bool alreadyDoubleJumped = false;
+    
 
     // Ali - Conections
     [SerializeField] private A_CrouchAndJump crouchAndJumpSystem;
+    
 
     // ref 
     [SerializeField] private A_PlayerDeath_WaterSection a_PlayerDeath;
@@ -135,6 +137,7 @@ public class PlayerController : MonoBehaviour
     {
         _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
         animator.SetTrigger("Jump");
+        alreadyDoubleJumped = false;
     }
 
     private void OnCrouch(bool isCrouching, float CrouchMoveSpeed)

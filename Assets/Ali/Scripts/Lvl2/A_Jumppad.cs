@@ -12,6 +12,7 @@ public class A_Jumppad : MonoBehaviour
    [SerializeField] private AudioSource jumpPadSound;
     private Vector3 orignalScale;
 
+
     private void Awake()
     {
         orignalScale = transform.localScale;
