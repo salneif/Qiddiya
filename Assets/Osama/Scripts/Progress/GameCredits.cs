@@ -64,20 +64,23 @@ public class GameCredits : MonoBehaviour
 
     [Header("التجميد")]
     [SerializeField] private string playerTag = "Player";
-    [Tooltip("يجمّد حركة اللاعب عبر قائمة Disable On Death في PlayerKillable")]
-    [SerializeField] private bool freezePlayer = true;
-    [Tooltip("سكربتات تُطفأ طوال الكريديت بالاسم — ما تحتاج تسحب شيئًا. " +
-             "بالاسم عمدًا لا بمرجع مباشر: الربط بسكربت زميلك يكسر بناء الجميع لو " +
-             "غيّر اسمه أو حذفه، وبالاسم يطبع تحذيرًا وكفى.")]
-    [SerializeField] private string[] disableScriptsNamed =
+    [Tooltip("يجمّد اللاعب طوال النهاية. أطفئه ليمشي واللاعب يتفرّج على الكريديت — " +
+             "الكاميرا تتابعه وهي تبعد فيطلع الطابع أحلى")]
+    [SerializeField] private bool freezePlayer = false;
+    [Tooltip("سكربتات حركة اللاعب — تُطفأ فقط إن كان Freeze Player مفعّلًا. " +
+             "لاعب الهب بلا PlayerKillable، فهذي هي التي تجمّده هناك")]
+    [SerializeField] private string[] freezeScriptsNamed =
     {
-        "CameraFollow",        // وإلا شدّت الكاميرا لللاعب فلا تبعد
-        "PlayerController",    // وما بعده: حركة اللاعب — الهب بلا PlayerKillable
+        "PlayerController",
         "A_CrouchAndJump",
         "A_ZipLineSystem",
         "LadderController",
         "BoxPusher",
     };
+    [Tooltip("سكربتات تُطفأ دائمًا طوال الكريديت بالاسم — ما تحتاج تسحب شيئًا. " +
+             "بالاسم عمدًا لا بمرجع مباشر: الربط بسكربت زميلك يكسر بناء الجميع لو " +
+             "غيّر اسمه أو حذفه، وبالاسم يطبع تحذيرًا وكفى.")]
+    [SerializeField] private string[] disableScriptsNamed = { "CameraFollow" };
     [Tooltip("سكربتات إضافية تُطفأ بالسحب — اتركها فارغة، القائمة أعلاه تكفي عادة")]
     [SerializeField] private MonoBehaviour[] disableOnCredits;
 
@@ -106,6 +109,10 @@ public class GameCredits : MonoBehaviour
     [SerializeField] private float stageScale = 0.0028f;
     [Tooltip("نزول الاسم تحت مركز المنصّة (متر) — المودلات فوقه")]
     [SerializeField] private float nameDrop = 1.3f;
+    [Tooltip("حجم خط الاسم")]
+    [SerializeField] private int nameFontSize = 120;
+    [Tooltip("حجم خط الدور تحته")]
+    [SerializeField] private int roleFontSize = 46;
 
     [Header("الأشكال الطائرة")]
     [Tooltip("أشكال تطلع من تحت لفوق وهي تدور — يُلتقط من نفس الكائن إن تُرك فارغًا")]
@@ -272,6 +279,7 @@ public class GameCredits : MonoBehaviour
         Transform block = nameCanvas.transform;
         block.localPosition = new Vector3(0f, -nameDrop, 0f);
         block.localScale = Vector3.one * stageScale;
+        LayoutText();
     }
 
     private void SetName(Section section)
@@ -359,15 +367,17 @@ public class GameCredits : MonoBehaviour
 
     // ───────────────────────────── التجميد والصوت ─────────────────────────────
 
-    private int stopped;
-
+    /// <summary>
+    /// يوقف ما يجب إيقافه ويرجّع اللاعب. التجميد اختياري: اللاعب يمشي أثناء الكريديت
+    /// افتراضيًا والكاميرا تتابعه وهي تبعد.
+    /// </summary>
     private Transform FreezePlayer()
     {
         if (disableOnCredits != null)
             foreach (var b in disableOnCredits)
                 if (b != null) b.enabled = false;
 
-        stopped = DisableByName();
+        int stopped = DisableByName(disableScriptsNamed);
         int dragged = disableOnCredits != null ? disableOnCredits.Length : 0;
 
         if (pullDuration > 0f && stopped == 0 && dragged == 0)
@@ -378,6 +388,8 @@ public class GameCredits : MonoBehaviour
         var go = PlayerLocator.Find(playerTag);
         if (go == null) return null;
 
+        if (!freezePlayer) return go.transform;
+
         var rb = go.GetComponentInParent<Rigidbody>();
         if (rb != null && !rb.isKinematic)
         {
@@ -385,29 +397,27 @@ public class GameCredits : MonoBehaviour
             rb.angularVelocity = Vector3.zero;
         }
 
-        // PlayerKillable الطريق الأنظف، لكنه غير موجود على لاعب الهب أصلًا —
-        // فقائمة الأسماء أعلاه هي التي تجمّده هناك، وهذي تكمّل تلك
-        if (freezePlayer)
-        {
-            var killable = go.GetComponentInParent<PlayerKillable>();
-            if (killable != null) killable.FreezeControl();
-            else if (stopped == 0)
-                Debug.LogWarning("[GameCredits] ما جمّدت اللاعب: لا PlayerKillable عليه ولا " +
-                                 "طابق أي اسم في Disable Scripts Named. حُطّ اسم سكربت حركته " +
-                                 "هناك، وإلا مشى أثناء النهاية.", this);
-        }
+        // PlayerKillable الطريق الأنظف حيث وُجد، ولاعب الهب بلا PlayerKillable
+        // أصلًا — فقائمة الأسماء هي التي تجمّده هناك
+        var killable = go.GetComponentInParent<PlayerKillable>();
+        if (killable != null) killable.FreezeControl();
+
+        if (DisableByName(freezeScriptsNamed) == 0 && killable == null)
+            Debug.LogWarning("[GameCredits] ما جمّدت اللاعب: لا PlayerKillable عليه ولا طابق " +
+                             "أي اسم في Freeze Scripts Named. حُطّ اسم سكربت حركته هناك، " +
+                             "أو أطفئ Freeze Player إن كنت تريده يمشي.", this);
 
         return go.transform;
     }
 
     /// <summary>
-    /// يطفئ سكربتات المتابعة بالاسم. البحث بالاسم لا بالنوع مقصود: النوع يعني
+    /// يطفئ السكربتات المسمّاة. البحث بالاسم لا بالنوع مقصود: النوع يعني
     /// اعتمادًا على ملف زميل في نفس التجميعة، فلو حذفه أو غيّر اسمه انكسر بناء
     /// الجميع — وهنا يطبع تحذيرًا ويكمل.
     /// </summary>
-    private int DisableByName()
+    private int DisableByName(string[] names)
     {
-        if (disableScriptsNamed == null || disableScriptsNamed.Length == 0) return 0;
+        if (names == null || names.Length == 0) return 0;
 
         int count = 0;
         var all = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude,
@@ -417,7 +427,7 @@ public class GameCredits : MonoBehaviour
             if (behaviour == null || behaviour == this || !behaviour.enabled) continue;
 
             string typeName = behaviour.GetType().Name;
-            foreach (string wanted in disableScriptsNamed)
+            foreach (string wanted in names)
             {
                 if (string.IsNullOrWhiteSpace(wanted)) continue;
                 if (!string.Equals(typeName, wanted.Trim(),
@@ -546,18 +556,17 @@ public class GameCredits : MonoBehaviour
         nameImage = NewImage(block.transform, "NameImage", Color.white);
         nameImage.rectTransform.anchorMin = nameImage.rectTransform.anchorMax = new Vector2(0.5f, 0f);
         nameImage.rectTransform.pivot = new Vector2(0.5f, 0f);
-        nameImage.rectTransform.anchoredPosition = new Vector2(0f, 90f);
         nameImage.enabled = false;
 
         Font font = BuiltinFont();
-        nameText = NewText(block.transform, font, 68, FontStyle.Bold, 110f,
+        nameText = NewText(block.transform, font, FontStyle.Bold,
                            new Color(1f, 1f, 1f, 0.95f));
-        roleText = NewText(block.transform, font, 26, FontStyle.Normal, 50f,
+        roleText = NewText(block.transform, font, FontStyle.Normal,
                            new Color(1f, 0.92f, 0.7f, 0.85f));
+        LayoutText();
     }
 
-    private Text NewText(Transform parent, Font font, int size, FontStyle style,
-                         float bottom, Color color)
+    private static Text NewText(Transform parent, Font font, FontStyle style, Color color)
     {
         if (font == null) return null;
 
@@ -566,7 +575,6 @@ public class GameCredits : MonoBehaviour
 
         var text = go.AddComponent<Text>();
         text.font = font;
-        text.fontSize = size;
         text.fontStyle = style;
         text.alignment = TextAnchor.LowerCenter;
         text.color = color;
@@ -577,9 +585,31 @@ public class GameCredits : MonoBehaviour
         RectTransform rect = text.rectTransform;
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
         rect.pivot = new Vector2(0.5f, 0f);
-        rect.anchoredPosition = new Vector2(0f, bottom);
-        rect.sizeDelta = new Vector2(1600f, size + 20f);
         return text;
+    }
+
+    /// <summary>
+    /// يرتّب السطرين حسب حجميهما: الدور في الأسفل والاسم فوقه بفراغ يتبع حجم الدور،
+    /// فتغيير الحجم لا يجعلهما يتراكبان.
+    /// </summary>
+    private void LayoutText()
+    {
+        if (roleText != null)
+        {
+            roleText.fontSize = roleFontSize;
+            roleText.rectTransform.anchoredPosition = new Vector2(0f, 20f);
+            roleText.rectTransform.sizeDelta = new Vector2(1600f, roleFontSize + 20f);
+        }
+
+        if (nameText != null)
+        {
+            nameText.fontSize = nameFontSize;
+            nameText.rectTransform.anchoredPosition = new Vector2(0f, 20f + roleFontSize + 26f);
+            nameText.rectTransform.sizeDelta = new Vector2(1600f, nameFontSize + 20f);
+        }
+
+        if (nameImage != null)
+            nameImage.rectTransform.anchoredPosition = new Vector2(0f, 20f + roleFontSize + 26f);
     }
 
     private static Image NewImage(Transform parent, string name, Color color)
@@ -646,6 +676,8 @@ public class GameCredits : MonoBehaviour
     {
         fadeDuration = Mathf.Max(0f, fadeDuration);
         holdBeforeFade = Mathf.Max(0f, holdBeforeFade);
+        nameFontSize = Mathf.Max(8, nameFontSize);
+        roleFontSize = Mathf.Max(6, roleFontSize);
         textFade = Mathf.Max(0f, textFade);
         pullDuration = Mathf.Max(0f, pullDuration);
         returnDuration = Mathf.Max(0f, returnDuration);
