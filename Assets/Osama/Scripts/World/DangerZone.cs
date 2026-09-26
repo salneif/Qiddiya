@@ -47,6 +47,11 @@ public class DangerZone : MonoBehaviour
     [Tooltip("يلقى رِندَرات الفخّ بنفسه إن تُركت القائمة فارغة: كل ما يتقاطع مع صندوق " +
              "القتل من رِندَرات الكائن الأب — أي الحِمَم والقِدر، لا الممشى كله")]
     [SerializeField] private bool autoGlow = true;
+    [Tooltip("علامة تحذير تطفو فوق الفخّ وتواجه الكاميرا دائمًا. هذي الوحيدة التي لا " +
+             "يحجبها شيء ولا تعتمد على أرض تحت الفخّ ولا على ماتيريال يقبل التوهّج")]
+    [SerializeField] private bool hazardMark = true;
+    [Tooltip("ارتفاع علامة التحذير فوق أعلى الفخّ، بنسبة من حجمه")]
+    [SerializeField] private float hazardMarkLift = 0.9f;
 
     [Header("الشكل")]
     [Tooltip("لون الخطر")]
@@ -84,6 +89,9 @@ public class DangerZone : MonoBehaviour
 
     private Transform marker;
     private MeshRenderer markerRenderer;
+    private Transform hazardMarker;
+    private MeshRenderer hazardRenderer;
+    private MaterialPropertyBlock hazardBlock;
     private MaterialPropertyBlock block;
     private AudioSource warningSource;
     private Transform player;
@@ -102,8 +110,10 @@ public class DangerZone : MonoBehaviour
         if (autoGlow && (glowRenderers == null || glowRenderers.Length == 0)) FindGlowRenderers();
 
         BuildMarker();
+        if (hazardMark) BuildHazardMark();
         BuildLight();
         BuildSound();
+        Report();
     }
 
     /// <summary>
@@ -165,6 +175,29 @@ public class DangerZone : MonoBehaviour
             Div(side, scale.x), Div(side, scale.z), Div(1f, scale.y));
     }
 
+    /// <summary>
+    /// لوحة تحذير تطفو فوق الفخّ وتواجه الكاميرا. العلامة الأرضية تحتاج أرضًا تحت
+    /// الفخّ وقد تُدفن في مجسّمه، والتوهّج يحتاج ماتيريالًا مفعَّل الـEmission — وهذي
+    /// لا تحتاج شيئًا من السين، فهي التي تضمن أن الخطر يُرى.
+    /// </summary>
+    private void BuildHazardMark()
+    {
+        var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        go.name = "DangerZone_Sign";
+        go.layer = 2;
+        Destroy(go.GetComponent<Collider>());
+
+        hazardMarker = go.transform;
+        hazardMarker.SetParent(null);   // بلا أب: مقاس الفخّ لا يشوّهها
+
+        hazardRenderer = go.GetComponent<MeshRenderer>();
+        hazardRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        hazardRenderer.receiveShadows = false;
+        hazardRenderer.sharedMaterial = markerRenderer.sharedMaterial;
+
+        hazardBlock = new MaterialPropertyBlock();
+    }
+
     private void BuildLight()
     {
         if (dangerLight == null && createLight)
@@ -214,8 +247,64 @@ public class DangerZone : MonoBehaviour
 
         if (dangerLight != null) dangerLight.intensity = lightIntensity * Vis * strength;
 
+        HazardSign(strength);
         Glow(strength);
         Warn();
+    }
+
+    private void HazardSign(float strength)
+    {
+        if (hazardMarker == null) return;
+
+        Bounds bounds = area.bounds;
+        float size = Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z) * Vis;
+
+        hazardMarker.position = bounds.center + Vector3.up * (bounds.extents.y + size * hazardMarkLift);
+        hazardMarker.localScale = new Vector3(size, size, 1f);
+
+        Camera cam = Camera.main;
+        if (cam != null)
+            hazardMarker.rotation = Quaternion.LookRotation(
+                hazardMarker.position - cam.transform.position, Vector3.up);
+
+        hazardBlock.SetColor(ColorId, new Color(color.r, color.g, color.b, strength));
+        hazardBlock.SetFloat(SoftnessId, 0.25f);
+        hazardBlock.SetFloat(RingId, 0.3f);
+        hazardRenderer.SetPropertyBlock(hazardBlock);
+    }
+
+    private void OnDestroy()
+    {
+        if (hazardMarker != null) Destroy(hazardMarker.gameObject);
+    }
+
+    /// <summary>سطر واحد في الكونسول يقول ما الذي اشتغل فعلًا — بدل التخمين.</summary>
+    private void Report()
+    {
+        Bounds bounds = area.bounds;
+        int emissive = 0;
+        if (glowRenderers != null)
+            foreach (var r in glowRenderers)
+            {
+                if (r == null) continue;
+                foreach (var m in r.sharedMaterials)
+                    if (m != null && m.IsKeywordEnabled("_EMISSION")) { emissive++; break; }
+            }
+
+        string floor = "بلا نزول";
+        if (dropToFloor)
+        {
+            Vector3 from = new Vector3(bounds.center.x, bounds.min.y - 0.02f, bounds.center.z);
+            floor = Physics.Raycast(from, Vector3.down, out RaycastHit hit, dropDistance,
+                                    floorLayers, QueryTriggerInteraction.Ignore)
+                  ? $"أرض «{hit.collider.name}» على بُعد {hit.distance:0.0} م"
+                  : "ما لقى أرضًا";
+        }
+
+        Debug.Log($"[DangerZone] «{name}»: علامة أرضية {(marker != null ? "✓" : "✗")} ({floor}) • " +
+                  $"لوحة فوق الفخّ {(hazardMarker != null ? "✓" : "✗")} • " +
+                  $"رِندَرات {(glowRenderers?.Length ?? 0)} منها {emissive} تقبل التوهّج • " +
+                  $"صوت {(warningSource != null ? "✓" : "✗")}", this);
     }
 
     /// <summary>
@@ -253,6 +342,8 @@ public class DangerZone : MonoBehaviour
         foreach (Renderer renderer in glowRenderers)
         {
             if (renderer == null) continue;
+            // بلا كلمة _EMISSION في الماتيريال لا يرسم يونيتي أي توهّج مهما ضبطنا اللون
+            if (!Emissive(renderer)) continue;
             renderer.GetPropertyBlock(glowBlock);
             glowBlock.SetColor(EmissionId, emission);
             renderer.SetPropertyBlock(glowBlock);
@@ -273,6 +364,14 @@ public class DangerZone : MonoBehaviour
         float distance = Vector3.Distance(player.position, area.bounds.center);
         float near = 1f - Mathf.Clamp01(distance / Mathf.Max(0.1f, hearingRange));
         warningSource.volume = warningVolume * near * near;   // تربيع: تهدأ من بعيد وتشتد عند الحافة
+    }
+
+    private static bool Emissive(Renderer renderer)
+    {
+        foreach (var material in renderer.sharedMaterials)
+            if (material != null && material.IsKeywordEnabled("_EMISSION")) return true;
+
+        return false;
     }
 
     private static float Div(float a, float b) => Mathf.Abs(b) > 0.0001f ? a / b : a;
