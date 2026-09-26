@@ -1992,8 +1992,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 5.173065, y: 18.030087, z: 6.5632935}
-  m_Center: {x: -33.923447, y: 8.515043, z: 10.553284}
+  m_Size: {x: 4.314697, y: 18.030087, z: 6.3022246}
+  m_Center: {x: -34.35264, y: 8.515043, z: 10.422751}
 --- !u!4 &239706820
 Transform:
   m_ObjectHideFlags: 0
@@ -2228,8 +2228,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 11.851554, y: 18.030087, z: 6.052623}
-  m_Center: {x: 23.382195, y: 8.515043, z: 3.9877126}
+  m_Size: {x: 11.325359, y: 18.030087, z: 6.052623}
+  m_Center: {x: 23.119112, y: 8.515043, z: 3.9877126}
 --- !u!1 &313164486
 GameObject:
   m_ObjectHideFlags: 0
@@ -7427,6 +7427,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ScreenFader
   fadeDuration: 1
   fadeInOnStart: 1
+  useLoadingScreen: 1
 --- !u!225 &896531152
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -10368,8 +10369,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 5.5495324, y: 18.030087, z: 7.654254}
-  m_Center: {x: -34.25728, y: 8.515043, z: 11.098764}
+  m_Size: {x: 5.5495324, y: 18.030087, z: 7.75279}
+  m_Center: {x: -34.25728, y: 8.515043, z: 11.049497}
 --- !u!4 &1236218248
 Transform:
   m_ObjectHideFlags: 0
@@ -17886,6 +17887,8 @@ MonoBehaviour:
   requireCarriedFlag: 3
   playerTag: Player
   activationKey: 0
+  ignoreTriggerAfterLoad: 1
+  useLoadingScreen: 1
   fader: {fileID: 0}
   freezePlayerOnTransition: 1
   disableOnTransition: []

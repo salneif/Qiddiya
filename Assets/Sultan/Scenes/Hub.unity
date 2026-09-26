@@ -11114,21 +11114,39 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameCredits
   playerTag: Player
   freezePlayer: 1
+  freezeScriptsNamed:
+  - PlayerController
+  - A_CrouchAndJump
+  - A_ZipLineSystem
+  - LadderController
+  - BoxPusher
   disableScriptsNamed:
   - CameraFollow
   disableOnCredits:
   - {fileID: 0}
-  music: {fileID: 0}
+  silenceSceneAudio: 1
+  silenceFade: 1.5
+  silenceScriptsNamed:
+  - MusicDirector
+  - MusicZone
+  - AudioFadeZone
+  music: {fileID: 8300000, guid: 938c62d1a68592a4b838669a24bfe48a, type: 3}
   musicVolume: 0.8
   fadeMusicOut: 1
   cameraToPull: {fileID: 2616903223425596772}
   pullOffset: {x: 0, y: 4, z: -14}
+  matchCameraToSections: 1
+  pullShare: 0.4
   pullDuration: 32
   returnDuration: 24
   keepLookingAtPlayer: 1
+  lookAtHeight: 1.2
+  lookDamping: 1.5
   stageOffset: {x: 0, y: 0.2, z: 6}
   stageScale: 0.0028
   nameDrop: 1.3
+  nameFontSize: 120
+  roleFontSize: 46
   floatingProps: {fileID: 0}
   sections: []
   textFade: 0.7
@@ -20108,6 +20126,10 @@ MonoBehaviour:
   returnOnHolderDeath: 1
   audioSource: {fileID: 0}
   pickupSound: {fileID: 0}
+  fallbackPickupSound: TakeFlag
+  pickupVolume: 0.55
+  pickupFadeIn: 0.12
+  pickupFadeOut: 0.45
   placeSound: {fileID: 0}
   onPickedUp:
     m_PersistentCalls:
