@@ -69,6 +69,9 @@ public class FloatingProps : MonoBehaviour
     [SerializeField] private float scaleJitter = 0.3f;
 
     [Header("التشغيل")]
+    [Tooltip("يطفئ سكربتات النسخ (ذكاء الأعداء، المطاردة، NavMeshAgent). النسخة زينة " +
+             "لا كائن حيّ: بلا هذا طاردت نسخُ الأعداء اللاعبَ وصارعت مواضعها")]
+    [SerializeField] private bool stripScripts = true;
     [Tooltip("يبدأ وحده عند تشغيل السين — أطفئه إن كان غيره يشغّله (الكريديت مثلًا)")]
     [SerializeField] private bool playOnStart = false;
 
@@ -182,10 +185,13 @@ public class FloatingProps : MonoBehaviour
         if (shape == null) return;
 
         GameObject clone = Instantiate(shape, root);
-        clone.SetActive(true);
         clone.name = shape.name + " (طائر)";
         clone.transform.localScale = shape.transform.localScale;
+
+        // الإسكات قبل التفعيل مقصود: مكوّن مطفأ على كائن غير نشط لا يمرّ عليه
+        // OnEnable ولا OnDisable، فلا تنفجر سكربتات غيرنا لمجرد أننا استعرنا شكلها
         Decorate(clone);
+        clone.SetActive(true);
 
         var prop = new Prop
         {
@@ -201,7 +207,7 @@ public class FloatingProps : MonoBehaviour
     /// زينة لا جسم: الكولايدرات تُطفأ والفيزياء تُلغى. الأشكال تطفو أمام الكاميرا
     /// وتمر خلال مباني الهب، فلو بقيت أجسامًا صلبة دفعت اللاعب أو علّقت الفيزياء.
     /// </summary>
-    private static void Decorate(GameObject clone)
+    private void Decorate(GameObject clone)
     {
         foreach (var collider in clone.GetComponentsInChildren<Collider>(true))
             collider.enabled = false;
@@ -211,6 +217,17 @@ public class FloatingProps : MonoBehaviour
             body.isKinematic = true;
             body.useGravity = false;
         }
+
+        if (!stripScripts) return;
+
+        foreach (var script in clone.GetComponentsInChildren<MonoBehaviour>(true))
+            if (script != null) script.enabled = false;
+
+        // NavMeshAgent بالاسم لا بالنوع: النوع يربطنا بوحدة الذكاء الاصطناعي، وهو
+        // يحرّك الكائن بنفسه فيصارع موضعنا ويملأ الكونسول بأن لا NavMesh هنا
+        foreach (var behaviour in clone.GetComponentsInChildren<Behaviour>(true))
+            if (behaviour != null && behaviour.GetType().Name == "NavMeshAgent")
+                behaviour.enabled = false;
     }
 
     /// <summary>

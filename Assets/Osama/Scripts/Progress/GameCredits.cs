@@ -69,7 +69,15 @@ public class GameCredits : MonoBehaviour
     [Tooltip("سكربتات تُطفأ طوال الكريديت بالاسم — ما تحتاج تسحب شيئًا. " +
              "بالاسم عمدًا لا بمرجع مباشر: الربط بسكربت زميلك يكسر بناء الجميع لو " +
              "غيّر اسمه أو حذفه، وبالاسم يطبع تحذيرًا وكفى.")]
-    [SerializeField] private string[] disableScriptsNamed = { "CameraFollow" };
+    [SerializeField] private string[] disableScriptsNamed =
+    {
+        "CameraFollow",        // وإلا شدّت الكاميرا لللاعب فلا تبعد
+        "PlayerController",    // وما بعده: حركة اللاعب — الهب بلا PlayerKillable
+        "A_CrouchAndJump",
+        "A_ZipLineSystem",
+        "LadderController",
+        "BoxPusher",
+    };
     [Tooltip("سكربتات إضافية تُطفأ بالسحب — اتركها فارغة، القائمة أعلاه تكفي عادة")]
     [SerializeField] private MonoBehaviour[] disableOnCredits;
 
@@ -351,13 +359,15 @@ public class GameCredits : MonoBehaviour
 
     // ───────────────────────────── التجميد والصوت ─────────────────────────────
 
+    private int stopped;
+
     private Transform FreezePlayer()
     {
         if (disableOnCredits != null)
             foreach (var b in disableOnCredits)
                 if (b != null) b.enabled = false;
 
-        int stopped = DisableByName();
+        stopped = DisableByName();
         int dragged = disableOnCredits != null ? disableOnCredits.Length : 0;
 
         if (pullDuration > 0f && stopped == 0 && dragged == 0)
@@ -375,12 +385,16 @@ public class GameCredits : MonoBehaviour
             rb.angularVelocity = Vector3.zero;
         }
 
+        // PlayerKillable الطريق الأنظف، لكنه غير موجود على لاعب الهب أصلًا —
+        // فقائمة الأسماء أعلاه هي التي تجمّده هناك، وهذي تكمّل تلك
         if (freezePlayer)
         {
             var killable = go.GetComponentInParent<PlayerKillable>();
             if (killable != null) killable.FreezeControl();
-            else Debug.LogWarning("[GameCredits] ما فيه PlayerKillable على اللاعب — " +
-                                  "ما قدرت أجمّد حركته.", this);
+            else if (stopped == 0)
+                Debug.LogWarning("[GameCredits] ما جمّدت اللاعب: لا PlayerKillable عليه ولا " +
+                                 "طابق أي اسم في Disable Scripts Named. حُطّ اسم سكربت حركته " +
+                                 "هناك، وإلا مشى أثناء النهاية.", this);
         }
 
         return go.transform;
