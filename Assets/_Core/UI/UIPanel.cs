@@ -93,6 +93,13 @@ public class UIPanel : MonoBehaviour
 
             var rect = selectable.transform as RectTransform;
 
+            Animator btnAnimator = selectable.GetComponent<Animator>();
+            if (btnAnimator != null)
+            {
+                // Forces the UI animation to ignore Time.timeScale = 0
+                btnAnimator.updateMode = AnimatorUpdateMode.UnscaledTime;
+            }
+
             // كل أبناء الزر — كليب Highlighted يشغّل بعضها (Big-Marker) وكليب Normal
             // الفارغ لا يطفئها، فنحتاج قيمتها الأصلية بأنفسنا.
             Transform[] children = selectable.GetComponentsInChildren<Transform>(true);
@@ -110,7 +117,7 @@ public class UIPanel : MonoBehaviour
 
             baselines[i] = new ButtonBaseline
             {
-                animator = selectable.GetComponent<Animator>(),
+                animator = btnAnimator,
                 rect = rect,
                 localScale = selectable.transform.localScale,
                 anchoredPosition = rect != null ? rect.anchoredPosition : Vector2.zero,
