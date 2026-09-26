@@ -67,6 +67,13 @@ public class WarningCard : MonoBehaviour
     [Tooltip("مسافة الانزلاق بنسبة من عرض الشاشة")]
     [Range(0.2f, 2f)] [SerializeField] private float slideDistance = 1.1f;
 
+    [Header("الصوت")]
+    [Tooltip("صوت ظهور اللوحة — حَشْفة ورق مثلًا")]
+    [SerializeField] private AudioClip showSound;
+    [Tooltip("صوت اختفائها — اتركه فارغًا ليُستعمل صوت الظهور نفسه")]
+    [SerializeField] private AudioClip hideSound;
+    [Range(0f, 1f)] [SerializeField] private float soundVolume = 0.7f;
+
     [Header("أحداث")]
     public UnityEvent onShown;
     public UnityEvent onDismissed;
@@ -76,6 +83,7 @@ public class WarningCard : MonoBehaviour
     private Image backdropImage;
     private Image cardImage;
     private Text hint;
+    private AudioSource audioSource;
     private Transform player;
     private Texture2D blurred;
     private Sprite blurSprite;
@@ -152,6 +160,7 @@ public class WarningCard : MonoBehaviour
         canvas.enabled = true;
         group.blocksRaycasts = true;
         Layout();
+        Play(showSound);
         onShown?.Invoke();
 
         // الوقت الحقيقي في كل شيء: اللعبة متوقفة، و Time.deltaTime صفر حينها
@@ -175,6 +184,7 @@ public class WarningCard : MonoBehaviour
             yield return null;
         }
 
+        Play(hideSound != null ? hideSound : showSound);
         yield return Move(0f, 1f, 1f, 0f, fadeOut);
 
         if (pauseGame) Time.timeScale = previousScale;
@@ -249,6 +259,24 @@ public class WarningCard : MonoBehaviour
 
         if (blurSprite != null) { Destroy(blurSprite); blurSprite = null; }
         if (blurred != null) { Destroy(blurred); blurred = null; }
+    }
+
+    /// <summary>
+    /// الصوت لا يتأثّر بـ<c>Time.timeScale</c>، فيُسمع واللعبة متوقّفة — وهذا
+    /// المطلوب هنا بالضبط. المصدر ثنائي الأبعاد: لوحة على الشاشة لا مكان لها في العالم.
+    /// </summary>
+    private void Play(AudioClip clip)
+    {
+        if (clip == null) return;
+
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+            audioSource.spatialBlend = 0f;
+        }
+
+        audioSource.PlayOneShot(clip, soundVolume);
     }
 
     private static bool Pressed()
