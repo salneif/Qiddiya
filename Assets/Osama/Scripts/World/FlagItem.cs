@@ -50,7 +50,10 @@ public class FlagItem : MonoBehaviour
     [Header("الصوت")]
     [Tooltip("مصدر الصوت — يُلتقط تلقائيًا من نفس كائن العلم إذا تُرك فارغًا")]
     [SerializeField] private AudioSource audioSource;
-    [Tooltip("صوت التقاط العلم")]
+    [Tooltip("صوت التقاط موحّد لكل الأعلام يُحمَّل من Osama/Resources بهذا الاسم، " +
+             "ويتقدّم على Pickup Sound. فرّغه ليستعمل كل علم صوته الخاص.")]
+    [SerializeField] private string sharedPickupSound = "TakeFlag";
+    [Tooltip("صوت التقاط خاص بهذا العلم — يُستعمل إن فُرّغ الاسم أعلاه")]
     [SerializeField] private AudioClip pickupSound;
     [Tooltip("صوت غرس العلم في مقبسه")]
     [SerializeField] private AudioClip placeSound;
@@ -89,6 +92,37 @@ public class FlagItem : MonoBehaviour
         hasStartScale = true;
         primary = GetComponents<FlagItem>()[0];
         startRotation = transform.rotation;
+
+        // النسخة الأولى وحدها تشغّل الصوت الموحّد: على العلم نسختان من هذا السكربت
+        // عمدًا، ولو شغّلتاه معًا سمعت اللقطة مرتين فوق بعض
+        if (this == primary) ApplySharedPickupSound();
+    }
+
+    /// <summary>
+    /// صوت التقاط واحد لكل الأعلام من <c>Resources</c>، بدل تعديل أربعة بريفابات
+    /// وأعلامٍ داخل سينات كل ما تغيّر الصوت. ويعمل حتى في السينات التي تُركت فيها
+    /// خانة الصوت فارغة، ويُنشئ مصدر صوت إن لم يكن على العلم واحد.
+    /// </summary>
+    private void ApplySharedPickupSound()
+    {
+        if (string.IsNullOrWhiteSpace(sharedPickupSound)) return;
+
+        var clip = Resources.Load<AudioClip>(sharedPickupSound.Trim());
+        if (clip == null)
+        {
+            Debug.LogWarning($"[FlagItem] ما لقيت \"{sharedPickupSound}\" في Osama/Resources " +
+                             "— بقي صوت هذا العلم كما هو.", this);
+            return;
+        }
+
+        pickupSound = clip;
+
+        if (audioSource != null) return;
+
+        // ثنائي الأبعاد: كاميرا اللعبة بعيدة عن اللاعب، والصوت المجسّم معها لا يُسمع
+        audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 0f;
     }
 
     /// <summary>
