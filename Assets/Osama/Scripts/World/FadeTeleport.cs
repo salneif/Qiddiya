@@ -41,6 +41,16 @@ public class FadeTeleport : MonoBehaviour
     [Tooltip("سكربتات إضافية تتعطّل أثناء النقل (متابعة الكاميرا مثلًا) — اختياري")]
     [SerializeField] private MonoBehaviour[] disableWhileTeleporting;
 
+    [Header("الوصول")]
+    [Tooltip("ينزل باللاعب إلى الأرض تحت نقطة الوصول، فلا يصل معلّقًا ثم يسقط")]
+    [SerializeField] private bool snapToGround = true;
+    [Tooltip("يبدأ البحث عن الأرض من هذا الارتفاع فوق النقطة")]
+    [SerializeField] private float snapRise = 2f;
+    [Tooltip("وينزل حتى هذا العمق تحتها")]
+    [SerializeField] private float snapDrop = 12f;
+    [Tooltip("طبقات الأرض")]
+    [SerializeField] private LayerMask groundLayers = ~0;
+
     [Header("الصوت")]
     [SerializeField] private AudioSource audioSource;
     [Tooltip("صوت لحظة النقل")]
@@ -123,10 +133,35 @@ public class FadeTeleport : MonoBehaviour
 
         if (controller != null) controller.enabled = false;
 
-        if (useDestinationRotation) body.SetPositionAndRotation(destination.position, destination.rotation);
-        else body.position = destination.position;
+        Vector3 place = snapToGround ? OnGround(destination.position, controller) : destination.position;
+
+        if (useDestinationRotation) body.SetPositionAndRotation(place, destination.rotation);
+        else body.position = place;
 
         if (controller != null) controller.enabled = true;
+    }
+
+    /// <summary>
+    /// ينزل بنقطة الوصول إلى الأرض تحتها.
+    ///
+    /// نقطة الوجهة توضع بالعين فتكون فوق الأرض بقليل دائمًا، فيصل اللاعب معلّقًا
+    /// ثم يسقط — والسقوط أول ما يفتح التعتيم يفسد الانتقال. الشعاع يضعه على الأرض
+    /// من أول إطار.
+    ///
+    /// الحساب من أسفل الكبسولة لا من مركزها: مرجع <c>CharacterController</c> في
+    /// منتصفها، فوضع المركز على الأرض يدفن نصف اللاعب فيها.
+    /// </summary>
+    private Vector3 OnGround(Vector3 wanted, CharacterController controller)
+    {
+        Vector3 from = wanted + Vector3.up * snapRise;
+        if (!Physics.Raycast(from, Vector3.down, out RaycastHit hit, snapRise + snapDrop,
+                             groundLayers, QueryTriggerInteraction.Ignore))
+            return wanted;
+
+        if (controller == null) return hit.point;
+
+        float bottom = controller.center.y - controller.height * 0.5f;
+        return hit.point + Vector3.up * (controller.skinWidth - bottom);
     }
 
     /// <summary>يعتّم أو يكشف — بـ ScreenFader إن وُجد، وإلا بالـ CanvasGroup.</summary>

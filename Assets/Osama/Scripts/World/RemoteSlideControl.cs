@@ -25,6 +25,9 @@ public class RemoteSlideControl : MonoBehaviour
     [Header("التفاعل")]
     [Tooltip("وسم اللاعب")]
     [SerializeField] private string playerTag = "Player";
+    [Tooltip("متغيّرات المشي في أنيميتر اللاعب — تُصفَّر عند الإمساك بالمقبض، وإلا " +
+             "ظلّ يمشي في مكانه. بالاسم لا بمرجع، فالأنيميتر ملك غيرنا")]
+    [SerializeField] private string[] walkParameters = { "speed", "MovementBlend", "isPushing" };
     [Tooltip("أقصى مسافة يقدر اللاعب يمسك منها التحكّم (متر)")]
     [SerializeField] private float interactRange = 2.5f;
     [Tooltip("زر الإمساك بالتحكّم وتركه")]
@@ -228,9 +231,46 @@ public class RemoteSlideControl : MonoBehaviour
     {
         IsEngaged = on;
         SetScriptsEnabled(!on);
+        if (on) StopWalkAnimation();
 
         if (on) onEngaged?.Invoke();
         else onReleased?.Invoke();
+    }
+
+    /// <summary>
+    /// يصفّر متغيّرات المشي في الأنيميتر عند الإمساك بالمقبض.
+    ///
+    /// تعطيل سكربت الحركة يوقف اللاعب لكنه لا يلمس الأنيميتر، فتبقى قيمة السرعة
+    /// على آخر ما كانت ويظل يمشي في مكانه بينما نحن نحرّك المقبض.
+    ///
+    /// بالاسم لا بمرجع: الأنيميتر ملك غيرنا، وأسماء متغيّراته قد تتغيّر — وعندها
+    /// لا يحدث شيء بدل أن ينكسر البناء. والفحص قبل الضبط يمنع تحذيرات يونيتي عن
+    /// متغيّر غير موجود.
+    /// </summary>
+    private void StopWalkAnimation()
+    {
+        if (player == null || walkParameters == null) return;
+
+        var animator = player.GetComponentInParent<Animator>();
+        if (animator == null) animator = player.GetComponentInChildren<Animator>();
+        if (animator == null) return;
+
+        foreach (string name in walkParameters)
+        {
+            if (string.IsNullOrWhiteSpace(name)) continue;
+
+            foreach (var parameter in animator.parameters)
+            {
+                if (parameter.name != name.Trim()) continue;
+
+                if (parameter.type == AnimatorControllerParameterType.Float)
+                    animator.SetFloat(parameter.nameHash, 0f);
+                else if (parameter.type == AnimatorControllerParameterType.Bool)
+                    animator.SetBool(parameter.nameHash, false);
+
+                break;
+            }
+        }
     }
 
     /// <summary>تعطيل/تفعيل حركة اللاعب حتى لا يتنازع الإدخال مع تحريك الهدف.</summary>
