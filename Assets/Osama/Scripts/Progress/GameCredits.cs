@@ -85,6 +85,18 @@ public class GameCredits : MonoBehaviour
     [SerializeField] private MonoBehaviour[] disableOnCredits;
 
     [Header("الموسيقى")]
+    [Tooltip("يخفت موسيقى السين وأصواته عند بدء الكريديت، فلا تعزفان فوق بعض")]
+    [SerializeField] private bool silenceSceneAudio = true;
+    [Tooltip("مدة إخفات أصوات السين")]
+    [SerializeField] private float silenceFade = 1.5f;
+    [Tooltip("سكربتات تتحكّم بمستوى الصوت وترفعه كل إطار — تُطفأ قبل الإخفات وإلا " +
+             "صارعت الإخفات وأرجعت الموسيقى")]
+    [SerializeField] private string[] silenceScriptsNamed =
+    {
+        "MusicDirector",
+        "MusicZone",
+        "AudioFadeZone",
+    };
     [SerializeField] private AudioClip music;
     [Range(0f, 1f)] [SerializeField] private float musicVolume = 0.8f;
     [Tooltip("تخفّ الأغنية أثناء التعتيم الأخير")]
@@ -106,6 +118,10 @@ public class GameCredits : MonoBehaviour
     [SerializeField] private float returnDuration = 24f;
     [Tooltip("تظل موجّهة لللاعب وهي تبعد")]
     [SerializeField] private bool keepLookingAtPlayer = true;
+    [Tooltip("ترتفع نقطة النظر عن قدمي اللاعب (متر) — النظر للقدمين يجعل كل خطوة هزّة")]
+    [SerializeField] private float lookAtHeight = 1.2f;
+    [Tooltip("نعومة الالتفات — أصغر = أهدأ وأبطأ")]
+    [SerializeField] private float lookDamping = 1.5f;
 
     [Header("منصّة الكريديت (3D)")]
     [Tooltip("مكان المنصّة أمام الكاميرا: Z موجب = أمامها. قرّبها إن تداخلت مع مبانٍ")]
@@ -193,6 +209,7 @@ public class GameCredits : MonoBehaviour
 
         BuildOverlay();
         Transform player = FreezePlayer();
+        if (silenceSceneAudio) SilenceScene();
         PlayMusic();
 
         Transform cam = cameraToPull != null ? cameraToPull
@@ -378,25 +395,34 @@ public class GameCredits : MonoBehaviour
 
             cam.position = Vector3.Lerp(from, to, k);
 
-            Quaternion want = homeRot;
+            // الزاوية المطلوبة تُحسب من الصفر كل إطار لا من زاوية الكاميرا الحالية:
+            // الحساب التراكمي كان يشدّها نحو اللاعب ثم نحو زاوية البداية بالتناوب،
+            // فتتصارع الجهتان كل إطار وتهتزّ الكاميرا — وكلما اقتربت النهاية اشتدّ
+            Quaternion target = homeRot;
             if (keepLookingAtPlayer && player != null)
             {
-                Vector3 dir = player.position - cam.position;
-                if (dir.sqrMagnitude > 0.0001f)
-                    want = Quaternion.Slerp(cam.rotation,
-                        Quaternion.LookRotation(dir, Vector3.up), Time.deltaTime * 2f);
-                else
-                    want = cam.rotation;
+                Vector3 focus = player.position + Vector3.up * lookAtHeight;
+                Vector3 dir = focus - cam.position;
+                if (dir.sqrMagnitude > 0.0001f) target = Quaternion.LookRotation(dir, Vector3.up);
             }
 
             // k*k: الالتقاء متأخّر وهادئ بدل أن يشدّها نحو زاوية البداية من أول متر
-            cam.rotation = settle ? Quaternion.Slerp(want, homeRot, k * k) : want;
+            if (settle) target = Quaternion.Slerp(target, homeRot, k * k);
+
+            // تنعيم أُسّي: مستقل عن عدد الإطارات، فلا يرتجف على جهاز سريع
+            float ease = 1f - Mathf.Exp(-Mathf.Max(0.01f, lookDamping) * Time.deltaTime);
+            cam.rotation = Quaternion.Slerp(cam.rotation, target, ease);
 
             yield return null;
         }
 
         cam.position = to;
         if (settle) cam.rotation = homeRot;
+    }
+
+    private void OnValidateCamera()
+    {
+        lookDamping = Mathf.Max(0.05f, lookDamping);
     }
 
     // ───────────────────────────── التجميد والصوت ─────────────────────────────
@@ -476,6 +502,46 @@ public class GameCredits : MonoBehaviour
         }
 
         return count;
+    }
+
+    /// <summary>
+    /// يخفت كل ما يعزف في السين. الترتيب مهم: تُطفأ سكربتات التحكّم أولًا لأن
+    /// <see cref="MusicDirector"/> يحرّك المستوى كل إطار، فلو خفّضناه وهو شغّال
+    /// أرجعه في الإطار التالي وبقيت أغنيتان فوق بعض.
+    /// </summary>
+    private void SilenceScene()
+    {
+        DisableByName(silenceScriptsNamed);
+
+        foreach (var source in FindObjectsByType<AudioSource>(FindObjectsInactive.Exclude,
+                                                              FindObjectsSortMode.None))
+        {
+            if (source == null || source == musicSource) continue;
+            if (source.gameObject == gameObject) continue;   // مصادرنا نحن
+            if (!source.isPlaying) continue;
+
+            StartCoroutine(FadeOutSource(source));
+        }
+    }
+
+    private IEnumerator FadeOutSource(AudioSource source)
+    {
+        float from = source.volume;
+
+        if (silenceFade > 0f)
+        {
+            float t = 0f;
+            while (t < silenceFade && source != null && source.isPlaying)
+            {
+                t += Time.deltaTime;
+                source.volume = Mathf.Lerp(from, 0f, t / silenceFade);
+                yield return null;
+            }
+        }
+
+        if (source == null) yield break;
+        source.Stop();
+        source.volume = from;   // نرجّع القيمة لا الصوت، فلا تُفسَد إن أُعيد تشغيله
     }
 
     private void PlayMusic()
@@ -710,6 +776,8 @@ public class GameCredits : MonoBehaviour
     {
         fadeDuration = Mathf.Max(0f, fadeDuration);
         holdBeforeFade = Mathf.Max(0f, holdBeforeFade);
+        silenceFade = Mathf.Max(0f, silenceFade);
+        OnValidateCamera();
         nameFontSize = Mathf.Max(8, nameFontSize);
         roleFontSize = Mathf.Max(6, roleFontSize);
         textFade = Mathf.Max(0f, textFade);
