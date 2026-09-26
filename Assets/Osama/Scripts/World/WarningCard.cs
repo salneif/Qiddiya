@@ -60,8 +60,12 @@ public class WarningCard : MonoBehaviour
     [SerializeField] private string skipHint = "PRESS ANY KEY";
 
     [Header("الظهور")]
-    [SerializeField] private float fadeIn = 0.25f;
-    [SerializeField] private float fadeOut = 0.2f;
+    [SerializeField] private float fadeIn = 0.35f;
+    [SerializeField] private float fadeOut = 0.3f;
+    [Tooltip("تدخل منزلقة من اليسار وتخرج إلى اليمين")]
+    [SerializeField] private bool slide = true;
+    [Tooltip("مسافة الانزلاق بنسبة من عرض الشاشة")]
+    [Range(0.2f, 2f)] [SerializeField] private float slideDistance = 1.1f;
 
     [Header("أحداث")]
     public UnityEvent onShown;
@@ -95,14 +99,21 @@ public class WarningCard : MonoBehaviour
 
     private void Update()
     {
-        if (showNear == null || showNear.Length == 0) return;
         if (busy || (onlyOnce && shown)) return;
+        if (showOnTrigger && GetComponent<Collider>() != null) return;
 
         if (player == null)
         {
             var go = PlayerLocator.Find(playerTag);
             if (go == null) return;
             player = go.transform;
+        }
+
+        // بلا قائمة: يقيس من موضع هذا الكائن — اسحبه حيث تريد التنبيه وكفى
+        if (showNear == null || showNear.Length == 0)
+        {
+            if (Vector3.Distance(player.position, transform.position) <= nearDistance) Show();
+            return;
         }
 
         foreach (Transform target in showNear)
@@ -147,7 +158,7 @@ public class WarningCard : MonoBehaviour
         float previousScale = Time.timeScale;
         if (pauseGame) Time.timeScale = 0f;
 
-        yield return Fade(0f, 1f, fadeIn);
+        yield return Move(-1f, 0f, 0f, 1f, fadeIn);
 
         float open = 0f;
         while (true)
@@ -164,7 +175,7 @@ public class WarningCard : MonoBehaviour
             yield return null;
         }
 
-        yield return Fade(1f, 0f, fadeOut);
+        yield return Move(0f, 1f, 1f, 0f, fadeOut);
 
         if (pauseGame) Time.timeScale = previousScale;
 
@@ -248,11 +259,19 @@ public class WarningCard : MonoBehaviour
         return false;
     }
 
-    private IEnumerator Fade(float from, float to, float duration)
+    /// <summary>
+    /// تنقل اللوحة وتغيّر شفافيتها معًا: تدخل من اليسار وتخرج إلى اليمين، فتبدو
+    /// كأنها مرّت لا كأنها ظهرت واختفت مكانها.
+    ///
+    /// الخلفية المغبّشة لا تنزلق — تتلاشى مكانها، وإلا بان طرفها وهي تمرّ.
+    /// </summary>
+    private IEnumerator Move(float fromSide, float toSide, float fromAlpha, float toAlpha,
+                             float duration)
     {
         if (duration <= 0f)
         {
-            group.alpha = to;
+            group.alpha = toAlpha;
+            Offset(toSide);
             yield break;
         }
 
@@ -260,11 +279,36 @@ public class WarningCard : MonoBehaviour
         while (t < duration)
         {
             t += Time.unscaledDeltaTime;
-            group.alpha = Mathf.Lerp(from, to, t / duration);
+            float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / duration));
+            group.alpha = Mathf.Lerp(fromAlpha, toAlpha, k);
+            Offset(Mathf.Lerp(fromSide, toSide, k));
             yield return null;
         }
 
-        group.alpha = to;
+        group.alpha = toAlpha;
+        Offset(toSide);
+    }
+
+    /// <summary>‎-1 = خارج الشاشة يسارًا، 0 = المنتصف، 1 = خارجها يمينًا.</summary>
+    private void Offset(float side)
+    {
+        if (cardImage == null) return;
+
+        float x = 0f;
+        if (slide)
+        {
+            var canvasRect = (RectTransform)canvas.transform;
+            x = side * canvasRect.rect.width * slideDistance;
+        }
+
+        Vector2 position = cardImage.rectTransform.anchoredPosition;
+        cardImage.rectTransform.anchoredPosition = new Vector2(x, position.y);
+
+        if (hint != null)
+        {
+            Vector2 hintPosition = hint.rectTransform.anchoredPosition;
+            hint.rectTransform.anchoredPosition = new Vector2(x, hintPosition.y);
+        }
     }
 
     // ───────────────────────────── الواجهة ─────────────────────────────
@@ -404,8 +448,13 @@ public class WarningCard : MonoBehaviour
             Gizmos.DrawWireCube(c.bounds.center, c.bounds.size);
         }
 
-        if (showNear == null) return;
         Gizmos.color = new Color(1f, 0.85f, 0.2f, 0.35f);
+        if (showNear == null || showNear.Length == 0)
+        {
+            Gizmos.DrawWireSphere(transform.position, nearDistance);
+            return;
+        }
+
         foreach (Transform target in showNear)
             if (target != null) Gizmos.DrawWireSphere(target.position, nearDistance);
     }
