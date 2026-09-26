@@ -99,6 +99,10 @@ public class GameCredits : MonoBehaviour
     [Tooltip("نزول الاسم تحت مركز المنصّة (متر) — المودلات فوقه")]
     [SerializeField] private float nameDrop = 1.3f;
 
+    [Header("الأشكال الطائرة")]
+    [Tooltip("أشكال تطلع من تحت لفوق وهي تدور — يُلتقط من نفس الكائن إن تُرك فارغًا")]
+    [SerializeField] private FloatingProps floatingProps;
+
     [Header("الفقرات")]
     [Tooltip("تُملأ بالافتراضي إن تُركت فارغة")]
     [SerializeField] private List<Section> sections = new List<Section>();
@@ -175,6 +179,9 @@ public class GameCredits : MonoBehaviour
         if (cam != null) BuildStage(cam);
         else Debug.LogWarning("[GameCredits] ما لقيت كاميرا — بلا كاميرا لا منصّة ولا حركة.", this);
 
+        if (floatingProps == null) floatingProps = GetComponent<FloatingProps>();
+        if (floatingProps != null && cam != null) floatingProps.Begin(cam);
+
         // الكاميرا تمشي على خطها الخاص بالتوازي مع الفقرات: تبعد أثناء فقرات
         // العرض ثم ترجع أثناء البقية، فلا تنتظر فقرة معيّنة ولا تتقطّع بينها
         if (cam != null) StartCoroutine(MoveCamera(cam, player));
@@ -185,6 +192,8 @@ public class GameCredits : MonoBehaviour
         }
 
         yield return FadeToBlack();
+
+        if (floatingProps != null) floatingProps.Stop();
 
         onCreditsFinished?.Invoke();
 
