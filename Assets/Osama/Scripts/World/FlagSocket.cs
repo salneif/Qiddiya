@@ -45,6 +45,12 @@ public class FlagSocket : MonoBehaviour
     /// <summary>نقطة تثبيت العلم الفعلية (المحددة أو هذا الكائن).</summary>
     public Transform PlacePoint => placePoint != null ? placePoint : transform;
 
+    /// <summary>زر الوضع — يعرضه <see cref="FlagBaseBeacon"/> للاعب.</summary>
+    public Key PlaceKey => placeKey;
+
+    /// <summary>هل يوضع العلم تلقائيًا بلا زر؟</summary>
+    public bool AutoPlace => autoPlace;
+
     private bool playerInside;
 
     private void Reset()

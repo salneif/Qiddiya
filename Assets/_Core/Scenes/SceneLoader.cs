@@ -16,7 +16,11 @@ public class SceneLoader : MonoBehaviour
     [SerializeField] private string sceneName = "Hub";
 
     [Header("الانتقال")]
-    [Tooltip("مموّه الشاشة — إن تُرك فارغًا يُحمّل المشهد مباشرة")]
+    [Tooltip("شاشة التحميل: صورة الوجهة وبار يركض عليه علي. إن أُطفئت رجع الانتقال " +
+             "للتعتيم الأسود وحده.")]
+    [SerializeField] private bool useLoadingScreen = true;
+
+    [Tooltip("مموّه الشاشة — إن تُرك فارغًا يُحمّل المشهد مباشرة. لا يُستعمل مع شاشة التحميل.")]
     [SerializeField] private ScreenFader fader;
 
     [Tooltip("تأخير بسيط قبل التحميل ليكتمل صوت الضغط على الزر")]
@@ -64,7 +68,8 @@ public class SceneLoader : MonoBehaviour
         isLoading = true;
         Time.timeScale = 1f; // اللعبة قد تكون متوقفة من لوحة الإيقاف
 
-        if (fader != null)
+        // شاشة التحميل تعتّم بنفسها، فلا نجمع تعتيمين فوق بعض
+        if (fader != null && !useLoadingScreen)
             fader.FadeOut(() => StartCoroutine(LoadRoutine(targetScene)));
         else
             StartCoroutine(LoadRoutine(targetScene));
@@ -87,6 +92,9 @@ public class SceneLoader : MonoBehaviour
     {
         if (delayBeforeLoad > 0f)
             yield return new WaitForSecondsRealtime(delayBeforeLoad);
+
+        // إن ردّت الشاشة بالرفض (سين ناقص مثلًا) نكمل بالطريق القديم فلا يعلق اللاعب
+        if (useLoadingScreen && LoadingOverlay.Go(targetScene)) yield break;
 
         AsyncOperation operation = SceneManager.LoadSceneAsync(targetScene);
         while (!operation.isDone)

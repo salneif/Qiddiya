@@ -10,6 +10,8 @@ public class PedestalButton : MonoBehaviour
     [SerializeField] private float rangeMemory = 0.2f;
     [SerializeField] private float pressDepth = 0.05f;
     [SerializeField] private float pressDuration = 0.14f;
+    [SerializeField] private AudioSource pressSource;
+    [SerializeField] private AudioClip pressClip;
 
     private Vector3 _topRestPos;
     private float _rangeTimer;
@@ -43,10 +45,20 @@ public class PedestalButton : MonoBehaviour
 
         if (_playerInRange && pedestal != null && pedestal.CanInteract && Input.GetKeyDown(interactKey))
         {
-            if (pedestal.Cycle()) _pressTimer = pressDuration;
+            if (pedestal.Cycle())
+            {
+                _pressTimer = pressDuration;
+                playPress();
+            }
         }
 
         pressVisual();
+    }
+
+    void playPress()
+    {
+        if (pressSource == null || pressClip == null) return;
+        pressSource.PlayOneShot(pressClip);
     }
 
     void pressVisual()

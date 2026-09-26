@@ -18,7 +18,8 @@ public class HintGlow : MonoBehaviour
     public enum Style
     {
         [InspectorName("نبض ناعم")] Pulse,
-        [InspectorName("وميض لمبات")] Blink
+        [InspectorName("وميض لمبات")] Blink,
+        [InspectorName("ثابت بلا نبض")] Steady
     }
 
     private static readonly int EmissionId = Shader.PropertyToID("_EmissionColor");
@@ -41,6 +42,10 @@ public class HintGlow : MonoBehaviour
     [Header("ضوء مرافق (اختياري)")]
     [Tooltip("Light ينبض مع اللمعة فيضيء ما حول اللوحة فعليًا. ينطفي مع انطفاء التلميح.")]
     [SerializeField] private Light hintLight;
+    [Tooltip("أضواء إضافية تتدرّج معه — لبوابة حولها عدة أضواء تولع سوية. " +
+             "⚠️ لا تطفئ كائناتها ولا تضعها في Show When Open، وإلا ولعت دفعة واحدة؛ " +
+             "اتركها شغّالة وهذا السكربت يبدأ بإطفاء شدّتها ثم يرفعها بالتدريج.")]
+    [SerializeField] private Light[] extraLights;
 
     [Header("متى يلمع")]
     [Tooltip("المقبض الذي تدلّ عليه اللوحة — أول ما يمسكه اللاعب ينطفي التلميح")]
@@ -50,8 +55,18 @@ public class HintGlow : MonoBehaviour
     [Tooltip("يلمع فقط لما يكون اللاعب أقرب من هذه المسافة (متر). صفر = دائمًا")]
     [SerializeField] private float showDistance = 0f;
     [SerializeField] private string playerTag = "Player";
-    [Tooltip("سرعة ظهور واختفاء اللمعة — تمنع الانطفاء المفاجئ")]
+    [Tooltip("سرعة ظهور واختفاء اللمعة: 1 ÷ المدة بالثواني. " +
+             "1 = ثانية، 0.25 = أربع ثوانٍ، 3 = ثلث ثانية. " +
+             "والظهور يبدأ وينتهي بنعومة فلا يقفز اللون دفعة واحدة.")]
     [SerializeField] private float fadeSpeed = 3f;
+    [Tooltip("قوة الإضاءة وهو مطفي، نسبةً لإضاءة الماتيريال الأصلية. " +
+             "صفر = مظلم تمامًا حتى يولع (لبوابة تشع دائمًا وتبيها تظل مطفية حتى يستحقها اللاعب). " +
+             "1 = يبقى بإضاءته الأصلية كما كان.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float offBrightness = 1f;
+    [Tooltip("يبدأ مطفيًا حتى يُنادى StartHint — اربطه بحدث مثل FlagBase.On Planted " +
+             "ليولع الشيء لحظة زرع العلم لا قبلها.")]
+    [SerializeField] private bool startStopped = false;
 
     private struct Target
     {
@@ -63,6 +78,7 @@ public class HintGlow : MonoBehaviour
     private Target[] targets;
     private MaterialPropertyBlock block;
     private float lightBaseIntensity;
+    private float[] extraBaseIntensities;
     private float weight;   // 0 = شكل الماتيريال الأصلي بالضبط، 1 = لمعة كاملة
     private bool applied;   // هل غيّرنا شيئًا يحتاج إرجاعًا؟
     private bool used;      // أمسك اللاعب المقبض مرة على الأقل
@@ -71,6 +87,7 @@ public class HintGlow : MonoBehaviour
 
     private void Awake()
     {
+        stopped = startStopped;
         block = new MaterialPropertyBlock();
 
         if (renderers == null || renderers.Length == 0)
@@ -85,7 +102,8 @@ public class HintGlow : MonoBehaviour
         }
         targets = list.ToArray();
 
-        if (targets.Length == 0)
+        bool hasLights = hintLight != null || (extraLights != null && extraLights.Length > 0);
+        if (targets.Length == 0 && !hasLights)
             Debug.LogWarning("[HintGlow] ما في مجسّم ماتيريالته فيها Emission مفعّل تحت " + name +
                              " — فعّل Emission في الماتيريال أو استخدم خانة الضوء المرافق.", this);
 
@@ -93,6 +111,19 @@ public class HintGlow : MonoBehaviour
         {
             lightBaseIntensity = hintLight.intensity;
             hintLight.intensity = 0f;
+        }
+
+        WarnAboutFlicker(hintLight);
+        if (extraLights != null)
+        {
+            extraBaseIntensities = new float[extraLights.Length];
+            for (int i = 0; i < extraLights.Length; i++)
+            {
+                if (extraLights[i] == null) continue;
+                extraBaseIntensities[i] = extraLights[i].intensity;
+                extraLights[i].intensity = 0f;
+                WarnAboutFlicker(extraLights[i]);
+            }
         }
     }
 
@@ -119,7 +150,8 @@ public class HintGlow : MonoBehaviour
     {
         weight = Mathf.MoveTowards(weight, WantsGlow() ? 1f : 0f, fadeSpeed * Time.deltaTime);
 
-        if (weight <= 0f)
+        // مطفي وبإضاءته الأصلية = لا شيء نفعله، فنرجّع الماتيريال كما هو تمامًا
+        if (weight <= 0f && offBrightness >= 0.999f)
         {
             if (applied) Restore();
             return;
@@ -155,6 +187,9 @@ public class HintGlow : MonoBehaviour
     /// <summary>موجة من 0 إلى 1 حسب شكل اللمعة.</summary>
     private float Wave()
     {
+        // ثابت: يشع بـ Max Brightness بلا حركة — يولع مرة ويظل
+        if (style == Style.Steady) return 1f;
+
         float t = Time.time * speed;
         if (style == Style.Blink)
             return Mathf.Repeat(t, 1f) < 0.5f ? 1f : 0f;
@@ -164,12 +199,16 @@ public class HintGlow : MonoBehaviour
 
     private void Apply(float brightness)
     {
+        // تنعيم التقدّم: يبدأ الولوع بهدوء ويستقر بهدوء بدل قفزة خطية
+        float w = Mathf.SmoothStep(0f, 1f, weight);
+
         foreach (var t in targets)
         {
             if (t.renderer == null) continue;
 
+            Color off = t.baseEmission * offBrightness;
             Color glow = t.baseEmission * tint * brightness;
-            Color final = Color.Lerp(t.baseEmission, glow, weight);
+            Color final = Color.Lerp(off, glow, w);
 
             // نقرأ البلوك الحالي أولًا حتى لا نمسح قيمًا وضعها سكربت آخر
             t.renderer.GetPropertyBlock(block);
@@ -177,7 +216,7 @@ public class HintGlow : MonoBehaviour
             t.renderer.SetPropertyBlock(block);
         }
 
-        if (hintLight != null) hintLight.intensity = lightBaseIntensity * brightness * weight;
+        SetLights(brightness * w);
         applied = true;
     }
 
@@ -201,8 +240,36 @@ public class HintGlow : MonoBehaviour
             }
         }
 
-        if (hintLight != null) hintLight.intensity = 0f;
+        SetLights(0f);
         applied = false;
+    }
+
+    /// <summary>
+    /// <see cref="LightFlicker"/> على نفس الضوء يكتب شدّته كل إطار، فيلغي تدرّجنا
+    /// ويولّعه قبل أوانه. نحذّر بدل أن يقضي أحدهم ساعة يبحث عن السبب.
+    /// </summary>
+    private void WarnAboutFlicker(Light light)
+    {
+        if (light == null) return;
+
+        var flicker = light.GetComponent<LightFlicker>();
+        if (flicker == null || !flicker.enabled) return;
+
+        Debug.LogWarning($"[HintGlow] الضوء \"{light.name}\" عليه LightFlicker شغّال — " +
+                         "هو يكتب شدّة الضوء كل إطار فيلغي التدرّج. أطفئه.", light);
+    }
+
+    /// <summary>يضبط شدّة كل الأضواء المرافقة نسبةً لشدّتها الأصلية.</summary>
+    private void SetLights(float factor)
+    {
+        if (hintLight != null) hintLight.intensity = lightBaseIntensity * factor;
+
+        if (extraLights == null || extraBaseIntensities == null) return;
+        for (int i = 0; i < extraLights.Length; i++)
+        {
+            if (extraLights[i] == null || i >= extraBaseIntensities.Length) continue;
+            extraLights[i].intensity = extraBaseIntensities[i] * factor;
+        }
     }
 
     /// <summary>يطفي التلميح نهائيًا — اربطه بأي حدث (WorldLever.onActivated، PuzzleButton.onPressed...).</summary>
@@ -213,6 +280,26 @@ public class HintGlow : MonoBehaviour
     {
         stopped = false;
         used = false;
+    }
+
+    /// <summary>
+    /// تجربة أثناء Play: كليك يمين على اسم المكوّن. لو ما تغيّر شيء على الشاشة،
+    /// فالمجسّم الذي تراه يشع ليس هذا — غالبًا مجسّم آخر يشارك نفس الخامة.
+    /// </summary>
+    [ContextMenu("تجربة: ولّع الآن")]
+    private void DebugStart()
+    {
+        if (!Application.isPlaying) { Debug.LogWarning("[HintGlow] التجربة أثناء Play فقط.", this); return; }
+        StartHint();
+        Debug.Log($"[HintGlow] ولّعت \"{name}\" — عدد المجسّمات المتأثرة: {(targets != null ? targets.Length : 0)}.", this);
+    }
+
+    [ContextMenu("تجربة: اطفئ الآن")]
+    private void DebugStop()
+    {
+        if (!Application.isPlaying) { Debug.LogWarning("[HintGlow] التجربة أثناء Play فقط.", this); return; }
+        StopHint();
+        Debug.Log($"[HintGlow] أطفأت \"{name}\" — لو ما تغيّر شيء فالشاع مجسّم آخر.", this);
     }
 
     private void OnDisable()

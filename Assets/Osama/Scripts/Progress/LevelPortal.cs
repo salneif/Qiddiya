@@ -42,11 +42,23 @@ public class LevelPortal : MonoBehaviour
     [SerializeField] private string playerTag = "Player";
     [Tooltip("زر التفعيل وأنت داخل المنطقة (None = ينتقل تلقائيًا بمجرد الدخول)")]
     [SerializeField] private Key activationKey = Key.None;
+    [Tooltip("يتجاهل التريغر أول هذي الثواني بعد تحميل السين. نقطة ظهور اللاعب عائدًا " +
+             "من المرحلة تكون ملاصقة للباب، فبدونها يظهر داخل البوابة فترجّعه من حيث " +
+             "أتى في نفس اللحظة — حلقة لا تنتهي. صفر = السلوك القديم.")]
+    [SerializeField] private float ignoreTriggerAfterLoad = 1f;
 
     [Header("الانتقال")]
+    [Tooltip("شاشة التحميل: صورة الوجهة وبار يركض عليه علي. إن أُطفئت رجع الانتقال " +
+             "للتعتيم الأسود وحده.")]
+    [SerializeField] private bool useLoadingScreen = true;
     [Tooltip("مموّه الشاشة — يُلتقط تلقائيًا من السين إذا تُرك فارغًا. " +
-             "بدونه يُحمَّل السين بلا تعتيم.")]
+             "بدونه يُحمَّل السين بلا تعتيم. لا يُستعمل مع شاشة التحميل.")]
     [SerializeField] private ScreenFader fader;
+    [Tooltip("يجمّد اللاعب لحظة بدء الانتقال، فلا يكمل مشيه أثناء التعتيم ويتعدّى الباب " +
+             "قبل أن ينتقل. يستخدم قائمة Disable On Death في PlayerKillable، فلا يحتاج ضبطًا.")]
+    [SerializeField] private bool freezePlayerOnTransition = true;
+    [Tooltip("سكربتات إضافية تتعطّل لحظة الانتقال (متابعة الكاميرا مثلًا) — اختياري")]
+    [SerializeField] private MonoBehaviour[] disableOnTransition;
     [Tooltip("يمسح كل التقدّم قبل الانتقال — فعّله في بوابة العودة للقائمة الرئيسية. " +
              "بدونه تبدأ اللعبة التالية والأعلام الثلاثة مزروعة أصلًا، " +
              "لأن GameProgress يعيش بين السينات ولا يموت إلا بإغلاق اللعبة.")]
@@ -83,6 +95,7 @@ public class LevelPortal : MonoBehaviour
                               GameProgress.Instance.IsPlanted(requirePlantedFlag);
 
     private bool playerInside;
+    private bool armed = true;
     private bool leaving;
     private Transform player;
     private bool playerNear;
@@ -106,19 +119,28 @@ public class LevelPortal : MonoBehaviour
         if (!other.CompareTag(playerTag)) return;
         playerInside = true;
 
+        // ظهر داخل البوابة لا مشى إليها — لا ترجّعه، وانتظر حتى يخرج ويعود بنفسه
+        if (Time.timeSinceLevelLoad < ignoreTriggerAfterLoad)
+        {
+            armed = false;
+            return;
+        }
+
         if (activationKey == Key.None) TryGo();
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag(playerTag)) playerInside = false;
+        if (!other.CompareTag(playerTag)) return;
+        playerInside = false;
+        armed = true;   // خرج ثم عاد = نيّة حقيقية للعبور
     }
 
     private void Update()
     {
         UpdateApproach();
 
-        if (!playerInside || leaving || activationKey == Key.None) return;
+        if (!playerInside || !armed || leaving || activationKey == Key.None) return;
         if (Keyboard.current == null) return;
 
         if (Keyboard.current[activationKey].wasPressedThisFrame) TryGo();
@@ -237,12 +259,17 @@ public class LevelPortal : MonoBehaviour
     {
         onTransitionStarted?.Invoke();
 
+        // أولًا التجميد ثم التأخير: بدونه يكمل اللاعب مشيه طوال التأخير والتعتيم،
+        // فيطلع من الباب ويقف بعيدًا عنه لحظة تحميل السين — يبدو كأنه ما انتقل
+        FreezePlayer(true);
+
         if (delay > 0f) yield return new WaitForSeconds(delay);
 
         if (string.IsNullOrEmpty(sceneName))
         {
             Debug.LogError("[LevelPortal] اسم السين فارغ.", this);
             leaving = false;
+            FreezePlayer(false);
             yield break;
         }
 
@@ -251,6 +278,7 @@ public class LevelPortal : MonoBehaviour
             Debug.LogError($"[LevelPortal] السين \"{sceneName}\" غير موجود في قائمة مشاهد " +
                            $"البناء — أضِفه من File → Build Profiles → Scene List.", this);
             leaving = false;
+            FreezePlayer(false);
             yield break;
         }
 
@@ -260,8 +288,37 @@ public class LevelPortal : MonoBehaviour
             // من أين جاء اللاعب — يقرأها PlayerSpawnRouter في الوجهة
             GameProgress.Instance.SetLastScene(SceneManager.GetActiveScene().name);
 
+        // الشاشة تتولّى التعتيم بنفسها، فلا نجمع تعتيمين فوق بعض
+        if (useLoadingScreen && LoadingOverlay.Go(sceneName)) yield break;
+
         if (fader != null) fader.FadeOutAndLoad(sceneName);
         else SceneManager.LoadSceneAsync(sceneName);
+    }
+
+    /// <summary>
+    /// يجمّد حركة اللاعب حول الانتقال ويرجّعها إذا فشل الانتقال، فلا يعلق اللاعب
+    /// بلا حركة في سين لم يتغيّر.
+    /// </summary>
+    private void FreezePlayer(bool freeze)
+    {
+        if (disableOnTransition != null)
+            foreach (var b in disableOnTransition)
+                if (b != null) b.enabled = !freeze;
+
+        if (!freezePlayerOnTransition) return;
+
+        if (player == null)
+        {
+            var go = PlayerLocator.Find(playerTag);
+            if (go == null) return;
+            player = go.transform;
+        }
+
+        var killable = player.GetComponentInParent<PlayerKillable>();
+        if (killable == null) return;
+
+        if (freeze) killable.FreezeControl();
+        else killable.UnfreezeControl();
     }
 
     private void OnDrawGizmosSelected()

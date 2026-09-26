@@ -42,6 +42,19 @@ public class Gate : MonoBehaviour
     [Tooltip("تبدأ مفتوحة؟")]
     [SerializeField] private bool startOpen = false;
 
+    [Header("الفتح عند الاقتراب")]
+    [Tooltip("تنفتح وحدها لما يقرب اللاعب من هذي المسافة (متر). صفر = لا تفتح إلا بالأحداث.")]
+    [SerializeField] private float openWhenPlayerWithin = 0f;
+    [Tooltip("ترجع تنغلق لما يبتعد اللاعب. أطفئه لتبقى مفتوحة بعد أول مرة.")]
+    [SerializeField] private bool closeWhenPlayerLeaves = true;
+    [Tooltip("مسافة إضافية قبل الإغلاق (متر) — تمنع فتحًا وإغلاقًا متكررين على الحد")]
+    [SerializeField] private float closeMargin = 0.75f;
+    [Tooltip("نقطة قياس المسافة — اتركها فارغة ليُقاس من هذا الكائن. " +
+             "لبابين يفتحان معًا (فتحة بنصفين): اربط الاثنين بنفس النقطة في مركزها.")]
+    [SerializeField] private Transform measureFrom;
+    [Tooltip("وسم اللاعب")]
+    [SerializeField] private string playerTag = "Player";
+
     [Header("الصوت")]
     [Tooltip("مصدر الصوت — يُلتقط تلقائيًا من نفس الكائن إذا تُرك فارغًا")]
     [SerializeField] private AudioSource audioSource;
@@ -52,6 +65,17 @@ public class Gate : MonoBehaviour
     [Tooltip("صوت متكرّر طوال الحركة، يسكت لحظة الوصول (احتكاك، سلاسل...). " +
              "⚠️ لو استخدمته خلّ صوت الفتح قصيرًا — سكوت الحركة يقطع ما قبله على نفس المصدر.")]
     [SerializeField] private AudioClip movingLoop;
+    [Tooltip("مدة الحركة = طول مقطع الصوت بالضبط، فتصل البوابة مع آخر لحظة منه. " +
+             "يتجاهل Speed و Rotation Speed ما دام للاتجاه مقطعٌ. " +
+             "صوت الفتح يضبط زمن الفتح، وصوت الإغلاق يضبط زمن الإغلاق.")]
+    [SerializeField] private bool matchMovementToSound = false;
+    [Tooltip("يستخدم المقاطع لضبط المدة فقط بلا تشغيلها — للنصف الثاني من فتحة بنصفين: " +
+             "يتحرك بنفس مدة أخيه بالضبط بلا أن يتكرر الصوت مرتين.")]
+    [SerializeField] private bool soundTimingOnly = false;
+    [Tooltip("مستوى صوت البوابة. مفيد خصوصًا مع المصدر الذي يُنشأ تلقائيًا — " +
+             "ما تقدر تخفّضه من الـ Inspector لأنه ما يوجد قبل التشغيل.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float soundVolume = 1f;
 
     [Header("أحداث")]
     public UnityEvent onOpened;
@@ -63,6 +87,10 @@ public class Gate : MonoBehaviour
     private bool wasOpen;
     private bool initialized;
     private bool loopPlaying;
+    private Transform player;
+
+    private float totalSlide;     // مسافة الانزلاق الكاملة
+    private float totalAngle;     // زاوية الدوران الكاملة
 
     // وضع المفصلة
     private bool usesHinge;
@@ -86,9 +114,22 @@ public class Gate : MonoBehaviour
 
         if (audioSource == null) audioSource = GetComponent<AudioSource>();
 
+        // بلا مصدر صوت ما يُسمع شيء — ننشئه تلقائيًا إذا حطيت مقطعًا.
+        // ثنائي الأبعاد عمدًا: كاميرا اللعبة بعيدة، والصوت ثلاثي الأبعاد معها لا يُسمع (خطأ ١١).
+        if (!soundTimingOnly && audioSource == null &&
+            (openSound != null || closeSound != null || movingLoop != null))
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+            audioSource.spatialBlend = 0f;
+        }
+
         closedPos = transform.position;
         closedRot = transform.rotation;
         openRot = closedRot * Quaternion.Euler(openRotation);
+
+        totalSlide = openOffset.magnitude;
+        totalAngle = Quaternion.Angle(closedRot, openRot);
 
         usesHinge = TryGetHingeAxis(out rotAngle, out rotAxis);
         if (usesHinge)
@@ -121,6 +162,8 @@ public class Gate : MonoBehaviour
 
     private void Update()
     {
+        UpdateProximity();
+
         bool arrived = usesHinge ? StepHinge() : StepLinear();
         UpdateMovingSound(moving: !arrived);
 
@@ -132,6 +175,54 @@ public class Gate : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// تفتح وحدها عند اقتراب اللاعب وتنغلق عند ابتعاده. الإغلاق له هامش إضافي،
+    /// فلا تتأرجح البوابة فتحًا وإغلاقًا واللاعب واقف على حد المسافة.
+    /// </summary>
+    private void UpdateProximity()
+    {
+        if (openWhenPlayerWithin <= 0f) return;
+
+        if (player == null)
+        {
+            var go = PlayerLocator.Find(playerTag);
+            if (go == null) return;
+            player = go.transform;
+        }
+
+        Transform origin = measureFrom != null ? measureFrom : transform;
+        float dist = Vector3.Distance(player.position, origin.position);
+
+        if (dist <= openWhenPlayerWithin) Open();
+        else if (closeWhenPlayerLeaves && dist > openWhenPlayerWithin + closeMargin) Close();
+    }
+
+    /// <summary>
+    /// مدة الحركة المطلوبة للاتجاه الحالي (ثواني)، أو صفر إن لم نربطها بالصوت.
+    /// </summary>
+    private float SoundDuration()
+    {
+        if (!matchMovementToSound) return 0f;
+
+        AudioClip clip = isOpen ? openSound : closeSound;
+        return clip != null ? clip.length : 0f;
+    }
+
+    /// <summary>سرعة الانزلاق الآن — محسوبة من طول الصوت إن رُبطت به.</summary>
+    private float SlideSpeedNow()
+    {
+        float d = SoundDuration();
+        return d > 0.01f && totalSlide > 0.0001f ? totalSlide / d : speed;
+    }
+
+    /// <summary>سرعة الدوران الآن — محسوبة من طول الصوت إن رُبطت به.</summary>
+    private float TurnSpeedNow()
+    {
+        float d = SoundDuration();
+        float angle = usesHinge ? rotAngle : totalAngle;
+        return d > 0.01f && angle > 0.01f ? angle / d : rotationSpeed;
+    }
+
     /// <summary>الحركة القديمة: انزلاق ودوران حول المركز كلٌّ بسرعته.</summary>
     private bool StepLinear()
     {
@@ -139,9 +230,9 @@ public class Gate : MonoBehaviour
         Quaternion targetRot = isOpen ? openRot : closedRot;
 
         transform.position = Vector3.MoveTowards(transform.position, targetPos,
-                                                 speed * Time.deltaTime);
+                                                 SlideSpeedNow() * Time.deltaTime);
         transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot,
-                                                      rotationSpeed * Time.deltaTime);
+                                                      TurnSpeedNow() * Time.deltaTime);
 
         // == على الكواتيرنيون مقارنة تقريبية، فنفحص الزاوية صراحةً
         return transform.position == targetPos &&
@@ -156,10 +247,10 @@ public class Gate : MonoBehaviour
     {
         float target = isOpen ? 1f : 0f;
 
-        float dist = openOffset.magnitude;
-        slideT = dist < 0.0001f ? target
-                                : Mathf.MoveTowards(slideT, target, speed / dist * Time.deltaTime);
-        rotT = Mathf.MoveTowards(rotT, target, rotationSpeed / rotAngle * Time.deltaTime);
+        slideT = totalSlide < 0.0001f ? target
+                                      : Mathf.MoveTowards(slideT, target,
+                                                          SlideSpeedNow() / totalSlide * Time.deltaTime);
+        rotT = Mathf.MoveTowards(rotT, target, TurnSpeedNow() / rotAngle * Time.deltaTime);
 
         Vector3 pos = PoseAt(slideT, rotT, out Quaternion rot);
         transform.SetPositionAndRotation(pos, rot);
@@ -255,17 +346,19 @@ public class Gate : MonoBehaviour
 
     private void Play(AudioClip clip)
     {
-        if (clip != null && audioSource != null) audioSource.PlayOneShot(clip);
+        if (soundTimingOnly) return;
+        if (clip != null && audioSource != null) audioSource.PlayOneShot(clip, soundVolume);
     }
 
     private void UpdateMovingSound(bool moving)
     {
-        if (movingLoop == null || audioSource == null) return;
+        if (soundTimingOnly || movingLoop == null || audioSource == null) return;
 
         if (moving && !loopPlaying)
         {
             audioSource.clip = movingLoop;
             audioSource.loop = true;
+            audioSource.volume = soundVolume;
             audioSource.Play();
             loopPlaying = true;
         }
@@ -284,6 +377,14 @@ public class Gate : MonoBehaviour
     /// </summary>
     private void OnDrawGizmosSelected()
     {
+        // مدى الفتح التلقائي
+        if (openWhenPlayerWithin > 0f)
+        {
+            Transform origin = measureFrom != null ? measureFrom : transform;
+            Gizmos.color = new Color(0.4f, 0.7f, 1f, 0.5f);
+            Gizmos.DrawWireSphere(origin.position, openWhenPlayerWithin);
+        }
+
         // في وضع اللعب نرسم من الوضع المغلق الأصلي لا من موضعه الحالي
         bool useStored = Application.isPlaying && initialized;
         Vector3 basePos = useStored ? closedPos : transform.position;

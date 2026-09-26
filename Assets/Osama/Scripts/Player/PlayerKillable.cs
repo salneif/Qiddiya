@@ -136,6 +136,19 @@ public class PlayerKillable : MonoBehaviour
         if (cc != null) cc.enabled = true;
     }
 
+    /// <summary>
+    /// يجمّد تحكّم اللاعب بلا قتله — يستخدمه <see cref="LevelPortal"/> لحظة الانتقال
+    /// حتى لا يكمل اللاعب مشيه أثناء التعتيم فيتعدّى الباب. يعتمد نفس قائمة
+    /// <see cref="disableOnDeath"/> المضبوطة أصلًا، فلا يحتاج ضبطًا جديدًا.
+    /// </summary>
+    public void FreezeControl() => SetControlEnabled(false);
+
+    /// <summary>يرجّع التحكّم بعد التجميد. لا يفعل شيئًا واللاعب ميت — الموت يملك التحكّم.</summary>
+    public void UnfreezeControl()
+    {
+        if (!IsDead) SetControlEnabled(true);
+    }
+
     private void SetControlEnabled(bool value)
     {
         if (disableOnDeath == null) return;

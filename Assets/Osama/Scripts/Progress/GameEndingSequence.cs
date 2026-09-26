@@ -23,7 +23,11 @@ public class GameEndingSequence : MonoBehaviour
     [Header("تجميد اللاعب")]
     [Tooltip("وسم اللاعب")]
     [SerializeField] private string playerTag = "Player";
-    [Tooltip("سكربتات تُطفأ عند بدء النهاية: حركة اللاعب + تتبّع الكاميرا + أي تحكّم")]
+    [Tooltip("يجمّد حركة اللاعب. يستخدم قائمة Disable On Death في PlayerKillable، " +
+             "فلا يحتاج ضبطًا — نفس ما يفعله LevelPortal عند الانتقال.")]
+    [SerializeField] private bool freezePlayer = true;
+    [Tooltip("سكربتات تُطفأ عند بدء النهاية: تتبّع الكاميرا وأي تحكّم آخر. حركة اللاعب " +
+             "مغطّاة بالمربّع أعلاه، لكن سكربت متابعة الكاميرا لازم يوضع هنا.")]
     [SerializeField] private MonoBehaviour[] disableOnEnding;
 
     [Header("سحب الكاميرا")]
@@ -94,8 +98,23 @@ public class GameEndingSequence : MonoBehaviour
             foreach (var b in disableOnEnding)
                 if (b != null) b.enabled = false;
 
+        // سحب الكاميرا لا يتحرّك خطوة وسكربت المتابعة يشدّها لللاعب كل إطار
+        if (pullDuration > 0f && (disableOnEnding == null || disableOnEnding.Length == 0))
+            Debug.LogWarning("[GameEndingSequence] قائمة Disable On Ending فارغة — حُطّ فيها " +
+                             "سكربت متابعة الكاميرا، وإلا رجعت الكاميرا لللاعب ولم يظهر السحب.",
+                             this);
+
         var go = PlayerLocator.Find(playerTag);
         if (go == null) return null;
+
+        // تجميد حقيقي: تطفئة السكربتات وحدها تترك اللاعب يمشي إن لم تُذكر هنا
+        if (freezePlayer)
+        {
+            var killable = go.GetComponentInParent<PlayerKillable>();
+            if (killable != null) killable.FreezeControl();
+            else Debug.LogWarning("[GameEndingSequence] ما فيه PlayerKillable على اللاعب — " +
+                                  "ما قدرت أجمّد حركته.", this);
+        }
 
         // تطفئة السكربت وحدها تترك الجسم ينزلق بسرعته الأخيرة
         var rb = go.GetComponentInParent<Rigidbody>();

@@ -27,9 +27,13 @@ public class FlagItem : MonoBehaviour
     [SerializeField] private bool carryOnBack = true;
     [Tooltip("موضع العلم على الظهر بالنسبة للاعب: Y = الارتفاع، Z سالب = وراه. " +
              "لو طلع على جنبه بدل ظهره، انقل الرقم من Z إلى X.")]
-    [SerializeField] private Vector3 backOffset = new Vector3(0f, 1.1f, -0.45f);
+    [SerializeField] private Vector3 backOffset = new Vector3(-0.054f, 0.358f, -0.199f);
     [Tooltip("ميلان العلم على الظهر (درجات)")]
     [SerializeField] private Vector3 backRotation = Vector3.zero;
+    [Tooltip("اسم كائن داخل اللاعب يُعلَّق عليه العلم — الشنطة أو عظمة الظهر مثلًا. " +
+             "عندها يمشي العلم مع الأنميشن ويثبت مكانه مهما كان دوران اللاعب، " +
+             "و Back Offset يصير بالنسبة له. اتركه فارغًا ليُعلَّق على اللاعب نفسه.")]
+    [SerializeField] private string attachToChildNamed = "";
     [Tooltip("حجم العلم وهو محمول نسبةً لحجمه الأصلي. يرجع لحجمه كاملًا لحظة غرسه.")]
     [Range(0.1f, 1f)]
     [SerializeField] private float heldScale = 0.5f;
@@ -140,7 +144,7 @@ public class FlagItem : MonoBehaviour
         holderKillable = player.GetComponentInParent<PlayerKillable>();
         pickupCollider.enabled = false; // لا يُلتقط مرتين ولا يعيق الحركة
 
-        transform.SetParent(player);
+        transform.SetParent(FindAnchor(player));
         ApplyCarryPose();
 
         Play(pickupSound);
@@ -235,6 +239,33 @@ public class FlagItem : MonoBehaviour
 
         // من الحجم الأصلي لا الحالي، فتطبيقه مرتين (نسختا FlagItem) يعطي نفس النتيجة
         if (hasStartScale) SetWorldScale(startScale * s.heldScale);
+    }
+
+    /// <summary>
+    /// الكائن الذي يُعلَّق عليه العلم داخل اللاعب: المطابق بالاسم إن حُدِّد، وإلا اللاعب نفسه.
+    /// المطابقة تتجاهل حالة الأحرف وتقبل جزءًا من الاسم، فـ"شنطة"/"Backpack" تكفي.
+    /// </summary>
+    private Transform FindAnchor(Transform player)
+    {
+        var s = primary != null ? primary : this;
+        if (string.IsNullOrWhiteSpace(s.attachToChildNamed)) return player;
+
+        string wanted = s.attachToChildNamed.Trim().ToLowerInvariant();
+        Transform root = player.root != null ? player.root : player;
+
+        foreach (var t in root.GetComponentsInChildren<Transform>(true))
+        {
+            string n = t.name.ToLowerInvariant();
+            if (n == wanted) return t;
+        }
+        foreach (var t in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (t.name.ToLowerInvariant().Contains(wanted)) return t;
+        }
+
+        Debug.LogWarning($"[FlagItem] ما لقيت كائنًا اسمه \"{s.attachToChildNamed}\" داخل اللاعب — " +
+                         "عُلِّق العلم على اللاعب نفسه.", this);
+        return player;
     }
 
     /// <summary>يضبط حجم العلم الفعلي في العالم مهما كان حجم أبيه.</summary>

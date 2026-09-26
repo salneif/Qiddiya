@@ -17,6 +17,9 @@ public class ScreenFader : MonoBehaviour
     [Tooltip("يبدأ بالتلاشي من الأسود تلقائيًا عند التشغيل")]
     [SerializeField] private bool fadeInOnStart = true;
 
+    [Tooltip("يمرّر التحميل لشاشة التحميل (صورة الوجهة وبار علي) بدل التعتيم الأسود وحده")]
+    [SerializeField] private bool useLoadingScreen = true;
+
     private CanvasGroup group;
 
     private void Awake()
@@ -43,6 +46,9 @@ public class ScreenFader : MonoBehaviour
     /// <summary>يعتّم الشاشة إلى الأسود ثم يحمّل المشهد المطلوب.</summary>
     public void FadeOutAndLoad(string sceneName)
     {
+        // الشاشة تعتّم وتحمّل بنفسها، فالتعتيم المحلي فوقها تكرار يطوّل الانتقال
+        if (useLoadingScreen && LoadingOverlay.Go(sceneName)) return;
+
         StopAllCoroutines();
         group.blocksRaycasts = true; // يمنع الضغط أثناء الانتقال
         StartCoroutine(Fade(group.alpha, 1f, () => LoadSceneAsync(sceneName)));

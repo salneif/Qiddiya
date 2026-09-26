@@ -34,6 +34,11 @@ public class FlagBase : MonoBehaviour
     [Tooltip("الباب الذي يُفتح عند زرع هذا العلم — اتركه فارغًا في آخر قاعدة")]
     [SerializeField] private Gate doorToOpen;
 
+    [Header("دليل اللاعب")]
+    [Tooltip("دائرة على القاعدة تُرى من بعيد وهو حامل علمها، وحرف الزر عند الاقتراب. " +
+             "يُضاف FlagBaseBeacon تلقائيًا؛ أضِفه يدويًا على القاعدة إن أردت ضبط أرقامه.")]
+    [SerializeField] private bool showBeacon = true;
+
     [Header("العلم المزروع")]
     [Tooltip("يقفل العلم في القاعدة فلا يُلتقط مرة أخرى")]
     [SerializeField] private bool lockFlagAfterPlant = true;
@@ -55,6 +60,10 @@ public class FlagBase : MonoBehaviour
     private void Awake()
     {
         if (socket == null) socket = GetComponent<FlagSocket>();
+
+        // دليل اللاعب بلا تركيب: القاعدة تنشئه بنفسها إن لم يُضف يدويًا
+        if (showBeacon && GetComponent<FlagBaseBeacon>() == null)
+            gameObject.AddComponent<FlagBaseBeacon>();
     }
 
     private void OnEnable()
