@@ -29,8 +29,16 @@ public class DangerZone : MonoBehaviour
     [Tooltip("زيادة على مقاس الكولايدر (متر) — العلامة أوسع قليلًا من القتل نفسه، " +
              "فمن يقف على حافتها ما زال حيًّا")]
     [SerializeField] private float margin = 0.35f;
-    [Tooltip("ارتفاع العلامة عن أسفل الكولايدر، فلا تغوص في الأرض ولا تطفو")]
+    [Tooltip("ارتفاع العلامة عن الأرض، فلا تغوص فيها ولا تطفو")]
     [SerializeField] private float groundOffset = 0.03f;
+    [Tooltip("ينزل بالعلامة إلى الأرض تحت الفخّ. الفخّ المعلّق في الهواء (قِدر حِمَم " +
+             "فوق ممشى) علامته عند أسفل صندوقه تطفو في الفراغ ولا تُرى — والمطلوب " +
+             "أن تظهر على الأرض التي سيسقط عليها")]
+    [SerializeField] private bool dropToFloor = true;
+    [Tooltip("أقصى نزول للبحث عن أرض (متر)")]
+    [SerializeField] private float dropDistance = 30f;
+    [Tooltip("طبقات الأرض — Nothing = كل شيء ما عدا التريغرات")]
+    [SerializeField] private LayerMask floorLayers = ~0;
 
     [Header("الشكل")]
     [Tooltip("لون الخطر")]
@@ -128,8 +136,18 @@ public class DangerZone : MonoBehaviour
         Bounds bounds = area.bounds;
         float side = Mathf.Max(bounds.size.x, bounds.size.z) + margin * 2f;
 
+        float y = bounds.min.y + groundOffset;
+        if (dropToFloor)
+        {
+            // من أسفل الصندوق بقليل، وتجاهل التريغرات وإلا اصطدم الشعاع بفخّنا نفسه
+            Vector3 from = new Vector3(bounds.center.x, bounds.min.y - 0.02f, bounds.center.z);
+            if (Physics.Raycast(from, Vector3.down, out RaycastHit hit, dropDistance,
+                                floorLayers, QueryTriggerInteraction.Ignore))
+                y = hit.point.y + groundOffset;
+        }
+
         // بفضاء العالم: الأب قد يكون مكبّرًا أو مائلًا، والعلامة يجب أن تبقى مستوية
-        marker.position = new Vector3(bounds.center.x, bounds.min.y + groundOffset, bounds.center.z);
+        marker.position = new Vector3(bounds.center.x, y, bounds.center.z);
         marker.rotation = Quaternion.Euler(90f, 0f, 0f);
 
         Vector3 scale = transform.lossyScale;
@@ -226,6 +244,7 @@ public class DangerZone : MonoBehaviour
     private void OnValidate()
     {
         margin = Mathf.Max(0f, margin);
+        dropDistance = Mathf.Max(0.1f, dropDistance);
         hearingRange = Mathf.Max(0.5f, hearingRange);
         pulsesPerSecond = Mathf.Max(0f, pulsesPerSecond);
     }
@@ -240,5 +259,15 @@ public class DangerZone : MonoBehaviour
 
         Gizmos.color = new Color(1f, 0.8f, 0.2f, 0.25f);
         Gizmos.DrawWireSphere(c.bounds.center, hearingRange);
+
+        if (!dropToFloor) return;
+        Vector3 from = new Vector3(c.bounds.center.x, c.bounds.min.y - 0.02f, c.bounds.center.z);
+        if (Physics.Raycast(from, Vector3.down, out RaycastHit hit, dropDistance,
+                            floorLayers, QueryTriggerInteraction.Ignore))
+        {
+            Gizmos.color = new Color(1f, 0.4f, 0.1f, 0.9f);
+            Gizmos.DrawLine(from, hit.point);
+            Gizmos.DrawWireSphere(hit.point, 0.25f);
+        }
     }
 }
