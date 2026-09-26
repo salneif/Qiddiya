@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -50,11 +51,16 @@ public class FlagItem : MonoBehaviour
     [Header("الصوت")]
     [Tooltip("مصدر الصوت — يُلتقط تلقائيًا من نفس كائن العلم إذا تُرك فارغًا")]
     [SerializeField] private AudioSource audioSource;
-    [Tooltip("صوت التقاط موحّد لكل الأعلام يُحمَّل من Osama/Resources بهذا الاسم، " +
-             "ويتقدّم على Pickup Sound. فرّغه ليستعمل كل علم صوته الخاص.")]
-    [SerializeField] private string sharedPickupSound = "TakeFlag";
-    [Tooltip("صوت التقاط خاص بهذا العلم — يُستعمل إن فُرّغ الاسم أعلاه")]
+    [Tooltip("صوت التقاط العلم")]
     [SerializeField] private AudioClip pickupSound;
+    [Tooltip("احتياط: يُحمَّل من Osama/Resources بهذا الاسم إن تُركت الخانة أعلاه فارغة")]
+    [SerializeField] private string fallbackPickupSound = "TakeFlag";
+    [Tooltip("مستوى صوت الالتقاط")]
+    [Range(0f, 1f)] [SerializeField] private float pickupVolume = 0.55f;
+    [Tooltip("تصاعد الصوت عند بدايته — بلا ه يضرب بكامل قوته من أول لحظة")]
+    [SerializeField] private float pickupFadeIn = 0.12f;
+    [Tooltip("تلاشي الصوت قبل نهايته — بلا ه ينقطع فجأة")]
+    [SerializeField] private float pickupFadeOut = 0.45f;
     [Tooltip("صوت غرس العلم في مقبسه")]
     [SerializeField] private AudioClip placeSound;
 
@@ -77,6 +83,7 @@ public class FlagItem : MonoBehaviour
     private FlagItem primary;                // أول FlagItem على الكائن — مصدر إعدادات الحمل
     private Vector3 startPosition;
     private Quaternion startRotation;
+    private AudioSource pickupSource;        // مصدر خاص بصوت الالتقاط المتدرّج
     private PlayerKillable holderKillable;   // حامل العلم الحالي، لمراقبة موته
     private bool locked;                     // مزروع نهائيًا في قاعدته — لا يُلتقط ولا يرجع
     private bool plantAtStartPose;           // يُغرس حيث وُضع في المحرر لا في نقطة المقبس
@@ -95,29 +102,25 @@ public class FlagItem : MonoBehaviour
 
         // النسخة الأولى وحدها تشغّل الصوت الموحّد: على العلم نسختان من هذا السكربت
         // عمدًا، ولو شغّلتاه معًا سمعت اللقطة مرتين فوق بعض
-        if (this == primary) ApplySharedPickupSound();
+        if (this == primary) ApplyFallbackPickupSound();
     }
 
     /// <summary>
-    /// صوت التقاط واحد لكل الأعلام من <c>Resources</c>، بدل تعديل أربعة بريفابات
-    /// وأعلامٍ داخل سينات كل ما تغيّر الصوت. ويعمل حتى في السينات التي تُركت فيها
-    /// خانة الصوت فارغة، ويُنشئ مصدر صوت إن لم يكن على العلم واحد.
+    /// احتياط للأعلام التي تُركت خانة صوتها فارغة داخل سين (علم السيرك كان بلا صوت
+    /// وبلا <c>AudioSource</c> أصلًا فكان التقاطه صامتًا). الخانة إن مُلئت فهي الأولى
+    /// دائمًا — فما يظهر في الـ Inspector هو ما يُسمع، بلا مفاجآت وقت التشغيل.
     /// </summary>
-    private void ApplySharedPickupSound()
+    private void ApplyFallbackPickupSound()
     {
-        if (string.IsNullOrWhiteSpace(sharedPickupSound)) return;
-
-        var clip = Resources.Load<AudioClip>(sharedPickupSound.Trim());
-        if (clip == null)
+        if (pickupSound == null && !string.IsNullOrWhiteSpace(fallbackPickupSound))
         {
-            Debug.LogWarning($"[FlagItem] ما لقيت \"{sharedPickupSound}\" في Osama/Resources " +
-                             "— بقي صوت هذا العلم كما هو.", this);
-            return;
+            pickupSound = Resources.Load<AudioClip>(fallbackPickupSound.Trim());
+            if (pickupSound == null)
+                Debug.LogWarning($"[FlagItem] ما لقيت \"{fallbackPickupSound}\" في " +
+                                 "Osama/Resources — التقاط هذا العلم بلا صوت.", this);
         }
 
-        pickupSound = clip;
-
-        if (audioSource != null) return;
+        if (pickupSound == null || audioSource != null) return;
 
         // ثنائي الأبعاد: كاميرا اللعبة بعيدة عن اللاعب، والصوت المجسّم معها لا يُسمع
         audioSource = gameObject.AddComponent<AudioSource>();
@@ -156,6 +159,54 @@ public class FlagItem : MonoBehaviour
         if (clip != null && audioSource != null) audioSource.PlayOneShot(clip);
     }
 
+    /// <summary>
+    /// صوت الالتقاط بتصاعد وتلاشٍ. <c>PlayOneShot</c> يضرب بكامل القوة من أول عيّنة
+    /// ويقطع عند آخرها، فتطلع اللقطة مفاجئة — ولا يمكن التحكّم بمستواها لحظيًا.
+    /// فنشغّلها على مصدر خاص بها ونحرّك مستواه، ومصدرٌ خاص حتى لا نقطع ما قد يكون
+    /// مصدر العلم الأصلي يشغّله.
+    /// </summary>
+    private void PlayPickup()
+    {
+        if (pickupSound == null) return;
+
+        if (pickupSource == null)
+        {
+            pickupSource = gameObject.AddComponent<AudioSource>();
+            pickupSource.playOnAwake = false;
+            pickupSource.spatialBlend = 0f;
+        }
+
+        StopCoroutine(nameof(FadePickup));
+        StartCoroutine(FadePickup());
+    }
+
+    private IEnumerator FadePickup()
+    {
+        AudioClip clip = pickupSound;
+        pickupSource.clip = clip;
+        pickupSource.volume = 0f;
+        pickupSource.Play();
+
+        float length = clip.length;
+        // الحدّان يمنعان التصاعد والتلاشي من أكل المقطع كله لو كان قصيرًا
+        float rise = Mathf.Min(Mathf.Max(0f, pickupFadeIn), length * 0.4f);
+        float fall = Mathf.Min(Mathf.Max(0f, pickupFadeOut), length * 0.5f);
+
+        float t = 0f;
+        while (t < length && pickupSource.isPlaying)
+        {
+            t += Time.deltaTime;
+
+            float up = rise > 0.001f ? Mathf.Clamp01(t / rise) : 1f;
+            float down = fall > 0.001f ? Mathf.Clamp01((length - t) / fall) : 1f;
+            pickupSource.volume = pickupVolume * Mathf.SmoothStep(0f, 1f, Mathf.Min(up, down));
+
+            yield return null;
+        }
+
+        pickupSource.Stop();
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (locked || IsHeld || !other.CompareTag(playerTag)) return;
@@ -181,7 +232,7 @@ public class FlagItem : MonoBehaviour
         transform.SetParent(FindAnchor(player));
         ApplyCarryPose();
 
-        Play(pickupSound);
+        PlayPickup();
         onPickedUp?.Invoke();
         PickedUp?.Invoke();
     }
