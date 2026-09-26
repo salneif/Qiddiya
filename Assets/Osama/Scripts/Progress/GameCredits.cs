@@ -66,7 +66,11 @@ public class GameCredits : MonoBehaviour
     [SerializeField] private string playerTag = "Player";
     [Tooltip("يجمّد حركة اللاعب عبر قائمة Disable On Death في PlayerKillable")]
     [SerializeField] private bool freezePlayer = true;
-    [Tooltip("سكربتات تُطفأ طوال الكريديت: تتبّع الكاميرا وأي تحكّم آخر")]
+    [Tooltip("سكربتات تُطفأ طوال الكريديت بالاسم — ما تحتاج تسحب شيئًا. " +
+             "بالاسم عمدًا لا بمرجع مباشر: الربط بسكربت زميلك يكسر بناء الجميع لو " +
+             "غيّر اسمه أو حذفه، وبالاسم يطبع تحذيرًا وكفى.")]
+    [SerializeField] private string[] disableScriptsNamed = { "CameraFollow" };
+    [Tooltip("سكربتات إضافية تُطفأ بالسحب — اتركها فارغة، القائمة أعلاه تكفي عادة")]
     [SerializeField] private MonoBehaviour[] disableOnCredits;
 
     [Header("الموسيقى")]
@@ -333,9 +337,13 @@ public class GameCredits : MonoBehaviour
             foreach (var b in disableOnCredits)
                 if (b != null) b.enabled = false;
 
-        if (pullDuration > 0f && (disableOnCredits == null || disableOnCredits.Length == 0))
-            Debug.LogWarning("[GameCredits] قائمة Disable On Credits فارغة — حُطّ فيها سكربت " +
-                             "متابعة الكاميرا، وإلا رجعت الكاميرا لللاعب ولم تبعد.", this);
+        int stopped = DisableByName();
+        int dragged = disableOnCredits != null ? disableOnCredits.Length : 0;
+
+        if (pullDuration > 0f && stopped == 0 && dragged == 0)
+            Debug.LogWarning("[GameCredits] ما أطفيت أي سكربت متابعة كاميرا — تأكد أن اسم " +
+                             "السكربت في Disable Scripts Named مطابق، وإلا شدّ الكاميرا " +
+                             "لللاعب كل إطار وما بعدت خطوة.", this);
 
         var go = PlayerLocator.Find(playerTag);
         if (go == null) return null;
@@ -356,6 +364,40 @@ public class GameCredits : MonoBehaviour
         }
 
         return go.transform;
+    }
+
+    /// <summary>
+    /// يطفئ سكربتات المتابعة بالاسم. البحث بالاسم لا بالنوع مقصود: النوع يعني
+    /// اعتمادًا على ملف زميل في نفس التجميعة، فلو حذفه أو غيّر اسمه انكسر بناء
+    /// الجميع — وهنا يطبع تحذيرًا ويكمل.
+    /// </summary>
+    private int DisableByName()
+    {
+        if (disableScriptsNamed == null || disableScriptsNamed.Length == 0) return 0;
+
+        int count = 0;
+        var all = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude,
+                                                   FindObjectsSortMode.None);
+        foreach (var behaviour in all)
+        {
+            if (behaviour == null || behaviour == this || !behaviour.enabled) continue;
+
+            string typeName = behaviour.GetType().Name;
+            foreach (string wanted in disableScriptsNamed)
+            {
+                if (string.IsNullOrWhiteSpace(wanted)) continue;
+                if (!string.Equals(typeName, wanted.Trim(),
+                                   System.StringComparison.OrdinalIgnoreCase)) continue;
+
+                behaviour.enabled = false;
+                count++;
+                Debug.Log($"[GameCredits] أطفأت {typeName} على «{behaviour.gameObject.name}».",
+                          behaviour);
+                break;
+            }
+        }
+
+        return count;
     }
 
     private void PlayMusic()
