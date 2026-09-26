@@ -110,6 +110,8 @@ public class GameCredits : MonoBehaviour
     [SerializeField] private float textFade = 0.7f;
 
     [Header("النهاية")]
+    [Tooltip("وقفة بعد آخر فقرة قبل بدء التعتيم — تريح الصورة بدل أن تسوّد فجأة")]
+    [SerializeField] private float holdBeforeFade = 1.2f;
     [SerializeField] private float fadeDuration = 2.5f;
     [Tooltip("السين الذي يرجع له — لازم يكون في قائمة البناء")]
     [SerializeField] private string returnScene = "Hub-Menu";
@@ -190,6 +192,8 @@ public class GameCredits : MonoBehaviour
         {
             if (section != null) yield return PlaySection(section, cam);
         }
+
+        if (holdBeforeFade > 0f) yield return new WaitForSeconds(holdBeforeFade);
 
         yield return FadeToBlack();
 
@@ -295,20 +299,24 @@ public class GameCredits : MonoBehaviour
         Quaternion homeRot = cam.rotation;
         Vector3 away = home + homeRot * pullOffset;   // بفضاء الكاميرا لا العالم
 
-        yield return Glide(cam, home, away, homeRot, player, pullDuration);
-        yield return Glide(cam, away, home, homeRot, player, returnDuration);
-
-        cam.position = home;
-        cam.rotation = homeRot;
+        yield return Glide(cam, home, away, homeRot, player, pullDuration, false);
+        yield return Glide(cam, away, home, homeRot, player, returnDuration, true);
     }
 
-    /// <summary>حركة ناعمة بين وضعين — البداية والنهاية بطيئتان فلا تبدأ بقفزة.</summary>
-    private IEnumerator Glide(Transform cam, Vector3 from, Vector3 to,
-                              Quaternion homeRot, Transform player, float duration)
+    /// <summary>
+    /// حركة ناعمة بين وضعين — البداية والنهاية بطيئتان فلا تبدأ بقفزة.
+    ///
+    /// <paramref name="settle"/> لرحلة العودة: الزاوية تلتقي بزاوية البداية تدريجيًا
+    /// حتى تطابقها تمامًا عند الوصول. بدونها كانت متابعة اللاعب تسحب الزاوية بعيدًا
+    /// طوال الرحلة ثم تُصحَّح بقفزة في آخر إطار — والتوقيت يصادف بداية التعتيم.
+    /// </summary>
+    private IEnumerator Glide(Transform cam, Vector3 from, Vector3 to, Quaternion homeRot,
+                              Transform player, float duration, bool settle)
     {
         if (duration <= 0f)
         {
             cam.position = to;
+            if (settle) cam.rotation = homeRot;
             yield break;
         }
 
@@ -320,22 +328,25 @@ public class GameCredits : MonoBehaviour
 
             cam.position = Vector3.Lerp(from, to, k);
 
+            Quaternion want = homeRot;
             if (keepLookingAtPlayer && player != null)
             {
                 Vector3 dir = player.position - cam.position;
                 if (dir.sqrMagnitude > 0.0001f)
-                    cam.rotation = Quaternion.Slerp(cam.rotation,
+                    want = Quaternion.Slerp(cam.rotation,
                         Quaternion.LookRotation(dir, Vector3.up), Time.deltaTime * 2f);
+                else
+                    want = cam.rotation;
             }
-            else
-            {
-                cam.rotation = homeRot;
-            }
+
+            // k*k: الالتقاء متأخّر وهادئ بدل أن يشدّها نحو زاوية البداية من أول متر
+            cam.rotation = settle ? Quaternion.Slerp(want, homeRot, k * k) : want;
 
             yield return null;
         }
 
         cam.position = to;
+        if (settle) cam.rotation = homeRot;
     }
 
     // ───────────────────────────── التجميد والصوت ─────────────────────────────
@@ -620,6 +631,7 @@ public class GameCredits : MonoBehaviour
     private void OnValidate()
     {
         fadeDuration = Mathf.Max(0f, fadeDuration);
+        holdBeforeFade = Mathf.Max(0f, holdBeforeFade);
         textFade = Mathf.Max(0f, textFade);
         pullDuration = Mathf.Max(0f, pullDuration);
         returnDuration = Mathf.Max(0f, returnDuration);
