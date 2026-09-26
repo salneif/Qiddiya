@@ -95,9 +95,14 @@ public class GameCredits : MonoBehaviour
     [SerializeField] private Transform cameraToPull;
     [Tooltip("مقدار الابتعاد بفضاء الكاميرا: Z سالب = للخلف، Y موجب = للأعلى")]
     [SerializeField] private Vector3 pullOffset = new Vector3(0f, 4f, -14f);
-    [Tooltip("مدة الابتعاد — خلّها بطول فقرات العرض (عبير + رزان)")]
-    [SerializeField] private float pullDuration = 32f;
-    [Tooltip("مدة الرجوع لمكانها بعد فقرات العرض")]
+    [Tooltip("توزّع حركة الكاميرا على طول الفقرات تلقائيًا — فتغيير مدة أي فقرة " +
+             "لا يخرّب التناسق. أطفئه لتستعمل المدتين أدناه كما هما")]
+    [SerializeField] private bool matchCameraToSections = true;
+    [Tooltip("نصيب الابتعاد من الزمن الكلي — والباقي للرجوع")]
+    [Range(0.1f, 0.9f)] [SerializeField] private float pullShare = 0.4f;
+    [Tooltip("مدة الابتعاد يدويًا — تُستعمل فقط إن أُطفئ التوزيع التلقائي")]
+    [SerializeField] private float pullDuration = 16f;
+    [Tooltip("مدة الرجوع يدويًا — تُستعمل فقط إن أُطفئ التوزيع التلقائي")]
     [SerializeField] private float returnDuration = 24f;
     [Tooltip("تظل موجّهة لللاعب وهي تبعد")]
     [SerializeField] private bool keepLookingAtPlayer = true;
@@ -142,11 +147,11 @@ public class GameCredits : MonoBehaviour
     /// <summary>الفريق كما اتفقنا عليه — يُستعمل إن تُركت القائمة فارغة.</summary>
     private static Section[] DefaultSections() => new[]
     {
-        new Section { title = "ABEER",  role = "ART & ENVIRONMENT DESIGN", duration = 16f },
-        new Section { title = "RAZAN",  role = "ART & ENVIRONMENT DESIGN", duration = 16f },
-        new Section { title = "SULTAN", role = "STEAM TOWN & THE CIRCUS",  duration = 8f  },
-        new Section { title = "OSAMA",  role = "THE HUB & THE CIRCUS",     duration = 8f  },
-        new Section { title = "ALI",    role = "TWILIGHT",                 duration = 8f  },
+        new Section { title = "ABEER",  role = "ART & ENVIRONMENT DESIGN", duration = 8f },
+        new Section { title = "RAZAN",  role = "ART & ENVIRONMENT DESIGN", duration = 8f },
+        new Section { title = "SULTAN", role = "STEAM TOWN & THE CIRCUS",  duration = 8f },
+        new Section { title = "OSAMA",  role = "THE HUB & THE CIRCUS",     duration = 8f },
+        new Section { title = "ALI",    role = "TWILIGHT",                 duration = 8f },
     };
 
     private Transform stage;
@@ -201,7 +206,7 @@ public class GameCredits : MonoBehaviour
 
         // الكاميرا تمشي على خطها الخاص بالتوازي مع الفقرات: تبعد أثناء فقرات
         // العرض ثم ترجع أثناء البقية، فلا تنتظر فقرة معيّنة ولا تتقطّع بينها
-        if (cam != null) StartCoroutine(MoveCamera(cam, player));
+        if (cam != null) StartCoroutine(MoveCamera(cam, player, PullTime(), ReturnTime()));
 
         foreach (Section section in sections)
         {
@@ -309,14 +314,43 @@ public class GameCredits : MonoBehaviour
 
     // ───────────────────────────── الكاميرا ─────────────────────────────
 
-    private IEnumerator MoveCamera(Transform cam, Transform player)
+    /// <summary>مجموع مدد الفقرات — الزمن الذي على الكاميرا أن تملأه.</summary>
+    private float SectionsTime()
+    {
+        float total = 0f;
+        if (sections != null)
+            foreach (Section section in sections)
+                if (section != null) total += section.duration;
+
+        return total;
+    }
+
+    /// <summary>
+    /// مدة الابتعاد. تُحسب من طول الفقرات لا تُكتب يدويًا: أي تعديل على مدة فقرة كان
+    /// يترك الكاميرا راجعةً والتعتيم قد بدأ، أو واقفةً تنتظر نصف العرض.
+    /// </summary>
+    private float PullTime()
+    {
+        float total = SectionsTime();
+        if (!matchCameraToSections || total < 0.1f) return pullDuration;
+        return total * pullShare;
+    }
+
+    private float ReturnTime()
+    {
+        float total = SectionsTime();
+        if (!matchCameraToSections || total < 0.1f) return returnDuration;
+        return total - total * pullShare;
+    }
+
+    private IEnumerator MoveCamera(Transform cam, Transform player, float out_, float back)
     {
         Vector3 home = cam.position;
         Quaternion homeRot = cam.rotation;
         Vector3 away = home + homeRot * pullOffset;   // بفضاء الكاميرا لا العالم
 
-        yield return Glide(cam, home, away, homeRot, player, pullDuration, false);
-        yield return Glide(cam, away, home, homeRot, player, returnDuration, true);
+        yield return Glide(cam, home, away, homeRot, player, out_, false);
+        yield return Glide(cam, away, home, homeRot, player, back, true);
     }
 
     /// <summary>
