@@ -25,9 +25,18 @@ using UnityEngine.Video;
 public class HoldToSkip : MonoBehaviour
 {
     private const float HoldSeconds = 5f;
-    private const float AppearDelay = 1.5f;
-    private const float FadeSeconds = 0.6f;
+    private const float AppearDelay = 1.2f;
+    private const float FadeSeconds = 0.9f;
     private const float ReleaseDrain = 3f;      // التصفير أسرع من العدّ: رفع اليد قرار
+    private const float BreathSeconds = 2.6f;   // نفَسٌ بطيء في الانتظار
+    private const float LingerSeconds = 6f;     // كم يبقى معروضًا قبل أن ينسحب
+
+    /// <summary>
+    /// حبرٌ أسود لا أبيض: خلفية الانترو ورقٌ كريميّ، والأبيض عليه لا يُرى.
+    /// ومعه هالةٌ فاتحة رقيقة، فلو أظلمت لقطةٌ لاحقًا بقي مقروءًا.
+    /// </summary>
+    private static readonly Color Ink = new Color(0.07f, 0.06f, 0.05f, 1f);
+    private static readonly Color Halo = new Color(1f, 0.99f, 0.96f, 0.55f);
 
     private static HoldToSkip instance;
 
@@ -57,6 +66,8 @@ public class HoldToSkip : MonoBehaviour
 
     private float held;
     private float shown;
+    private float linger;
+    private float alpha;
     private bool skipping;
     private bool scanned;
 
@@ -71,7 +82,7 @@ public class HoldToSkip : MonoBehaviour
     {
         scanned = false;
         skipping = false;
-        held = shown = 0f;
+        held = shown = linger = alpha = 0f;
 
         if (canvas != null) canvas.gameObject.SetActive(false);
     }
@@ -84,24 +95,45 @@ public class HoldToSkip : MonoBehaviour
         // الفيديو انتهى من نفسه: لا شيء يُتخطّى بعد
         if (skipper == null) { canvas.gameObject.SetActive(false); return; }
 
-        shown += Time.unscaledDeltaTime;
-        group.alpha = Mathf.Clamp01((shown - AppearDelay) / FadeSeconds);
+        float step = Time.unscaledDeltaTime;
+        shown += step;
 
-        bool holding = group.alpha > 0.99f && Holding();
+        bool touching = Holding();
+
+        // اللمس يُعيده ويمدّ بقاءه. وإلا انسحب بعد ثوانٍ — فلا يقعد على الشاشة طول
+        // الفيديو كأنه شيء علق فيها
+        bool arrived = shown > AppearDelay;
+        if (arrived) linger = touching ? LingerSeconds : linger - step;
+
+        bool wanted = arrived && linger > 0f;
+
+        // الوصول للهدف بمنحنى لا بخطّ: الخطّي يظهر دفعةً ثم يقف، فيبدو معلّقًا
+        alpha = Mathf.MoveTowards(alpha, wanted ? 1f : 0f, step / FadeSeconds);
+        float entered = alpha * alpha * (3f - 2f * alpha);
+
+        bool holding = touching && entered > 0.35f;
 
         held = holding
-            ? held + Time.unscaledDeltaTime
-            : Mathf.Max(0f, held - Time.unscaledDeltaTime * ReleaseDrain);
+            ? held + step
+            : Mathf.Max(0f, held - step * ReleaseDrain);
 
         float progress = Mathf.Clamp01(held / HoldSeconds);
         fill.fillAmount = progress;
 
-        // النصّ يسطع وهو ممسوك، فيعرف أن الإمساك مسموع
-        label.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.45f, 1f, progress));
-        fill.color = Color.Lerp(new Color(1f, 1f, 1f, 0.75f), Color.white, progress);
+        // نفَسٌ بطيء في الانتظار فلا يبدو صورةً واقفة، ويثبت تمامًا عند الإمساك
+        float breath = Mathf.Lerp(0.62f, 1f,
+            Mathf.Sin(shown / BreathSeconds * Mathf.PI * 2f) * 0.5f + 0.5f);
+        group.alpha = entered * Mathf.Lerp(breath, 1f, progress);
+
+        // والحبر نفسه يغمق وهو ممسوك، فيعرف أن الإمساك مسموع
+        label.color = Fade(Ink, Mathf.Lerp(0.72f, 1f, progress));
+        fill.color = Fade(Ink, Mathf.Lerp(0.8f, 1f, progress));
 
         if (progress >= 1f) Skip();
     }
+
+    private static Color Fade(Color color, float alpha) =>
+        new Color(color.r, color.g, color.b, alpha);
 
     /// <summary>أي زرّ: كيبورد أو يد أو ماوس. العصيّ لا تُحسب إمساكًا.</summary>
     private static bool Holding()
@@ -180,7 +212,8 @@ public class HoldToSkip : MonoBehaviour
         canvas.gameObject.SetActive(true);
         group.alpha = 0f;
         fill.fillAmount = 0f;
-        held = shown = 0f;
+        held = shown = alpha = 0f;
+        linger = LingerSeconds;
     }
 
     private void Build()
@@ -203,12 +236,15 @@ public class HoldToSkip : MonoBehaviour
 
         Sprite white = White();
 
+        // هالةٌ فاتحة تحت الحوض بقليل: تفصل الحبر عن أي لقطة مهما كان لونها
+        Panel(root.transform, "Halo", white, Halo, new Vector2(566f, 16f), new Vector2(0f, 96f));
+
         // الحوض: شريط رقيق أسفل الشاشة، بعرض الثلث فيُقرأ ولا يزحم الصورة
         RectTransform track = Panel(root.transform, "Track", white,
-                                   new Color(1f, 1f, 1f, 0.16f),
-                                   new Vector2(620f, 8f), new Vector2(0f, 96f));
+                                   Fade(Ink, 0.22f),
+                                   new Vector2(560f, 10f), new Vector2(0f, 96f));
 
-        RectTransform bar = Panel(track, "Fill", white, Color.white,
+        RectTransform bar = Panel(track, "Fill", white, Ink,
                                   Vector2.zero, Vector2.zero);
         bar.anchorMin = Vector2.zero;
         bar.anchorMax = Vector2.one;
@@ -220,7 +256,12 @@ public class HoldToSkip : MonoBehaviour
         fill.fillOrigin = (int)Image.OriginHorizontal.Left;
         fill.fillAmount = 0f;
 
-        label = Label(root.transform, "HOLD ANY BUTTON TO SKIP", new Vector2(0f, 132f));
+        label = Label(root.transform, "HOLD ANY BUTTON TO SKIP", new Vector2(0f, 134f));
+
+        // حدٌّ فاتح حول الحروف: الحبر يبقى مقروءًا ولو أظلمت اللقطة تحته
+        var outline = label.gameObject.AddComponent<Outline>();
+        outline.effectColor = Halo;
+        outline.effectDistance = new Vector2(2f, -2f);
     }
 
     private static RectTransform Panel(Transform parent, string name, Sprite sprite,
@@ -256,9 +297,10 @@ public class HoldToSkip : MonoBehaviour
         // الاسم تغيّر في 2022.2: Arial.ttf صار LegacyRuntime.ttf
         text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         text.text = message;
-        text.fontSize = 22;
+        text.fontSize = 24;
+        text.fontStyle = FontStyle.Bold;
         text.alignment = TextAnchor.MiddleCenter;
-        text.color = new Color(1f, 1f, 1f, 0.45f);
+        text.color = Ink;
         text.raycastTarget = false;
 
         var rect = (RectTransform)go.transform;
