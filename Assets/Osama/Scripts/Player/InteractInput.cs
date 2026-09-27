@@ -35,6 +35,14 @@ public static class InteractInput
         return PadInteract != null && PadInteract.wasPressedThisFrame;
     }
 
+    /// <summary>
+    /// زر التفاعل في يد التحكّم وحده، بلا الكيبورد.
+    ///
+    /// لِـ<c>LegacyInteractBridge</c>: سكربتات غيرنا تقرأ الكيبورد بنفسها، فمن قرأ
+    /// الاثنين هناك شغّل التفاعل مرّتين في ضغطة واحدة.
+    /// </summary>
+    public static bool PadPressed => PadInteract != null && PadInteract.wasPressedThisFrame;
+
     /// <summary>هل زر التفاعل مضغوط الآن؟ للأشياء التي تُمسك لا تُنقر.</summary>
     public static bool Held(Key key)
     {
