@@ -25,7 +25,7 @@ using UnityEngine.Video;
 [DisallowMultipleComponent]
 public class HoldToSkip : MonoBehaviour
 {
-    private const float HoldSeconds = 5f;
+    private const float HoldSeconds = 3f;
     private const float AppearDelay = 1.2f;
     private const float FadeSeconds = 0.9f;
     private const float ReleaseDrain = 3f;      // التصفير أسرع من العدّ: رفع اليد قرار
@@ -68,6 +68,8 @@ public class HoldToSkip : MonoBehaviour
     }
 
     private MonoBehaviour skipper;          // VideoSkipButton الخاص بعلي
+    private VideoPlayer video;              // صوته لا يمرّ بـAudioListener، فنخفته بيده
+    private float[] tracks;                 // شدّة كل مسار صوتي قبل أن نخفته
     private MonoBehaviour ender;            // A_AfterIntro — ينقل وحده حين ينتهي العدّ
     private FieldInfo enderClock;
     private GameObject skipButton;          // زرّه، نُخفيه فما يبقى تخطّيان
@@ -163,6 +165,36 @@ public class HoldToSkip : MonoBehaviour
     private static Color Fade(Color color, float alpha) =>
         new Color(color.r, color.g, color.b, alpha);
 
+    /// <summary>
+    /// شدّة مسارات الفيديو الصوتية قبل أن نلمسها.
+    ///
+    /// مخرج صوت الفيديو هنا <b>Direct</b>، أي أنه يخرج من المشغّل نفسه ولا يمرّ
+    /// بـ<c>AudioListener</c> ولا بأي <c>AudioSource</c> — فخفض صوت اللعبة كلها لا
+    /// يمسّه، وكان يدخل على شاشة تحميل ستيم كأن الفيلم ما انتهى.
+    /// </summary>
+    private void RememberTracks()
+    {
+        if (video == null) { tracks = null; return; }
+
+        // audioTrackCount لا يُعرف إلا بعد تجهيز المقطع، فإن كان صفرًا أخذنا عدد
+        // المسارات المضبوط في السين — وإلا خرجنا بمصفوفة فارغة ولم يخفت شيء
+        int count = video.audioTrackCount > 0
+            ? (int)video.audioTrackCount
+            : (int)video.controlledAudioTrackCount;
+
+        tracks = new float[count];
+        for (ushort i = 0; i < count; i++)
+            tracks[i] = video.GetDirectAudioVolume(i);
+    }
+
+    private void Tracks(float scale)
+    {
+        if (video == null || tracks == null) return;
+
+        for (ushort i = 0; i < tracks.Length; i++)
+            video.SetDirectAudioVolume(i, tracks[i] * scale);
+    }
+
     /// <summary>أي زرّ: كيبورد أو يد أو ماوس. العصيّ لا تُحسب إمساكًا.</summary>
     private static bool Holding()
     {
@@ -201,6 +233,7 @@ public class HoldToSkip : MonoBehaviour
     private IEnumerator Leave(bool load)
     {
         volume = AudioListener.volume;
+        RememberTracks();
 
         for (float t = 0f; t < LeaveSeconds; t += Time.unscaledDeltaTime)
         {
@@ -210,11 +243,17 @@ public class HoldToSkip : MonoBehaviour
             black.color = Fade(Color.black, k);
             group.alpha *= 1f - k;               // التلميح ينطفئ مع اللقطة
             AudioListener.volume = volume * (1f - k);
+            Tracks(1f - k);
             yield return null;
         }
 
         black.color = Color.black;
         AudioListener.volume = 0f;
+        Tracks(0f);
+
+        // ووقفٌ تامّ بعد الخفوت: شاشة التحميل تبقى ثوانٍ والانترو ما زال حيًّا تحتها،
+        // فلو اكتفينا بخفض الشدّة عاد صوته مع أول من يرفعها
+        if (video != null) video.Stop();
 
         if (load) Load();
     }
@@ -257,7 +296,9 @@ public class HoldToSkip : MonoBehaviour
         skipper = null;
         skipButton = null;
 
-        if (FindAnyObjectByType<VideoPlayer>() == null) return;
+        video = FindAnyObjectByType<VideoPlayer>();
+        tracks = null;
+        if (video == null) return;
 
         foreach (var component in FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
         {
