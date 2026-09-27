@@ -559,6 +559,7 @@ GameObject:
   - component: {fileID: 15489151}
   - component: {fileID: 15489150}
   - component: {fileID: 15489153}
+  - component: {fileID: 1180235458}
   m_Layer: 5
   m_Name: Back_Button1
   m_TagString: Untagged
@@ -5041,7 +5042,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 2800000, guid: 7df4dcc9068e2b841b1c1457b2b2da17, type: 3}
+  m_Texture: {fileID: 2800000, guid: c6a99ab93af4ba6439221290f195aec2, type: 3}
   m_UVRect:
     serializedVersion: 2
     x: 0
@@ -19390,7 +19391,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 2800000, guid: 7df4dcc9068e2b841b1c1457b2b2da17, type: 3}
+  m_Texture: {fileID: 2800000, guid: c6a99ab93af4ba6439221290f195aec2, type: 3}
   m_UVRect:
     serializedVersion: 2
     x: 0
@@ -20831,6 +20832,7 @@ GameObject:
   - component: {fileID: 1605672886}
   - component: {fileID: 1605672889}
   - component: {fileID: 1605672890}
+  - component: {fileID: 1545759114}
   m_Layer: 5
   m_Name: Back_Button
   m_TagString: Untagged
@@ -35913,6 +35915,52 @@ MonoBehaviour:
   rawImage: {fileID: 742704965}
   keyboardTexture: {fileID: 2800000, guid: d9eae13fecfe4f2cb65912b79f036116, type: 3}
   gamepadTexture: {fileID: 2800000, guid: 438579b151896d748a77d435a11ebf3c, type: 3}
+  label: {fileID: 0}
+  keyboardText: 
+  gamepadText: 
+  keyboardOnly: 0
+  gamepadOnly: 0
+--- !u!114 &1180235458
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 15489147}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8cec54d2d98c4cb19173973dd7687d74, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  image: {fileID: 0}
+  keyboardSprite: {fileID: 0}
+  gamepadSprite: {fileID: 0}
+  rawImage: {fileID: 1475149418}
+  keyboardTexture: {fileID: 2800000, guid: d9eae13fecfe4f2cb65912b79f036116, type: 3}
+  gamepadTexture: {fileID: 2800000, guid: c6a99ab93af4ba6439221290f195aec2, type: 3}
+  label: {fileID: 0}
+  keyboardText: 
+  gamepadText: 
+  keyboardOnly: 0
+  gamepadOnly: 0
+--- !u!114 &1545759114
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1605672884}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8cec54d2d98c4cb19173973dd7687d74, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  image: {fileID: 0}
+  keyboardSprite: {fileID: 0}
+  gamepadSprite: {fileID: 0}
+  rawImage: {fileID: 388614628}
+  keyboardTexture: {fileID: 2800000, guid: d9eae13fecfe4f2cb65912b79f036116, type: 3}
+  gamepadTexture: {fileID: 2800000, guid: c6a99ab93af4ba6439221290f195aec2, type: 3}
   label: {fileID: 0}
   keyboardText: 
   gamepadText: 
