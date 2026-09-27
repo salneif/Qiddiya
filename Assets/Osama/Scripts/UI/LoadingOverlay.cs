@@ -48,7 +48,7 @@ public class LoadingOverlay : MonoBehaviour
 
     [Header("التوقيت")]
     [Tooltip("مدة امتلاء البار (ثواني) — استعراضية، لا تتبع سرعة التحميل الحقيقية")]
-    [SerializeField] private float barDuration = 4f;
+    [SerializeField] private float barDuration = 6f;
     [Tooltip("ظهور الشاشة")]
     [SerializeField] private float fadeInDuration = 0.25f;
     [Tooltip("اختفاء الشاشة — طوّلها إن رأيت سوادًا بين الشاشة والمشهد")]
@@ -70,7 +70,7 @@ public class LoadingOverlay : MonoBehaviour
     [Tooltip("ارتفاع علي على الشاشة")]
     [SerializeField] private float runnerHeight = 125f;
     [Tooltip("إطارات ركض علي في الثانية")]
-    [SerializeField] private float runnerFps = 16f;
+    [SerializeField] private float runnerFps = 10f;
     [Tooltip("يذيب كل إطار في الذي بعده فتختفي القفزة بينهما")]
     [SerializeField] private bool blendFrames = true;
     [Tooltip("نطّة وميلٌ يتبعان دورة الركض — حركةٌ متّصلة تُخفي خطوات الإطارات")]
@@ -363,20 +363,23 @@ public class LoadingOverlay : MonoBehaviour
         tip = go.AddComponent<Text>();
         tip.font = font;
         tip.fontSize = 19;
-        tip.alignment = TextAnchor.LowerLeft;
+        tip.alignment = TextAnchor.UpperCenter;
         tip.color = new Color(1f, 1f, 1f, 0f);
         tip.raycastTarget = false;
         tip.horizontalOverflow = HorizontalWrapMode.Overflow;
         tip.verticalOverflow = VerticalWrapMode.Overflow;
 
         RectTransform rect = tip.rectTransform;
-        rect.anchorMin = rect.anchorMax = new Vector2(0f, 0f);
-        rect.pivot = new Vector2(0f, 0f);
-        rect.anchoredPosition = new Vector2(64f, 52f);
-        rect.sizeDelta = new Vector2(1100f, 60f);
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.anchoredPosition = new Vector2(0f, TipBottom);
+        rect.sizeDelta = new Vector2(1400f, 44f);
 
         NextTip();
     }
+
+    /// <summary>تحت اسم الوجهة مباشرة، في الوسط — سطران يقرآن معًا لا شيئان متفرّقان.</summary>
+    private float TipBottom => barBottom - 66f;
 
     /// <summary>تلميحٌ غير الذي قبله — التكرار في شاشةٍ قصيرة يُلاحَظ فورًا.</summary>
     private void NextTip()
@@ -594,6 +597,9 @@ public class LoadingOverlay : MonoBehaviour
         if (label != null)
             label.rectTransform.anchoredPosition = new Vector2(0f, barBottom - 18f);
 
+        if (tip != null)
+            tip.rectTransform.anchoredPosition = new Vector2(0f, TipBottom);
+
         if (runnerImage != null && runnerImage.enabled)
         {
             runner.sizeDelta = RunnerSize();
@@ -678,7 +684,9 @@ public class LoadingOverlay : MonoBehaviour
     /// <summary>الإطار السابق خلفه يخفت — فالقفزة بين الإطارين تصير ذوبانًا.</summary>
     private void Ghost(float within)
     {
-        const float Window = 0.34f;
+        // نافذةٌ أوسع مع الإيقاع الأبطأ: كل إطار يبقى أطول، فالذوبان بينهما يحتاج
+        // وقتًا أكثر وإلا عاد يُرى قفزةً في آخر الإطار
+        const float Window = 0.55f;
 
         if (!blendFrames || runnerGhost == null)
         {
