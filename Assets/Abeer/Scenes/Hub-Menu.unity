@@ -18587,7 +18587,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 259340880d37a1141b94aa563bef7d50, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIPanel
-  firstSelected: {fileID: 1232610632}
+  firstSelected: {fileID: 15489147}
   hidePrevious: 1
   pauseGameWhileOpen: 0
   blockBack: 0
@@ -18611,7 +18611,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae349239805fe3942bb90b95410412af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UITabGroup
-  tabs: []
+  tabs:
+  - content: {fileID: 1949503047}
+    header: {fileID: 532991672}
+    firstSelected: {fileID: 1448274588}
+  - content: {fileID: 1070567364}
+    header: {fileID: 1564568886}
+    firstSelected: {fileID: 0}
   startIndex: 0
   activeHeaderColor: {r: 1, g: 1, b: 1, a: 1}
   inactiveHeaderColor: {r: 1, g: 1, b: 1, a: 0.45}
