@@ -85,6 +85,9 @@ public class RobotEyeAttack : MonoBehaviour
     {
         eyesGlowing = true;
         SetEyeLights(true);
+
+        // العيون تولع قبل أن تقتل: دمدمةٌ تعلو تُشعره أن شيئًا بدأ، فيختبئ
+        PadRumble.Open(0.7f);
     }
 
     /// <summary>تُنادى عند انطفاء العيون: تُطفئ الكشافات.</summary>

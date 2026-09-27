@@ -211,7 +211,14 @@ public class UIPanel : MonoBehaviour
     private void OnEnable()
     {
         ResetVisualStates();
-        if (!managedToggle) StartCoroutine(ResetAfterAnimatorBinds());
+        if (managedToggle) return;
+
+        StartCoroutine(ResetAfterAnimatorBinds());
+
+        // أُظهرت من خارج MenuManager: نُدخلها في الترتيب وإلا بقي الرجوع معطّلًا
+        // فيها ولم يُحدَّد فيها زرّ — راجع NotifyPanelOpenedExternally
+        if (MenuManager.Instance != null)
+            MenuManager.Instance.NotifyPanelOpenedExternally(this);
     }
 
     private IEnumerator ResetAfterAnimatorBinds()

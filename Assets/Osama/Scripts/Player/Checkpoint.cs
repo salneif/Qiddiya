@@ -27,6 +27,17 @@ public class Checkpoint : MonoBehaviour
     [Tooltip("Invoked when this checkpoint is activated (flag/sound/VFX...).")]
     [SerializeField] private UnityEvent onActivated;
 
+    /// <summary>
+    /// يُطلق عند تفعيل أي نقطة حفظ في السين. ساكنٌ عمدًا: من يريد أن يُعلن عنها —
+    /// كـ<c>CheckpointFace</c> — يستمع مرّة واحدة بدل أن يُربط في كل نقطة بيدك،
+    /// وإضافة نقطة جديدة لا تحتاج ربطًا أصلًا.
+    /// </summary>
+    public static event System.Action<Checkpoint> Activated;
+
+    /// <summary>يونيتي يُبقي المشتركين بين تشغيلتين في المحرر.</summary>
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics() => Activated = null;
+
     private bool activated;
 
     private void Reset()
@@ -46,5 +57,6 @@ public class Checkpoint : MonoBehaviour
         killable.SetRespawnPoint(spawnPoint != null ? spawnPoint : transform);
         activated = true;
         onActivated?.Invoke();
+        Activated?.Invoke(this);
     }
 }

@@ -73,6 +73,23 @@ public class LevelPortal : MonoBehaviour
     [SerializeField] private AudioClip approachSound;
     [Tooltip("صوت مرة واحدة عند الاقتراب والبوابة مقفولة (قعقعة قفل)")]
     [SerializeField] private AudioClip lockedApproachSound;
+
+    [Header("اهتزاز اليد")]
+    [Tooltip("دمدمةٌ تشتدّ كلّما قرب اللاعب من البوابة المفتوحة. صفر = بلا اهتزاز")]
+    [SerializeField] private float rumbleStrength = 0.35f;
+
+    [Header("نبض الوهج")]
+    [Tooltip("يجعل ضوء البوابة ومجسّماتها المضيئة تنبض بعد أن تُفتح — البوابة الساكنة " +
+             "تُقرأ زينةً في المشهد لا بابًا يُدخل منه")]
+    [SerializeField] private bool pulseGlow;
+    [Tooltip("نصف قطر ما يُلتقط حول البوابة من أضواء ومجسّمات")]
+    [SerializeField] private float pulseRadius = 3f;
+    [Tooltip("نبضة كاملة في كم ثانية")]
+    [SerializeField] private float pulsePeriod = 1.8f;
+    [Tooltip("حدّ الخفوت في أضعف لحظة")]
+    [Range(0.2f, 1f)] [SerializeField] private float pulseDim = 0.6f;
+    [Tooltip("حدّ السطوع في أقواها")]
+    [Range(1f, 2.5f)] [SerializeField] private float pulseBright = 1.3f;
     [Tooltip("صوت محاولة العبور وهي مقفولة (ضغط الزر بلا فايدة)")]
     [SerializeField] private AudioClip blockedSound;
     [Tooltip("همهمة مستمرة تعلو كلما اقتربت وتخفت كلما ابتعدت")]
@@ -141,15 +158,24 @@ public class LevelPortal : MonoBehaviour
         UpdateApproach();
 
         if (!playerInside || !armed || leaving || activationKey == Key.None) return;
-        if (Keyboard.current == null) return;
 
-        if (Keyboard.current[activationKey].wasPressedThisFrame) TryGo();
+        if (InteractInput.Pressed(activationKey)) TryGo();
     }
 
     /// <summary>
     /// الإحساس بالبوابة بالمسافة لا بكولايدر ثانٍ — فيعمل حتى على بوابة بلا كولايدر
     /// أصلًا، ولا يتعارض مع كولايدر البيس المجاور.
     /// </summary>
+    private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    private static readonly int ColorId = Shader.PropertyToID("_Color");
+    private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+
+    private Light[] glowLights;
+    private float[] glowIntensities;
+    private Renderer[] glowRenderers;
+    private Color[] glowColors;
+    private MaterialPropertyBlock glowBlock;
+
     private void UpdateApproach()
     {
         if (approachDistance <= 0f) return;
@@ -177,6 +203,118 @@ public class LevelPortal : MonoBehaviour
         }
 
         UpdateAmbient(near, dist);
+        UpdateRumble(near, dist);
+        UpdatePulse();
+    }
+
+    /// <summary>
+    /// دمدمةٌ تشتدّ مع القرب — بوابةٌ تُحسّ قبل أن تُدخل.
+    ///
+    /// <c>Hold</c> لا <c>Play</c>: الأولى تُكتب كل إطار وتتبع المسافة لحظةً بلحظة،
+    /// والثانية ضربةٌ لها مدّة تنتهي فلا تصلح لشيءٍ يشتدّ ويخفّ باستمرار.
+    ///
+    /// وللمغلقة نصف ما للمفتوحة: تُحسّ أن هناك شيئًا، ولا تُدعى إلى ما لا يُفتح.
+    /// </summary>
+    private void UpdateRumble(bool near, float dist)
+    {
+        if (!near || leaving || rumbleStrength <= 0f) return;
+
+        float closeness = 1f - Mathf.Clamp01(dist / approachDistance);
+        closeness *= closeness;                       // تشتدّ في المتر الأخير لا في الطريق كله
+
+        float strength = rumbleStrength * closeness * (IsUnlocked ? 1f : 0.45f);
+        PadRumble.Hold(strength, strength * 0.35f);
+    }
+
+    /// <summary>
+    /// نبضُ الوهج.
+    ///
+    /// يُلتقط ما حول البوابة من أضواء ومجسّمات <b>مرّة واحدة عند أول نبضة</b>، فلا
+    /// يحتاج أحدٌ أن يربط شيئًا بيده — والبوابة موضوعةٌ وسط وهجها أصلًا.
+    /// والالتقاط بنصف قطر صغير عمدًا: ما بعد عن البوابة ليس منها.
+    /// </summary>
+    private void UpdatePulse()
+    {
+        if (!pulseGlow || !IsUnlocked) return;
+
+        if (glowLights == null) CollectGlow();
+        if (glowLights.Length == 0 && glowRenderers.Length == 0) return;
+
+        float wave = Mathf.Sin(Time.time / Mathf.Max(0.05f, pulsePeriod) * Mathf.PI * 2f) * 0.5f + 0.5f;
+        float strength = Mathf.Lerp(pulseDim, pulseBright, wave);
+
+        for (int i = 0; i < glowLights.Length; i++)
+        {
+            if (glowLights[i] == null) continue;
+            glowLights[i].intensity = glowIntensities[i] * strength;
+        }
+
+        if (glowRenderers.Length == 0) return;
+
+        if (glowBlock == null) glowBlock = new MaterialPropertyBlock();
+        for (int i = 0; i < glowRenderers.Length; i++)
+        {
+            Renderer renderer = glowRenderers[i];
+            if (renderer == null) continue;
+
+            Color color = glowColors[i] * strength;
+            color.a = glowColors[i].a;
+
+            renderer.GetPropertyBlock(glowBlock);
+            glowBlock.SetColor(BaseColorId, color);
+            glowBlock.SetColor(ColorId, color);
+            glowBlock.SetColor(EmissionColorId, color);
+            renderer.SetPropertyBlock(glowBlock);
+        }
+    }
+
+    /// <summary>
+    /// يلتقط الوهج حول البوابة. الشدّة واللون الأصليان يُقرآن <b>هنا مرّة</b>: لو
+    /// قُرئا كل إطار لقرآ ما كتبناه نحن فتضاعف النبض حتى يبيضّ.
+    /// </summary>
+    private void CollectGlow()
+    {
+        var lights = new System.Collections.Generic.List<Light>();
+        var renderers = new System.Collections.Generic.List<Renderer>();
+
+        foreach (Collider hit in Physics.OverlapSphere(transform.position, pulseRadius,
+                                                       ~0, QueryTriggerInteraction.Collide))
+        {
+            if (hit == null) continue;
+            foreach (Light light in hit.GetComponentsInChildren<Light>(false))
+                if (!lights.Contains(light)) lights.Add(light);
+        }
+
+        // الأضواء بلا كولايدر في الغالب، فنمرّ على أضواء المشهد بالمسافة كذلك
+        foreach (Light light in FindObjectsByType<Light>(FindObjectsSortMode.None))
+        {
+            if (light == null || light.type == LightType.Directional) continue;
+            if (lights.Contains(light)) continue;
+            if (Vector3.Distance(light.transform.position, transform.position) <= pulseRadius)
+                lights.Add(light);
+        }
+
+        foreach (Renderer renderer in GetComponentsInChildren<Renderer>(false))
+            renderers.Add(renderer);
+
+        glowLights = lights.ToArray();
+        glowRenderers = renderers.ToArray();
+
+        glowIntensities = new float[glowLights.Length];
+        for (int i = 0; i < glowLights.Length; i++) glowIntensities[i] = glowLights[i].intensity;
+
+        glowColors = new Color[glowRenderers.Length];
+        for (int i = 0; i < glowRenderers.Length; i++)
+        {
+            Material material = glowRenderers[i].sharedMaterial;
+            glowColors[i] = material != null && material.HasProperty(BaseColorId)
+                ? material.GetColor(BaseColorId)
+                : Color.white;
+        }
+
+        if (glowLights.Length == 0 && glowRenderers.Length == 0)
+            Debug.LogWarning($"[LevelPortal] «{name}»: ما لقيت ضوءًا ولا مجسّمًا خلال " +
+                             $"{pulseRadius} م — ارفع Pulse Radius أو أطفئ Pulse Glow.", this);
     }
 
     /// <summary>

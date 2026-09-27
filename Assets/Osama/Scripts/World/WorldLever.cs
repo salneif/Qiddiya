@@ -69,8 +69,7 @@ public class WorldLever : MonoBehaviour
             if (player == null) return;
         }
 
-        bool pressed = interactKey != Key.None && Keyboard.current != null &&
-                       Keyboard.current[interactKey].wasPressedThisFrame;
+        bool pressed = InteractInput.Pressed(interactKey);
 
         if (pressed && Vector3.Distance(player.position, transform.position) <= interactRange)
             Activate();

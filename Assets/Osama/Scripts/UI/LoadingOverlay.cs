@@ -48,7 +48,7 @@ public class LoadingOverlay : MonoBehaviour
 
     [Header("التوقيت")]
     [Tooltip("مدة امتلاء البار (ثواني) — استعراضية، لا تتبع سرعة التحميل الحقيقية")]
-    [SerializeField] private float barDuration = 4f;
+    [SerializeField] private float barDuration = 6f;
     [Tooltip("ظهور الشاشة")]
     [SerializeField] private float fadeInDuration = 0.25f;
     [Tooltip("اختفاء الشاشة — طوّلها إن رأيت سوادًا بين الشاشة والمشهد")]
@@ -70,9 +70,20 @@ public class LoadingOverlay : MonoBehaviour
     [Tooltip("ارتفاع علي على الشاشة")]
     [SerializeField] private float runnerHeight = 125f;
     [Tooltip("إطارات ركض علي في الثانية")]
-    [SerializeField] private float runnerFps = 12f;
+    [SerializeField] private float runnerFps = 8f;
+    [Tooltip("يذيب كل إطار في الذي بعده فتختفي القفزة بينهما")]
+    [SerializeField] private bool blendFrames = true;
+    [Tooltip("نطّة وميلٌ يتبعان دورة الركض — حركةٌ متّصلة تُخفي خطوات الإطارات")]
+    [SerializeField] private float runnerBob = 7f;
+
+    [Tooltip("ارتفاع رأس الشخصية في ركن الشاشة. صفر = بلا رأس")]
+    [SerializeField] private float headHeight = 150f;
     [Tooltip("يكتب اسم الوجهة تحت البار")]
     [SerializeField] private bool showTitle = true;
+    [Tooltip("سطر تلميح يتبدّل أسفل يسار الشاشة")]
+    [SerializeField] private bool showTips = true;
+    [Tooltip("كم يبقى كل تلميح")]
+    [SerializeField] private float tipSeconds = 3.5f;
 
     [Header("الوجهات")]
     [Tooltip("تُملأ تلقائيًا بالافتراضي إن تُركت فارغة")]
@@ -92,6 +103,21 @@ public class LoadingOverlay : MonoBehaviour
         new Destination("Hub-Menu",              "Loading_Hub",      "THE HUB"),
     };
 
+    /// <summary>
+    /// تلاميح تحت البار. لاتينية كالعناوين — الخط المدمج بلا حروف عربية — وكلها
+    /// أشياء حقيقية في اللعبة: من كتب تلميحًا لا يصحّ أضاع لاعبًا.
+    /// </summary>
+    private static readonly string[] Tips =
+    {
+        "SQUARE INTERACTS  -  LEVERS, DOORS, FLAGS",
+        "HOLD SQUARE TO PUSH AND PULL CRATES",
+        "OPTIONS PAUSES  -  CIRCLE GOES BACK",
+        "THE LIGHT GIVES THE WORLD ITS COLOUR BACK",
+        "LAVA BURNS  -  THE SIGNS ARE THERE FOR A REASON",
+        "CARRY EACH FLAG BACK TO THE HUB",
+        "A CHECKPOINT IS WHERE YOU WILL COME BACK",
+    };
+
     private const string ArtFolder = "Loading/";
     private const int MaxRunFrames = 24;
 
@@ -106,6 +132,11 @@ public class LoadingOverlay : MonoBehaviour
     private RectTransform barFill;
     private RectTransform runner;
     private Image runnerImage;
+    private Image runnerGhost;
+    private Text tip;
+    private int tipIndex = -1;
+    private float tipTimer;
+    private TurningHead head;
     private Text label;
 
     private Sprite[] runFrames;
@@ -225,6 +256,12 @@ public class LoadingOverlay : MonoBehaviour
 
         BuildBar();
         BuildLabel();
+        BuildTip();
+
+        // آخر ما يُبنى فيُرسم فوق الجميع: ركن أسفل اليمين، صغيرًا، يلتفت وهي تُحمِّل
+        if (headHeight > 0f)
+            head = TurningHead.Build(transform, headHeight, new Vector2(1f, 0f),
+                                     new Vector2(78f, 58f));
     }
 
     private void BuildBar()
@@ -247,12 +284,25 @@ public class LoadingOverlay : MonoBehaviour
         barFill.anchoredPosition = Vector2.zero;
         barFill.sizeDelta = new Vector2(0f, 0f);
 
+        // الطيف يُضمّ قبل الراكض فيصير أخاه الأكبر ويُرسم خلفه: يحمل الإطار السابق
+        // ويخفت، فالانتقال بين إطارين يذوب بدل أن يقفز
+        runnerGhost = NewImage("RunnerGhost", Color.white);
+        runnerGhost.enabled = false;
+        RectTransform ghost = runnerGhost.rectTransform;
+        ghost.SetParent(barTrack, false);
+
         runnerImage = NewImage("Runner", Color.white);
         runner = runnerImage.rectTransform;
         runner.SetParent(barTrack, false);
         runner.anchorMin = runner.anchorMax = new Vector2(0f, 0.5f);
         runner.pivot = new Vector2(0.5f, 0f);   // قدماه على خط البار
         runner.sizeDelta = RunnerSize();
+
+        // الطيف صورةٌ من الراكض تمامًا، وإلا انزلق تحته بدل أن يذوب فيه
+        ghost.anchorMin = runner.anchorMin;
+        ghost.anchorMax = runner.anchorMax;
+        ghost.pivot = runner.pivot;
+        ghost.sizeDelta = runner.sizeDelta;
         runnerImage.enabled = runFrames != null && runFrames.Length > 0;
         if (runnerImage.enabled) runnerImage.sprite = runFrames[0];
     }
@@ -294,6 +344,55 @@ public class LoadingOverlay : MonoBehaviour
         rect.pivot = new Vector2(0.5f, 1f);
         rect.anchoredPosition = new Vector2(0f, barBottom - 18f);
         rect.sizeDelta = new Vector2(1200f, 48f);
+    }
+
+    /// <summary>
+    /// سطر التلميح أسفل يسار الشاشة. الشاشة كانت فارغة إلا من اسم الوجهة، وأربع
+    /// ثوانٍ من فراغ طويلة — والتلميح يملؤها بشيء ينفع اللاعب لا بزينة.
+    /// </summary>
+    private void BuildTip()
+    {
+        if (!showTips) return;
+
+        Font font = BuiltinFont();
+        if (font == null) return;
+
+        var go = new GameObject("Tip", typeof(RectTransform));
+        go.transform.SetParent(transform, false);
+
+        tip = go.AddComponent<Text>();
+        tip.font = font;
+        tip.fontSize = 19;
+        tip.alignment = TextAnchor.UpperCenter;
+        tip.color = new Color(1f, 1f, 1f, 0f);
+        tip.raycastTarget = false;
+        tip.horizontalOverflow = HorizontalWrapMode.Overflow;
+        tip.verticalOverflow = VerticalWrapMode.Overflow;
+
+        RectTransform rect = tip.rectTransform;
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.anchoredPosition = new Vector2(0f, TipBottom);
+        rect.sizeDelta = new Vector2(1400f, 44f);
+
+        NextTip();
+    }
+
+    /// <summary>تحت اسم الوجهة مباشرة، في الوسط — سطران يقرآن معًا لا شيئان متفرّقان.</summary>
+    private float TipBottom => barBottom - 66f;
+
+    /// <summary>تلميحٌ غير الذي قبله — التكرار في شاشةٍ قصيرة يُلاحَظ فورًا.</summary>
+    private void NextTip()
+    {
+        if (tip == null || Tips.Length == 0) return;
+
+        int pick = tipIndex;
+        for (int guard = 0; guard < 8 && pick == tipIndex; guard++)
+            pick = Random.Range(0, Tips.Length);
+
+        tipIndex = pick;
+        tipTimer = 0f;
+        tip.text = Tips[pick];
     }
 
     /// <summary>خط يونيتي المدمج — موجود في كل بناء بلا استيراد.</summary>
@@ -375,6 +474,7 @@ public class LoadingOverlay : MonoBehaviour
         fill = 0f;
         frameTimer = 0f;
         frameIndex = 0;
+        NextTip();
         Layout(0f);
 
         canvas.enabled = true;
@@ -497,12 +597,31 @@ public class LoadingOverlay : MonoBehaviour
         if (label != null)
             label.rectTransform.anchoredPosition = new Vector2(0f, barBottom - 18f);
 
+        if (tip != null)
+            tip.rectTransform.anchoredPosition = new Vector2(0f, TipBottom);
+
         if (runnerImage != null && runnerImage.enabled)
         {
             runner.sizeDelta = RunnerSize();
             runner.anchoredPosition = new Vector2(width * fill, barSize.y * 0.5f);
             Animate(deltaTime);
         }
+
+        head?.Turn(deltaTime);
+        Tip(deltaTime);
+    }
+
+    /// <summary>يبدّل التلميح، ويُدخله ويُخرجه بتلاشٍ فلا يقفز نصٌّ مكان نصّ.</summary>
+    private void Tip(float deltaTime)
+    {
+        if (tip == null || Tips.Length == 0) return;
+
+        tipTimer += deltaTime;
+        if (tipTimer >= tipSeconds) NextTip();
+
+        const float Fade = 0.45f;
+        float a = Mathf.Min(tipTimer / Fade, (tipSeconds - tipTimer) / Fade);
+        tip.color = new Color(1f, 1f, 1f, Mathf.Clamp01(a) * 0.62f);
     }
 
     /// <summary>يكبّر الصورة لتغطّي الشاشة كاملة بلا أشرطة، مع تكبير بطيء أثناء التحميل.</summary>
@@ -529,6 +648,20 @@ public class LoadingOverlay : MonoBehaviour
         art.rectTransform.sizeDelta = new Vector2(w * zoom, h * zoom);
     }
 
+    /// <summary>
+    /// مشية علي.
+    ///
+    /// الإطارات ثمانية فقط وتتشابه: الجذع والذراعان يكادان لا يتغيّران وكل الفرق في
+    /// الساقين، فالعين تلمح <b>صورتين تتبادلان</b> لا شخصًا يركض. وثلاثة أشياء تُصلح
+    /// ذلك بلا إطار واحد جديد:
+    ///
+    /// ١. <b>سرعة أعلى</b> — دورةٌ بطيئة بإطارات قليلة تُري كل قفزة؛ وإذا أسرعت
+    ///    أكملت العين ما بينها.
+    /// ٢. <b>مزجٌ بين الإطار والذي بعده</b> في أول ثلث مدّته: الانتقال يذوب بدل أن
+    ///    يقفز. وقصرُ نافذة المزج مقصود — المزج الدائم يُري شبحًا مزدوجًا.
+    /// ٣. <b>نطّة وميلٌ متّصلان</b> يتبعان الدورة: حركةٌ لا تتوقّف عند حدود الإطارات
+    ///    فتُخفي خطواتها. وهي أيضًا ما يفتقده الرسم — القفزُ في الركض قبل الساقين.
+    /// </summary>
     private void Animate(float deltaTime)
     {
         if (runFrames.Length < 2 || runnerFps <= 0f) return;
@@ -542,13 +675,66 @@ public class LoadingOverlay : MonoBehaviour
         }
 
         runnerImage.sprite = runFrames[frameIndex];
+
+        float within = Mathf.Clamp01(frameTimer / step);   // أين نحن داخل هذا الإطار
+        Ghost(within);
+        Bounce(within);
+    }
+
+    /// <summary>الإطار السابق خلفه يخفت — فالقفزة بين الإطارين تصير ذوبانًا.</summary>
+    private void Ghost(float within)
+    {
+        // نافذةٌ أوسع مع الإيقاع الأبطأ: كل إطار يبقى أطول، فالذوبان بينهما يحتاج
+        // وقتًا أكثر وإلا عاد يُرى قفزةً في آخر الإطار
+        const float Window = 0.55f;
+
+        if (!blendFrames || runnerGhost == null)
+        {
+            if (runnerGhost != null) runnerGhost.enabled = false;
+            return;
+        }
+
+        int previous = (frameIndex - 1 + runFrames.Length) % runFrames.Length;
+        runnerGhost.sprite = runFrames[previous];
+        runnerGhost.rectTransform.sizeDelta = runner.sizeDelta;
+        runnerGhost.rectTransform.anchoredPosition = runner.anchoredPosition;
+        runnerGhost.rectTransform.localRotation = runner.localRotation;
+
+        float alpha = Mathf.Clamp01(1f - within / Window);
+        runnerGhost.enabled = alpha > 0.01f;
+        runnerGhost.color = new Color(1f, 1f, 1f, alpha);
+    }
+
+    /// <summary>
+    /// النطّة على ضِعف تردّد الدورة — قدمٌ ثم قدم، وارتفاعةٌ بينهما — والميل يتبعها
+    /// فيبدو مدفوعًا إلى الأمام.
+    /// </summary>
+    private void Bounce(float within)
+    {
+        if (runnerBob <= 0f) return;
+
+        float cycle = (frameIndex + within) / runFrames.Length;   // 0..1 على الدورة
+        float phase = cycle * Mathf.PI * 4f;                      // قدمان في الدورة
+
+        float lift = Mathf.Abs(Mathf.Sin(phase)) * runnerBob;
+        runner.anchoredPosition += new Vector2(0f, lift);
+        runner.localRotation = Quaternion.Euler(0f, 0f, -3.5f - Mathf.Sin(phase) * 2.5f);
+
+        if (runnerGhost != null && runnerGhost.enabled)
+        {
+            runnerGhost.rectTransform.anchoredPosition = runner.anchoredPosition;
+            runnerGhost.rectTransform.localRotation = runner.localRotation;
+        }
     }
 
     private void OnValidate()
     {
         barDuration = Mathf.Max(0f, barDuration);
         runnerFps = Mathf.Max(0f, runnerFps);
+        runnerBob = Mathf.Max(0f, runnerBob);
+        tipSeconds = Mathf.Max(1f, tipSeconds);
         runnerHeight = Mathf.Max(1f, runnerHeight);
+        headHeight = Mathf.Max(0f, headHeight);
         barSize = new Vector2(Mathf.Max(1f, barSize.x), Mathf.Max(1f, barSize.y));
     }
 }

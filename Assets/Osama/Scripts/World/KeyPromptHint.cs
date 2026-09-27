@@ -39,6 +39,11 @@ public class KeyPromptHint : MonoBehaviour
     [SerializeField] private bool hideAfterUse = true;
     [SerializeField] private string playerTag = "Player";
 
+    [Header("الرسم")]
+    [Tooltip("ترتيب الرسم. الشعاع والدخان وأشباهها شفّافة وتُرسم فوق السبرايت " +
+             "بالافتراض، فترفعه هذي فوقها. ارفعه أكثر إن بقي شيء يغطّيه")]
+    [SerializeField] private int sortingOrder = 200;
+
     private Transform player;
     private Camera cam;
     private SpriteRenderer icon3d;
@@ -49,7 +54,9 @@ public class KeyPromptHint : MonoBehaviour
 
     private void Awake()
     {
-        if (icon == null) icon = Resources.Load<Sprite>("Key" + key);
+        // لا نثبّت على صورة واحدة هنا: الجهاز قد يتبدّل في منتصف اللعب، و Refresh
+        // يقرأ المناسب كل إطار. وهذي الأولى فقط، لئلا يبدأ فارغًا
+        if (icon == null) icon = PromptIcons.For(key);
         if (icon == null) icon = Resources.Load<Sprite>("KeyE");
 
         if (icon == null)
@@ -66,6 +73,10 @@ public class KeyPromptHint : MonoBehaviour
         icon3d = go.AddComponent<SpriteRenderer>();
         icon3d.sprite = icon;
         icon3d.enabled = false;
+
+        // شعاع بوابة التوايلايت شفّافٌ يُرسم فوق السبرايت فيبتلعه. والشفافيات تُرتَّب
+        // بـ sortingOrder قبل المسافة، فرفعُه يضع التلميح فوقها كلها
+        icon3d.sortingOrder = sortingOrder;
     }
 
     private void LateUpdate()
@@ -91,6 +102,11 @@ public class KeyPromptHint : MonoBehaviour
         icon3d.transform.localScale = new Vector3(Div(size, s.x), Div(size, s.y), Div(size, s.z));
         icon3d.color = new Color(1f, 1f, 1f, alpha);
         icon3d.enabled = true;
+
+        // الجهاز قد يتبدّل واللاعب واقف أمام التلميح، فنسأل ما دام ظاهرًا لا مرّة
+        // في البداية. والصورة محفوظة عند PromptIcons فهذا بحثٌ في قاموس لا تحميل
+        Sprite wanted = PromptIcons.For(key);
+        if (wanted != null && icon3d.sprite != wanted) icon3d.sprite = wanted;
     }
 
     /// <summary>شدّة الظهور المطلوبة الآن.</summary>
@@ -109,7 +125,7 @@ public class KeyPromptHint : MonoBehaviour
         if (distance > showDistance) return 0f;
 
         // ضغط الزر وهو قريب = تعلّمها، فلا داعي لتكرار التلميح
-        if (Keyboard.current != null && key != Key.None && Keyboard.current[key].wasPressedThisFrame)
+        if (InteractInput.Pressed(key))
             used = true;
 
         float band = Mathf.Max(0.01f, fadeBand);

@@ -93,6 +93,8 @@ public class RemoteSlideControl : MonoBehaviour
     [SerializeField] private bool showApproachKey = true;
     [Tooltip("أيقونة الإمساك — تُحمَّل KeyE من Osama/Resources إن تُركت فارغة")]
     [SerializeField] private Sprite approachKeyIcon;
+    [Tooltip("ترتيب رسم الأيقونات فوق الشفافيات (شعاع، دخان). ارفعه إن غطّى شيءٌ عليها")]
+    [SerializeField] private int iconSortingOrder = 200;
     [Tooltip("المسافة التي تظهر عندها أيقونة E (متر)")]
     [SerializeField] private float approachKeyDistance = 3.5f;
     [Tooltip("آخر متر من المسافة تخفّ فيه الأيقونة بالتدريج")]
@@ -181,8 +183,7 @@ public class RemoteSlideControl : MonoBehaviour
 
     private void UpdateEngageState()
     {
-        if (Keyboard.current == null || interactKey == Key.None) return;
-        if (!Keyboard.current[interactKey].wasPressedThisFrame) return;
+        if (!InteractInput.Pressed(interactKey)) return;
 
         if (IsEngaged)
         {
@@ -293,15 +294,8 @@ public class RemoteSlideControl : MonoBehaviour
         if (target != null) target.position = targetStart;
     }
 
-    /// <summary>-1 يسار، +1 يمين، 0 وقوف.</summary>
-    private float ReadDirection()
-    {
-        if (Keyboard.current == null) return 0f;
-        float dir = 0f;
-        if (leftKey != Key.None && Keyboard.current[leftKey].isPressed) dir -= 1f;
-        if (rightKey != Key.None && Keyboard.current[rightKey].isPressed) dir += 1f;
-        return dir;
-    }
+    /// <summary>-1 يسار، +1 يمين، 0 وقوف — من الزرّين أو من عصا يد التحكّم.</summary>
+    private float ReadDirection() => InteractInput.Horizontal(leftKey, rightKey);
 
     private void MoveTarget(float direction)
     {
@@ -369,6 +363,7 @@ public class RemoteSlideControl : MonoBehaviour
                 Quaternion faceE = keysCamera != null
                     ? Quaternion.LookRotation(centre - keysCamera.transform.position, Vector3.up)
                     : Quaternion.identity;
+                Swap(approachIconRenderer, interactKey);
                 Place(approachIconRenderer, centre, faceE, approachAlpha);
             }
             else approachIconRenderer.enabled = false;
@@ -386,6 +381,10 @@ public class RemoteSlideControl : MonoBehaviour
         Quaternion face = keysCamera != null
             ? Quaternion.LookRotation(centre - keysCamera.transform.position, Vector3.up)
             : Quaternion.identity;
+
+        // الجهاز قد يتبدّل واللاعب ممسكٌ بالمرفاع، فنسأل ما دامت ظاهرة
+        Swap(leftIconRenderer, leftKey);
+        Swap(rightIconRenderer, rightKey);
 
         Place(leftIconRenderer, centre - right * (keysSpacing * 0.5f), face, keysAlpha);
         Place(rightIconRenderer, centre + right * (keysSpacing * 0.5f), face, keysAlpha);
@@ -421,8 +420,8 @@ public class RemoteSlideControl : MonoBehaviour
 
     private void BuildDirectionKeys()
     {
-        if (leftKeyIcon == null) leftKeyIcon = Resources.Load<Sprite>("KeyA");
-        if (rightKeyIcon == null) rightKeyIcon = Resources.Load<Sprite>("KeyD");
+        if (leftKeyIcon == null) leftKeyIcon = PromptIcons.For(leftKey);
+        if (rightKeyIcon == null) rightKeyIcon = PromptIcons.For(rightKey);
         if (leftKeyIcon == null || rightKeyIcon == null)
         {
             Debug.LogWarning("[RemoteSlideControl] ما لقيت أيقونتي KeyA و KeyD في Osama/Resources.", this);
@@ -433,8 +432,17 @@ public class RemoteSlideControl : MonoBehaviour
         leftIconRenderer = NewIcon("KeyHint_A", leftKeyIcon);
         rightIconRenderer = NewIcon("KeyHint_D", rightKeyIcon);
 
-        if (approachKeyIcon == null) approachKeyIcon = Resources.Load<Sprite>("KeyE");
+        if (approachKeyIcon == null) approachKeyIcon = PromptIcons.For(interactKey);
         if (approachKeyIcon != null) approachIconRenderer = NewIcon("KeyHint_E", approachKeyIcon);
+    }
+
+    /// <summary>يجعل الأيقونة تطابق جهاز اللاعب الحالي. محفوظةٌ عند PromptIcons.</summary>
+    private static void Swap(SpriteRenderer renderer, Key key)
+    {
+        if (renderer == null) return;
+
+        Sprite wanted = PromptIcons.For(key);
+        if (wanted != null && renderer.sprite != wanted) renderer.sprite = wanted;
     }
 
     private SpriteRenderer NewIcon(string name, Sprite sprite)
@@ -446,6 +454,9 @@ public class RemoteSlideControl : MonoBehaviour
         var r = go.AddComponent<SpriteRenderer>();
         r.sprite = sprite;
         r.enabled = false;
+
+        // فوق الشفافيات — دخانٌ أو شعاعٌ أمام المرفاع كان يبتلع الأيقونة
+        r.sortingOrder = iconSortingOrder;
         return r;
     }
 

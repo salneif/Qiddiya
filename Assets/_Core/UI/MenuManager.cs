@@ -219,6 +219,25 @@ public class MenuManager : MonoBehaviour
     /// تُنادى من UIPanel حين تُطفأ اللوحة بـ`SetActive` من خارج هذا المدير.
     /// نُسقطها هي وكل ما فوقها من الترتيب حتى يبقى الترتيب مطابقًا لما يراه اللاعب.
     /// </summary>
+    /// <summary>
+    /// لوحةٌ أُظهرت من خارجنا بـ<c>SetActive</c> مباشرةً — وأزرارٌ كثيرة في القوائم
+    /// تفعل ذلك بدل <c>Open()</c>.
+    ///
+    /// بلا هذا تبقى اللوحة خارج الترتيب: <c>Current</c> يظلّ اللوحة الجذر، فزرّ الرجوع
+    /// (دائرة / ESC) يرى نفسه في الجذر ولا يرجع — وهذا ما كان يحبس اللاعب في
+    /// الإعدادات. ولا يُحدَّد فيها زرّ، فلا تتنقّل العصا.
+    /// </summary>
+    public void NotifyPanelOpenedExternally(UIPanel panel)
+    {
+        if (panel == null || panel == rootPanel || Current == panel) return;
+        if (stack.Contains(panel)) return;
+
+        stack.Add(panel);
+        Select(panel.FirstSelected);
+        ApplyTimeScale();
+        ApplyCursor();
+    }
+
     public void NotifyPanelClosedExternally(UIPanel panel)
     {
         int index = stack.IndexOf(panel);
@@ -253,7 +272,34 @@ public class MenuManager : MonoBehaviour
             return;
         }
 
-        ForceSelect(target);
+        ForceSelect(Selectable(target) ? target : FirstButton(Current));
+    }
+
+    /// <summary>هل هذا الكائن شيءٌ يُحدَّد فعلًا؟</summary>
+    private static bool Selectable(GameObject target)
+    {
+        if (target == null || !target.activeInHierarchy) return false;
+
+        var selectable = target.GetComponent<UnityEngine.UI.Selectable>();
+        return selectable != null && selectable.IsInteractable();
+    }
+
+    /// <summary>
+    /// أول زرّ صالح في اللوحة.
+    ///
+    /// شبكة أمان لِـ<c>First Selected</c> حين يُترك فارغًا، أو يُوضع فيه كائنٌ ليس
+    /// زرًّا (خطّ، صورة) — وكلاهما يعني أن لا شيء محدَّد عند الفتح، <b>وبلا زرٍّ
+    /// محدَّد لا تتنقّل العصا إطلاقًا</b>. فيُصلَح من هنا لكل لوحة في اللعبة بدل أن
+    /// يُضبط في كل واحدة بيدك ويُنسى في واحدة.
+    /// </summary>
+    private static GameObject FirstButton(UIPanel panel)
+    {
+        if (panel == null) return null;
+
+        foreach (var selectable in panel.GetComponentsInChildren<UnityEngine.UI.Selectable>(false))
+            if (selectable != null && selectable.IsInteractable()) return selectable.gameObject;
+
+        return null;
     }
 
     private static void ForceSelect(GameObject target)

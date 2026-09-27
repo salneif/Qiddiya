@@ -320,8 +320,7 @@ public class WarningCard : MonoBehaviour
     {
         if (Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame) return true;
         if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) return true;
-        if (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame) return true;
-        return false;
+        return InteractInput.AnyPadButton;
     }
 
     /// <summary>

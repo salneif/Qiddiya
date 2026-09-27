@@ -57,8 +57,7 @@ public class PuzzleButton : MonoBehaviour
             if (player == null) return;
         }
 
-        bool pressed = interactKey != Key.None && Keyboard.current != null &&
-                       Keyboard.current[interactKey].wasPressedThisFrame;
+        bool pressed = InteractInput.Pressed(interactKey);
 
         if (pressed &&
             Time.time - lastPress >= cooldown &&

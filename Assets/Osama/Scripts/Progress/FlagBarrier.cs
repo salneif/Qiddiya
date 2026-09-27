@@ -80,6 +80,7 @@ public class FlagBarrier : MonoBehaviour
         SetRevealedActive(true);
 
         if (unblockSound != null && audioSource != null) audioSource.PlayOneShot(unblockSound);
+        PadRumble.Open();
         onUnblocked?.Invoke();
     }
 

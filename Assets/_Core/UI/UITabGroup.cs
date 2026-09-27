@@ -40,10 +40,24 @@ public class UITabGroup : MonoBehaviour
 
     private void OnEnable()
     {
-        if (tabs == null || tabs.Length == 0) return;
+        // لوحةٌ بلا تبويبات مربوطة تفتح **فارغة**: العناوين تظهر ولا يظهر تحتها شيء،
+        // وL1/R1 لا يفعلان شيئًا — ويبدو للاعب أن الشاشة معطّلة لا أنها غير مضبوطة.
+        // فنقولها مرّة بصوتٍ عالٍ بدل أن نصمت
+        if (tabs == null || tabs.Length == 0)
+        {
+            if (!warned)
+            {
+                warned = true;
+                Debug.LogWarning($"[UITabGroup] «{name}» بلا تبويبات: اربط Tabs " +
+                                 "(المحتوى + العنوان لكل تبويب) وإلا فتحت اللوحة فارغة.", this);
+            }
+            return;
+        }
 
         SelectTab(Mathf.Clamp(startIndex, 0, tabs.Length - 1), false);
     }
+
+    private bool warned;
 
     private void Update()
     {

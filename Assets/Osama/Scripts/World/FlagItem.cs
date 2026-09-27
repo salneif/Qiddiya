@@ -233,6 +233,7 @@ public class FlagItem : MonoBehaviour
         ApplyCarryPose();
 
         PlayPickup();
+        PadRumble.Pickup();
         onPickedUp?.Invoke();
         PickedUp?.Invoke();
     }
