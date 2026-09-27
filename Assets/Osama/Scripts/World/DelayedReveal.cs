@@ -79,6 +79,9 @@ public class DelayedReveal : MonoBehaviour
              "وربط حدثه بكائن في السين يدويًا لا يعبر حدود البريفاب بثبات")]
     [SerializeField] private bool watchRotaryPuzzle;
 
+    [Tooltip("يطبع في الكونسول ما حدث فعلًا في كل خطوة")]
+    [SerializeField] private bool log;
+
     [Header("أحداث")]
     [Tooltip("لحظة الفتح — صوت، تلميح، ضوء...")]
     public UnityEvent onRevealed;
@@ -211,6 +214,8 @@ public class DelayedReveal : MonoBehaviour
 
         onRevealed?.Invoke();
 
+        if (log) Debug.Log($"[DelayedReveal] فُتح الطريق • السحب مفعّل={pullPlayer}", this);
+
         if (!pullPlayer || portal == null) yield break;
 
         if (pullDelay > 0f) yield return new WaitForSeconds(pullDelay);
@@ -226,7 +231,11 @@ public class DelayedReveal : MonoBehaviour
     private IEnumerator Pull(Transform portal)
     {
         var go = PlayerLocator.Find(playerTag);
-        if (go == null) yield break;
+        if (go == null)
+        {
+            Debug.LogWarning("[DelayedReveal] ما لقيت اللاعب — لا سحب.", this);
+            yield break;
+        }
 
         var controller = go.GetComponentInParent<CharacterController>();
         Transform body = controller != null ? controller.transform : go.transform;
@@ -241,6 +250,11 @@ public class DelayedReveal : MonoBehaviour
         // try/finally حول الحركة كلها: لو انرمى استثناء في المنتصف — أو أُوقف
         // الكوروتين لأي سبب — رجع التحكّم للاعب. بدونه يعلق مجمّدًا بلا مخرج،
         // وهذا أسوأ من ألّا يعمل المشهد أصلًا
+        if (log)
+            Debug.Log($"[DelayedReveal] سحب «{body.name}» من {from} إلى {to} " +
+                      $"({Vector3.Distance(from, to):0.0} م خلال {pullTime} ث) " +
+                      $"• CharacterController={(controller != null ? "نعم" : "لا")}", this);
+
         Freeze(true);
         StopWalkAnimation(go);
         if (controller != null) controller.enabled = false;
@@ -261,6 +275,10 @@ public class DelayedReveal : MonoBehaviour
         {
             if (controller != null) controller.enabled = true;
             Freeze(false);
+
+            if (log)
+                Debug.Log($"[DelayedReveal] انتهى السحب — اللاعب الآن عند {body.position} " +
+                          $"(المطلوب {to}، الفرق {Vector3.Distance(body.position, to):0.00} م)", this);
         }
     }
 
@@ -327,6 +345,7 @@ public class DelayedReveal : MonoBehaviour
 
         Vector3 place;
         Quaternion facing;
+        // نُخبر عن المكان قبل الإنشاء، فإن طلع في غير محلّه عرفنا لماذا
 
         if (portalInFrontOfPlayer)
         {
@@ -361,6 +380,8 @@ public class DelayedReveal : MonoBehaviour
             place = at.position;
             facing = at.rotation;
         }
+
+        if (log) Debug.Log($"[DelayedReveal] البوابة عند {place + portalOffset}", this);
 
         GameObject portal = Instantiate(portalPrefab, place + portalOffset, facing);
         portal.name = portalPrefab.name + " (بوابة)";
