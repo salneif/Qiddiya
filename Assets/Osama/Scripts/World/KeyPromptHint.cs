@@ -39,6 +39,11 @@ public class KeyPromptHint : MonoBehaviour
     [SerializeField] private bool hideAfterUse = true;
     [SerializeField] private string playerTag = "Player";
 
+    [Header("الرسم")]
+    [Tooltip("ترتيب الرسم. الشعاع والدخان وأشباهها شفّافة وتُرسم فوق السبرايت " +
+             "بالافتراض، فترفعه هذي فوقها. ارفعه أكثر إن بقي شيء يغطّيه")]
+    [SerializeField] private int sortingOrder = 200;
+
     private Transform player;
     private Camera cam;
     private SpriteRenderer icon3d;
@@ -68,6 +73,10 @@ public class KeyPromptHint : MonoBehaviour
         icon3d = go.AddComponent<SpriteRenderer>();
         icon3d.sprite = icon;
         icon3d.enabled = false;
+
+        // شعاع بوابة التوايلايت شفّافٌ يُرسم فوق السبرايت فيبتلعه. والشفافيات تُرتَّب
+        // بـ sortingOrder قبل المسافة، فرفعُه يضع التلميح فوقها كلها
+        icon3d.sortingOrder = sortingOrder;
     }
 
     private void LateUpdate()

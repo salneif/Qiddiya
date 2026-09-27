@@ -83,6 +83,20 @@ public class PadRumble : MonoBehaviour
         Play(low * near, high * near, seconds);
     }
 
+    /// <summary>
+    /// شيءٌ يُفتح: دمدمةٌ تعلو ثم تُفلت — حاجزٌ ينزاح، بوابةٌ تنفتح.
+    ///
+    /// الصعود هو الفرق: الضربة تقول «حدث شيء»، والصعود يقول «شيءٌ يفتح الآن»،
+    /// فيرفع اللاعب رأسه قبل أن ينتهي.
+    /// </summary>
+    public static void Open(float seconds = 0.8f)
+    {
+        if (instance == null || !InputScheme.UsingGamepad) return;
+
+        instance.StopAllCoroutines();
+        instance.StartCoroutine(instance.Swell(Mathf.Max(0.05f, seconds)));
+    }
+
     public static void Stop()
     {
         if (instance != null) instance.End();
@@ -134,6 +148,24 @@ public class PadRumble : MonoBehaviour
     /// وزنًا. والفاصل بينهما بزمنٍ غير متأثّر بالتوقّف، فالتقاطٌ أثناء مشهدٍ موقوف
     /// لا يُعلّق النبضة الأولى.
     /// </summary>
+    /// <summary>دمدمةٌ تعلو ثم تسكت. تُكتب كل إطار فلا تحتاج عدّادًا يوقفها.</summary>
+    private System.Collections.IEnumerator Swell(float seconds)
+    {
+        var pad = Gamepad.current;
+        if (pad == null) yield break;
+
+        for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
+        {
+            float k = Mathf.Clamp01(t / seconds);
+            // تعلو ثلاثة أرباع المدّة ثم تُفلت في الربع الأخير
+            float strength = k < 0.75f ? k / 0.75f : 1f - (k - 0.75f) / 0.25f;
+            pad.SetMotorSpeeds(0.55f * strength, 0.2f * strength);
+            yield return null;
+        }
+
+        End();
+    }
+
     private System.Collections.IEnumerator PickupBeat()
     {
         Begin(0.15f, 0.55f, 0.07f);

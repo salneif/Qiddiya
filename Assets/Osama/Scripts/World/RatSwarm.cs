@@ -381,6 +381,10 @@ public class RatSwarm : MonoBehaviour
         if (playerIntruding && !everAlerted)
         {
             everAlerted = true;
+
+            // لحظةُ انتباههم وحدها، لا كل إطار ولا كل فأر: طقطقةٌ حادّة كأنّ شيئًا
+            // استيقظ تحته
+            PadRumble.Play(0.25f, 0.6f, 0.2f);
             // يبدأ المسار من نقطة سقوطه فيتجه الفئران نحوها أول ما ينتبهون
             if (footprintTrail.Count == 0)
                 footprintTrail.Add(new Vector3(player.position.x, groundY, player.position.z));

@@ -93,6 +93,8 @@ public class RemoteSlideControl : MonoBehaviour
     [SerializeField] private bool showApproachKey = true;
     [Tooltip("أيقونة الإمساك — تُحمَّل KeyE من Osama/Resources إن تُركت فارغة")]
     [SerializeField] private Sprite approachKeyIcon;
+    [Tooltip("ترتيب رسم الأيقونات فوق الشفافيات (شعاع، دخان). ارفعه إن غطّى شيءٌ عليها")]
+    [SerializeField] private int iconSortingOrder = 200;
     [Tooltip("المسافة التي تظهر عندها أيقونة E (متر)")]
     [SerializeField] private float approachKeyDistance = 3.5f;
     [Tooltip("آخر متر من المسافة تخفّ فيه الأيقونة بالتدريج")]
@@ -452,6 +454,9 @@ public class RemoteSlideControl : MonoBehaviour
         var r = go.AddComponent<SpriteRenderer>();
         r.sprite = sprite;
         r.enabled = false;
+
+        // فوق الشفافيات — دخانٌ أو شعاعٌ أمام المرفاع كان يبتلع الأيقونة
+        r.sortingOrder = iconSortingOrder;
         return r;
     }
 
