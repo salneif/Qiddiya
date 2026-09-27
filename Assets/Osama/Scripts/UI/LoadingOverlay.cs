@@ -70,7 +70,7 @@ public class LoadingOverlay : MonoBehaviour
     [Tooltip("ارتفاع علي على الشاشة")]
     [SerializeField] private float runnerHeight = 125f;
     [Tooltip("إطارات ركض علي في الثانية")]
-    [SerializeField] private float runnerFps = 10f;
+    [SerializeField] private float runnerFps = 8f;
     [Tooltip("يذيب كل إطار في الذي بعده فتختفي القفزة بينهما")]
     [SerializeField] private bool blendFrames = true;
     [Tooltip("نطّة وميلٌ يتبعان دورة الركض — حركةٌ متّصلة تُخفي خطوات الإطارات")]
