@@ -157,7 +157,7 @@ public class GameCredits : MonoBehaviour
     [Tooltip("ظهوره واختفاؤه")]
     [SerializeField] private float studioFade = 1.2f;
     [Tooltip("عرضه من الشاشة")]
-    [Range(0.1f, 1f)] [SerializeField] private float studioWidth = 0.42f;
+    [Range(0.1f, 1f)] [SerializeField] private float studioWidth = 0.35f;
 
     [Header("النهاية")]
     [Tooltip("وقفة بعد آخر فقرة قبل بدء التعتيم — تريح الصورة بدل أن تسوّد فجأة")]
