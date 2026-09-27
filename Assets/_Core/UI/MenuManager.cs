@@ -284,7 +284,11 @@ public class MenuManager : MonoBehaviour
     /// </summary>
     private void Select(GameObject target)
     {
-        if (lastInputWasPointer)
+        // زرٌّ منوّر لا يفيد إلا من يتنقّل باليد: هو مؤشّره الوحيد. أمّا من على
+        // الكيبورد والماوس فيراه زرًّا عالقًا — والرجوع بـESC كان يُحسب «ليس ماوسًا»
+        // فيُعيد تحديد الزرّ الذي خرج منه فيولع. ومن يضغط سهمًا يعود له التحديد
+        // فورًا عبر KeepSelectionAlive، فلا يضيع التنقّل بالكيبورد
+        if (lastInputWasPointer || !InputScheme.UsingGamepad)
         {
             ForceSelect(null);
             return;
