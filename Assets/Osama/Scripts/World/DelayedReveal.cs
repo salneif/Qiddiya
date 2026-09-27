@@ -45,6 +45,26 @@ public class DelayedReveal : MonoBehaviour
     [SerializeField] private Vector3 portalOffset;
     [Tooltip("حجمه")]
     [SerializeField] private float portalScale = 1f;
+    [Tooltip("يكبر من الصفر إلى حجمه خلال هذي الثواني — الظهور دفعةً واحدة يبدو خطأً")]
+    [SerializeField] private float portalGrow = 1.4f;
+
+    [Header("السحب إلى البوابة")]
+    [Tooltip("تسحب اللاعب إليها بعد أن تكتمل. بدونها عليه أن يجدها ويمشي إليها، " +
+             "وقد لا يراها أصلًا")]
+    [SerializeField] private bool pullPlayer = true;
+    [Tooltip("وقفة بعد اكتمال البوابة قبل السحب — لحظة يفهم فيها ما يحدث")]
+    [SerializeField] private float pullDelay = 0.5f;
+    [Tooltip("مدة السحب")]
+    [SerializeField] private float pullTime = 1.6f;
+    [Tooltip("سكربتات حركة اللاعب — تُطفأ أثناء السحب بالاسم لا بمرجع")]
+    [SerializeField] private string[] freezeScriptsNamed =
+    {
+        "PlayerController",
+        "A_CrouchAndJump",
+        "A_ZipLineSystem",
+        "LadderController",
+        "BoxPusher",
+    };
 
     [Header("أحداث")]
     [Tooltip("لحظة الفتح — صوت، تلميح، ضوء...")]
@@ -114,15 +134,104 @@ public class DelayedReveal : MonoBehaviour
         done = true;
         running = false;
 
-        SpawnPortal();
-
-        foreach (GameObject target in enable)
-            if (target != null) target.SetActive(true);
+        Transform portal = SpawnPortal();
 
         foreach (GameObject target in disable)
             if (target != null) target.SetActive(false);
 
+        StartCoroutine(Arrive(portal));
+    }
+
+    /// <summary>
+    /// مشهد الوصول: تكبر البوابة، ثم يُفتح الطريق، ثم تسحب اللاعب إليها.
+    ///
+    /// الترتيب مقصود: الطريق (التريغر) يُفتح <b>قبل</b> السحب لا بعده، فيلتقط
+    /// اللاعب لحظة وصوله. ولو فُتح بعد السحب لوقف عليه ولم يحدث شيء.
+    /// </summary>
+    private IEnumerator Arrive(Transform portal)
+    {
+        if (portal != null && portalGrow > 0f)
+        {
+            Vector3 full = portal.localScale;
+            float t = 0f;
+            while (t < portalGrow)
+            {
+                t += Time.deltaTime;
+                float k = Mathf.SmoothStep(0f, 1f, t / portalGrow);
+                portal.localScale = full * k;
+                yield return null;
+            }
+
+            portal.localScale = full;
+        }
+
+        foreach (GameObject target in enable)
+            if (target != null) target.SetActive(true);
+
         onRevealed?.Invoke();
+
+        if (!pullPlayer || portal == null) yield break;
+
+        if (pullDelay > 0f) yield return new WaitForSeconds(pullDelay);
+        yield return Pull(portal);
+    }
+
+    /// <summary>
+    /// يسحب اللاعب إلى البوابة. الـ<c>CharacterController</c> يُطفأ أثناءها وإلا
+    /// قاوم النقل، وسكربتات حركته تُطفأ بالاسم وإلا نازعتنا على موضعه.
+    /// </summary>
+    private IEnumerator Pull(Transform portal)
+    {
+        var go = PlayerLocator.Find(playerTag);
+        if (go == null) yield break;
+
+        var controller = go.GetComponentInParent<CharacterController>();
+        Transform body = controller != null ? controller.transform : go.transform;
+
+        Freeze(true);
+        if (controller != null) controller.enabled = false;
+
+        Vector3 from = body.position;
+        Quaternion fromRot = body.rotation;
+        Vector3 to = portal.position;
+        Quaternion toRot = Quaternion.LookRotation(
+            Vector3.ProjectOnPlane(to - from, Vector3.up).sqrMagnitude > 0.001f
+                ? Vector3.ProjectOnPlane(to - from, Vector3.up) : body.forward, Vector3.up);
+
+        float t = 0f;
+        while (t < pullTime && body != null)
+        {
+            t += Time.deltaTime;
+            float k = Mathf.SmoothStep(0f, 1f, t / pullTime);
+            body.position = Vector3.Lerp(from, to, k);
+            body.rotation = Quaternion.Slerp(fromRot, toRot, k);
+            yield return null;
+        }
+
+        if (controller != null) controller.enabled = true;
+        Freeze(false);
+    }
+
+    /// <summary>بالاسم لا بمرجع: سكربتات الحركة ملك غيرنا فلا نُترجَم معها.</summary>
+    private void Freeze(bool on)
+    {
+        if (freezeScriptsNamed == null) return;
+
+        foreach (var behaviour in FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude,
+                                                                   FindObjectsSortMode.None))
+        {
+            if (behaviour == null) continue;
+
+            string name = behaviour.GetType().Name;
+            foreach (string wanted in freezeScriptsNamed)
+            {
+                if (string.IsNullOrWhiteSpace(wanted)) continue;
+                if (name != wanted.Trim()) continue;
+
+                behaviour.enabled = !on;
+                break;
+            }
+        }
     }
 
     /// <summary>
@@ -130,9 +239,9 @@ public class DelayedReveal : MonoBehaviour
     /// موجودة لحظة انفتاحه — فيرى اللاعب بوابةً يمشي إليها، لا تريغرًا خفيًّا
     /// يخطفه من مكانه.
     /// </summary>
-    private void SpawnPortal()
+    private Transform SpawnPortal()
     {
-        if (portalPrefab == null) return;
+        if (portalPrefab == null) return null;
 
         Transform at = portalAt;
         if (at == null && enable != null)
@@ -142,7 +251,7 @@ public class DelayedReveal : MonoBehaviour
         if (at == null)
         {
             Debug.LogWarning("[DelayedReveal] ما فيه مكان أضع فيه البوابة.", this);
-            return;
+            return null;
         }
 
         GameObject portal = Instantiate(portalPrefab, at.position + portalOffset, at.rotation);
@@ -153,6 +262,8 @@ public class DelayedReveal : MonoBehaviour
         // زينة لا جسم: لا نريد لمؤثّر أن يدفع اللاعب أو يسدّ عليه الطريق
         foreach (var collider in portal.GetComponentsInChildren<Collider>(true))
             collider.enabled = false;
+
+        return portal.transform;
     }
 
     [ContextMenu("تجربة: افتح الآن")]
@@ -173,6 +284,9 @@ public class DelayedReveal : MonoBehaviour
         clearance = Mathf.Max(0f, clearance);
         giveUpAfter = Mathf.Max(0f, giveUpAfter);
         portalScale = Mathf.Max(0.01f, portalScale);
+        portalGrow = Mathf.Max(0f, portalGrow);
+        pullDelay = Mathf.Max(0f, pullDelay);
+        pullTime = Mathf.Max(0.05f, pullTime);
     }
 
     private void OnDrawGizmosSelected()
