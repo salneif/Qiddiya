@@ -98,8 +98,7 @@ public class FlagSocket : MonoBehaviour
     {
         if (!playerInside || flag == null || !flag.IsHeld) return;
 
-        bool keyPressed = placeKey != Key.None && Keyboard.current != null &&
-                          Keyboard.current[placeKey].wasPressedThisFrame;
+        bool keyPressed = InteractInput.Pressed(placeKey);
 
         if (autoPlace || keyPressed)
         {

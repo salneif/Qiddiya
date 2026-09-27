@@ -109,7 +109,7 @@ public class KeyPromptHint : MonoBehaviour
         if (distance > showDistance) return 0f;
 
         // ضغط الزر وهو قريب = تعلّمها، فلا داعي لتكرار التلميح
-        if (Keyboard.current != null && key != Key.None && Keyboard.current[key].wasPressedThisFrame)
+        if (InteractInput.Pressed(key))
             used = true;
 
         float band = Mathf.Max(0.01f, fadeBand);

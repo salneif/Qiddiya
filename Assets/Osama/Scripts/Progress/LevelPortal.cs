@@ -141,9 +141,8 @@ public class LevelPortal : MonoBehaviour
         UpdateApproach();
 
         if (!playerInside || !armed || leaving || activationKey == Key.None) return;
-        if (Keyboard.current == null) return;
 
-        if (Keyboard.current[activationKey].wasPressedThisFrame) TryGo();
+        if (InteractInput.Pressed(activationKey)) TryGo();
     }
 
     /// <summary>

@@ -181,8 +181,7 @@ public class RemoteSlideControl : MonoBehaviour
 
     private void UpdateEngageState()
     {
-        if (Keyboard.current == null || interactKey == Key.None) return;
-        if (!Keyboard.current[interactKey].wasPressedThisFrame) return;
+        if (!InteractInput.Pressed(interactKey)) return;
 
         if (IsEngaged)
         {
@@ -293,15 +292,8 @@ public class RemoteSlideControl : MonoBehaviour
         if (target != null) target.position = targetStart;
     }
 
-    /// <summary>-1 يسار، +1 يمين، 0 وقوف.</summary>
-    private float ReadDirection()
-    {
-        if (Keyboard.current == null) return 0f;
-        float dir = 0f;
-        if (leftKey != Key.None && Keyboard.current[leftKey].isPressed) dir -= 1f;
-        if (rightKey != Key.None && Keyboard.current[rightKey].isPressed) dir += 1f;
-        return dir;
-    }
+    /// <summary>-1 يسار، +1 يمين، 0 وقوف — من الزرّين أو من عصا يد التحكّم.</summary>
+    private float ReadDirection() => InteractInput.Horizontal(leftKey, rightKey);
 
     private void MoveTarget(float direction)
     {

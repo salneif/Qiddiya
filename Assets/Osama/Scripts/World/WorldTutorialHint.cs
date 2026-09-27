@@ -92,8 +92,7 @@ public class WorldTutorialHint : MonoBehaviour
             }
 
             // الإتمام بالضغط
-            if (completeKey != Key.None && Keyboard.current != null &&
-                Keyboard.current[completeKey].wasPressedThisFrame &&
+            if (InteractInput.Pressed(completeKey) &&
                 (!requireInsideToComplete || inside))
             {
                 CompleteHint();

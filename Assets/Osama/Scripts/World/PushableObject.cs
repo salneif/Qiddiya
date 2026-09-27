@@ -119,15 +119,15 @@ public class PushableObject : MonoBehaviour
         bool inRange = Vector3.Distance(player.position, transform.position) <= grabRange;
         bool wasGrabbed = IsGrabbed;
 
-        if (Keyboard.current == null || grabKey == Key.None)
+        if (grabKey == Key.None)
         {
             IsGrabbed = false;
         }
         else if (holdToGrab)
         {
-            IsGrabbed = inRange && Keyboard.current[grabKey].isPressed;
+            IsGrabbed = inRange && InteractInput.Held(grabKey);
         }
-        else if (Keyboard.current[grabKey].wasPressedThisFrame)
+        else if (InteractInput.Pressed(grabKey))
         {
             // ضغطة تمسك وضغطة تفلت — والإفلات مسموح حتى لو ابتعد
             if (IsGrabbed) IsGrabbed = false;
