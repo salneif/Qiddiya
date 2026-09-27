@@ -361,6 +361,7 @@ public class RemoteSlideControl : MonoBehaviour
                 Quaternion faceE = keysCamera != null
                     ? Quaternion.LookRotation(centre - keysCamera.transform.position, Vector3.up)
                     : Quaternion.identity;
+                Swap(approachIconRenderer, interactKey);
                 Place(approachIconRenderer, centre, faceE, approachAlpha);
             }
             else approachIconRenderer.enabled = false;
@@ -378,6 +379,10 @@ public class RemoteSlideControl : MonoBehaviour
         Quaternion face = keysCamera != null
             ? Quaternion.LookRotation(centre - keysCamera.transform.position, Vector3.up)
             : Quaternion.identity;
+
+        // الجهاز قد يتبدّل واللاعب ممسكٌ بالمرفاع، فنسأل ما دامت ظاهرة
+        Swap(leftIconRenderer, leftKey);
+        Swap(rightIconRenderer, rightKey);
 
         Place(leftIconRenderer, centre - right * (keysSpacing * 0.5f), face, keysAlpha);
         Place(rightIconRenderer, centre + right * (keysSpacing * 0.5f), face, keysAlpha);
@@ -413,8 +418,8 @@ public class RemoteSlideControl : MonoBehaviour
 
     private void BuildDirectionKeys()
     {
-        if (leftKeyIcon == null) leftKeyIcon = Resources.Load<Sprite>("KeyA");
-        if (rightKeyIcon == null) rightKeyIcon = Resources.Load<Sprite>("KeyD");
+        if (leftKeyIcon == null) leftKeyIcon = PromptIcons.For(leftKey);
+        if (rightKeyIcon == null) rightKeyIcon = PromptIcons.For(rightKey);
         if (leftKeyIcon == null || rightKeyIcon == null)
         {
             Debug.LogWarning("[RemoteSlideControl] ما لقيت أيقونتي KeyA و KeyD في Osama/Resources.", this);
@@ -425,8 +430,17 @@ public class RemoteSlideControl : MonoBehaviour
         leftIconRenderer = NewIcon("KeyHint_A", leftKeyIcon);
         rightIconRenderer = NewIcon("KeyHint_D", rightKeyIcon);
 
-        if (approachKeyIcon == null) approachKeyIcon = Resources.Load<Sprite>("KeyE");
+        if (approachKeyIcon == null) approachKeyIcon = PromptIcons.For(interactKey);
         if (approachKeyIcon != null) approachIconRenderer = NewIcon("KeyHint_E", approachKeyIcon);
+    }
+
+    /// <summary>يجعل الأيقونة تطابق جهاز اللاعب الحالي. محفوظةٌ عند PromptIcons.</summary>
+    private static void Swap(SpriteRenderer renderer, Key key)
+    {
+        if (renderer == null) return;
+
+        Sprite wanted = PromptIcons.For(key);
+        if (wanted != null && renderer.sprite != wanted) renderer.sprite = wanted;
     }
 
     private SpriteRenderer NewIcon(string name, Sprite sprite)

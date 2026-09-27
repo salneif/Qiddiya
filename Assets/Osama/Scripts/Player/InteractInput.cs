@@ -115,8 +115,11 @@ public static class InteractInput
         }
     }
 
-    /// <summary>هل اللاعب يستعمل يد التحكّم الآن؟ لاختيار أيقونة التلميح المناسبة.</summary>
-    public static bool UsingGamepad =>
-        Gamepad.current != null && Gamepad.current.lastUpdateTime >
-        (Keyboard.current != null ? Keyboard.current.lastUpdateTime : 0d);
+    /// <summary>
+    /// هل اللاعب يستعمل يد التحكّم الآن؟
+    ///
+    /// الجواب عند <c>InputScheme</c>: يحكم بضغطةٍ حقيقية لا بـ<c>lastUpdateTime</c>،
+    /// فعصا مائلة بشعرة كانت تُحدِّث الجهاز كل إطار وتجعل الجواب يتذبذب واليد على الطاولة.
+    /// </summary>
+    public static bool UsingGamepad => InputScheme.UsingGamepad;
 }
