@@ -53,6 +53,10 @@ public class SwingingAxeTrap : MonoBehaviour
     [SerializeField] private AudioSource audioSource;
     [Tooltip("صوت 'شووش' يُشغَّل كل ما عبر الفاس منتصف تأرجحه (أسرع نقطة) — تنبيه سمعي للاعب")]
     [SerializeField] private AudioClip whooshSound;
+
+    [Header("اهتزاز اليد")]
+    [Tooltip("أبعد مسافة تُحسّ فيها مرورة الفاس في اليد. صفر = بلا اهتزاز")]
+    [SerializeField] private float rumbleRange = 9f;
     [Tooltip("صرير مستمر (سلسلة/خشب) يدور بلا توقف — يعلو مع قوة التأرجح ويسكت لما يهدأ الفاس. " +
              "يشتغل على نفس الـ AudioSource مع الشووش.")]
     [SerializeField] private AudioClip creakLoop;
@@ -145,10 +149,17 @@ public class SwingingAxeTrap : MonoBehaviour
         bool visible = AxeVisible;
 
         // عبور منتصف التأرجح (الزاوية تغيّر إشارتها) = أسرع نقطة بالحركة → شغّل صوت الهسهسة
-        if (whooshSound != null && audioSource != null && visible &&
-            amplitudeScale > DeadlyThreshold &&
-            Mathf.Sign(angle) != Mathf.Sign(lastAngle))
+        bool passedBottom = visible && amplitudeScale > DeadlyThreshold &&
+                            Mathf.Sign(angle) != Mathf.Sign(lastAngle);
+
+        if (whooshSound != null && audioSource != null && passedBottom)
             audioSource.PlayOneShot(whooshSound);
+
+        // ونفس اللحظة في اليد: مرورُ الفاس بجانبك يُحسّ لا يُسمع وحده. وبقوّة التأرجح
+        // لا ثابتةً — فاسٌ يتباطأ يهدأ في اليد كما يهدأ في الصورة
+        if (passedBottom && rumbleRange > 0f)
+            PadRumble.At(transform.position, 0.45f * amplitudeScale,
+                         0.25f * amplitudeScale, 0.12f, rumbleRange);
 
         lastAngle = angle;
         SyncKillComponent();

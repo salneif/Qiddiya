@@ -52,6 +52,37 @@ public class PadRumble : MonoBehaviour
     /// <summary>نقرةٌ خفيفة — نقطة حفظ، أو تأكيدٌ صغير.</summary>
     public static void Tick() => Play(0f, 0.35f, 0.09f);
 
+    /// <summary>التقاط العلم: طقطقةٌ ثم دمدمةٌ قصيرة — يُحسّ أنه أخذ شيئًا له وزن.</summary>
+    public static void Pickup()
+    {
+        if (instance == null) return;
+
+        instance.StopAllCoroutines();
+        instance.StartCoroutine(instance.PickupBeat());
+    }
+
+    /// <summary>
+    /// ضربةٌ في المكان: يُحسّها من كان قريبًا، ويخفّ أثرها كلّما بعد.
+    ///
+    /// وبلا المسافة كانت فأسٌ في الطرف الآخر من المرحلة تهزّ يد اللاعب كأنها فوق رأسه.
+    /// </summary>
+    public static void At(Vector3 position, float low, float high, float seconds, float range)
+    {
+        if (instance == null || Gamepad.current == null) return;
+
+        Transform player = instance.Player();
+        if (player == null) return;
+
+        float distance = Vector3.Distance(player.position, position);
+        if (distance >= range) return;
+
+        // التربيع يجعل الخفوت طبيعيًّا: قويّةٌ عن قرب، وتذوب بسرعة مع البعد
+        float near = 1f - Mathf.Clamp01(distance / Mathf.Max(0.01f, range));
+        near *= near;
+
+        Play(low * near, high * near, seconds);
+    }
+
     public static void Stop()
     {
         if (instance != null) instance.End();
@@ -59,6 +90,7 @@ public class PadRumble : MonoBehaviour
 
     private float remaining;
     private bool running;
+    private Transform player;
 
     private void OnEnable()
     {
@@ -78,7 +110,37 @@ public class PadRumble : MonoBehaviour
     private static void OnCheckpoint(Checkpoint point) => Tick();
 
     /// <summary>سينٌ جديد يبدأ ساكنًا — لا نُورّث اهتزازًا من الذي قبله.</summary>
-    private void OnSceneLoaded(Scene scene, LoadSceneMode mode) => End();
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        player = null;      // لاعب السين السابق ذهب معه
+        End();
+    }
+
+    /// <summary>اللاعب، يُبحث عنه مرّة لكل سين.</summary>
+    private Transform Player()
+    {
+        if (player != null) return player;
+
+        GameObject go = PlayerLocator.Find("Player");
+        if (go == null) return null;
+
+        var controller = go.GetComponentInParent<CharacterController>();
+        player = controller != null ? controller.transform : go.transform;
+        return player;
+    }
+
+    /// <summary>
+    /// نبضتان لا واحدة: الأولى حادّة كأنّ شيئًا أُمسك، والثانية ثقيلةٌ تتلاشى كأنّ له
+    /// وزنًا. والفاصل بينهما بزمنٍ غير متأثّر بالتوقّف، فالتقاطٌ أثناء مشهدٍ موقوف
+    /// لا يُعلّق النبضة الأولى.
+    /// </summary>
+    private System.Collections.IEnumerator PickupBeat()
+    {
+        Begin(0.15f, 0.55f, 0.07f);
+        yield return new WaitForSecondsRealtime(0.07f);
+
+        Begin(0.6f, 0.2f, 0.22f);
+    }
 
     private void OnApplicationQuit() => End();
 
@@ -103,6 +165,10 @@ public class PadRumble : MonoBehaviour
     {
         var pad = Gamepad.current;
         if (pad == null || seconds <= 0f) return;
+
+        // من يلعب بالكيبورد ويدُه على الطاولة لا يريدها تزحف عليها كلّما مات. ومن
+        // وصلها للتوّ سيضغط عليها، فيصله ما بعدها
+        if (!InputScheme.UsingGamepad) return;
 
         pad.SetMotorSpeeds(low, high);
         remaining = seconds;

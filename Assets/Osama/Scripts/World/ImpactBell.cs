@@ -47,6 +47,10 @@ public class ImpactBell : MonoBehaviour
     [Tooltip("عند كل رنّة — اربطه بأي شيء (عدّاد، ضوء، لغز...)")]
     public UnityEvent onStruck;
 
+    [Header("اهتزاز اليد")]
+    [Tooltip("أبعد مسافة تُحسّ فيها الضربة في اليد. صفر = بلا اهتزاز")]
+    [SerializeField] private float rumbleRange = 14f;
+
     /// <summary>كم مرة ضُرب الجرس؟</summary>
     public int StrikeCount { get; private set; }
 
@@ -91,6 +95,10 @@ public class ImpactBell : MonoBehaviour
             if (routine != null) StopCoroutine(routine);
             routine = StartCoroutine(KnockRoutine());
         }
+
+        // ضربةٌ في اليد لمن كان قريبًا. بالمسافة لا دائمًا: فأسٌ في الطرف الآخر من
+        // المرحلة تهزّ اليد كأنها فوق الرأس
+        PadRumble.At(transform.position, 0.55f, 0.3f, 0.14f, rumbleRange);
 
         onStruck?.Invoke();
     }
