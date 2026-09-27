@@ -56,6 +56,9 @@ public class DelayedReveal : MonoBehaviour
     [SerializeField] private float pullDelay = 0.5f;
     [Tooltip("مدة السحب")]
     [SerializeField] private float pullTime = 1.6f;
+    [Tooltip("متغيّرات المشي في الأنيميتر — تُصفَّر أثناء السحب، وإلا بان ماشيًا في " +
+             "مكانه وهو مسحوب: تعطيل سكربت الحركة لا يلمس الأنيميتر")]
+    [SerializeField] private string[] walkParameters = { "speed", "MovementBlend", "isPushing" };
     [Tooltip("سكربتات حركة اللاعب — تُطفأ أثناء السحب بالاسم لا بمرجع")]
     [SerializeField] private string[] freezeScriptsNamed =
     {
@@ -205,6 +208,7 @@ public class DelayedReveal : MonoBehaviour
         // الكوروتين لأي سبب — رجع التحكّم للاعب. بدونه يعلق مجمّدًا بلا مخرج،
         // وهذا أسوأ من ألّا يعمل المشهد أصلًا
         Freeze(true);
+        StopWalkAnimation(go);
         if (controller != null) controller.enabled = false;
 
         try
@@ -223,6 +227,36 @@ public class DelayedReveal : MonoBehaviour
         {
             if (controller != null) controller.enabled = true;
             Freeze(false);
+        }
+    }
+
+    /// <summary>
+    /// يصفّر متغيّرات المشي. تعطيل سكربت الحركة يوقف اللاعب لكنه لا يلمس الأنيميتر،
+    /// فتبقى قيمة السرعة على آخر ما كانت ويظلّ يمشي في مكانه وهو مسحوب.
+    /// </summary>
+    private void StopWalkAnimation(GameObject player)
+    {
+        if (walkParameters == null || player == null) return;
+
+        var animator = player.GetComponentInParent<Animator>();
+        if (animator == null) animator = player.GetComponentInChildren<Animator>();
+        if (animator == null) return;
+
+        foreach (string wanted in walkParameters)
+        {
+            if (string.IsNullOrWhiteSpace(wanted)) continue;
+
+            foreach (var parameter in animator.parameters)
+            {
+                if (parameter.name != wanted.Trim()) continue;
+
+                if (parameter.type == AnimatorControllerParameterType.Float)
+                    animator.SetFloat(parameter.nameHash, 0f);
+                else if (parameter.type == AnimatorControllerParameterType.Bool)
+                    animator.SetBool(parameter.nameHash, false);
+
+                break;
+            }
         }
     }
 
