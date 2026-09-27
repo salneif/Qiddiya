@@ -89,6 +89,7 @@ public class GameCredits : MonoBehaviour
     [SerializeField] private bool waveAtCamera = true;
     [Tooltip("الحركة. فارغ = تُحمَّل من Osama/Resources بالاسم أدناه")]
     [SerializeField] private AnimationClip waveClip;
+    [Tooltip("CreditsWave = تلويح باليدين (الافتراضي)، CreditsWaveOne = بيدٍ واحدة")]
     [SerializeField] private string waveFromResources = "CreditsWave";
     [Tooltip("سرعة استدارته نحو الكاميرا")]
     [SerializeField] private float faceCameraSpeed = 2.5f;
