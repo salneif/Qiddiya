@@ -9493,7 +9493,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab43d498f77141b0972778d65c89e13b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DelayedReveal
-  delay: 2
+  delay: 1
   requirePlayerAway: 0
   clearance: 5
   giveUpAfter: 20
@@ -9505,10 +9505,10 @@ MonoBehaviour:
   portalAt: {fileID: 623774519}
   portalOffset: {x: 0, y: 0, z: 0}
   portalScale: 1
-  portalGrow: 1.4
+  portalGrow: 0.9
   pullPlayer: 1
-  pullDelay: 0.5
-  pullTime: 1.6
+  pullDelay: 0.25
+  pullTime: 1.1
   freezeScriptsNamed:
   - PlayerController
   - A_CrouchAndJump
