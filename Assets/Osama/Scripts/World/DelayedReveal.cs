@@ -134,7 +134,13 @@ public class DelayedReveal : MonoBehaviour
         done = true;
         running = false;
 
-        Transform portal = SpawnPortal();
+        Transform portal = null;
+        try { portal = SpawnPortal(); }
+        catch (System.Exception e)
+        {
+            // البوابة زينة: فشلها لا يمنع فتح الطريق، وإلا حُبس اللاعب في المرحلة
+            Debug.LogWarning($"[DelayedReveal] ما قدرت أنشئ البوابة: {e.Message}", this);
+        }
 
         foreach (GameObject target in disable)
             if (target != null) target.SetActive(false);
@@ -188,28 +194,36 @@ public class DelayedReveal : MonoBehaviour
         var controller = go.GetComponentInParent<CharacterController>();
         Transform body = controller != null ? controller.transform : go.transform;
 
-        Freeze(true);
-        if (controller != null) controller.enabled = false;
-
         Vector3 from = body.position;
         Quaternion fromRot = body.rotation;
         Vector3 to = portal.position;
+        Vector3 flat = Vector3.ProjectOnPlane(to - from, Vector3.up);
         Quaternion toRot = Quaternion.LookRotation(
-            Vector3.ProjectOnPlane(to - from, Vector3.up).sqrMagnitude > 0.001f
-                ? Vector3.ProjectOnPlane(to - from, Vector3.up) : body.forward, Vector3.up);
+            flat.sqrMagnitude > 0.001f ? flat : body.forward, Vector3.up);
 
-        float t = 0f;
-        while (t < pullTime && body != null)
+        // try/finally حول الحركة كلها: لو انرمى استثناء في المنتصف — أو أُوقف
+        // الكوروتين لأي سبب — رجع التحكّم للاعب. بدونه يعلق مجمّدًا بلا مخرج،
+        // وهذا أسوأ من ألّا يعمل المشهد أصلًا
+        Freeze(true);
+        if (controller != null) controller.enabled = false;
+
+        try
         {
-            t += Time.deltaTime;
-            float k = Mathf.SmoothStep(0f, 1f, t / pullTime);
-            body.position = Vector3.Lerp(from, to, k);
-            body.rotation = Quaternion.Slerp(fromRot, toRot, k);
-            yield return null;
+            float t = 0f;
+            while (t < pullTime && body != null)
+            {
+                t += Time.deltaTime;
+                float k = Mathf.SmoothStep(0f, 1f, t / pullTime);
+                body.position = Vector3.Lerp(from, to, k);
+                body.rotation = Quaternion.Slerp(fromRot, toRot, k);
+                yield return null;
+            }
         }
-
-        if (controller != null) controller.enabled = true;
-        Freeze(false);
+        finally
+        {
+            if (controller != null) controller.enabled = true;
+            Freeze(false);
+        }
     }
 
     /// <summary>بالاسم لا بمرجع: سكربتات الحركة ملك غيرنا فلا نُترجَم معها.</summary>
