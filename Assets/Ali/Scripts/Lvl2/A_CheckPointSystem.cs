@@ -11,6 +11,8 @@ public class A_CheckPointSystem : MonoBehaviour
     [SerializeField] private Transform checkPoint4;
     [SerializeField] private Transform checkPoint5;
     [SerializeField] private Transform checkPoint6;
+    [SerializeField] private Transform checkPoint7;
+
 
 
     [Header("Ref")]
@@ -66,6 +68,9 @@ public class A_CheckPointSystem : MonoBehaviour
                 break;
             case 6:
                 _currentCheckPoint = checkPoint6;
+                break;
+            case 7:
+                _currentCheckPoint = checkPoint7;
                 break;
 
 
