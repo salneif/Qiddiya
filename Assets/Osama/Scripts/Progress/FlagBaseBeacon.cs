@@ -58,6 +58,8 @@ public class FlagBaseBeacon : MonoBehaviour
     [SerializeField] private float promptFadeBand = 1.5f;
     [Tooltip("حجم العلامة — صغّره حتى تصير خفيفة على العين")]
     [SerializeField] private float promptSize = 0.35f;
+    [Tooltip("ترتيب الرسم. شعاع البوابة شفّاف ويُرسم فوق السبرايت بالافتراض فيبتلعه")]
+    [SerializeField] private int promptSortingOrder = 200;
     [Tooltip("تختفي الدائرة وهو قريب فلا يزدحم المشهد")]
     [SerializeField] private bool hideRingWhenClose = true;
 
@@ -163,6 +165,8 @@ public class FlagBaseBeacon : MonoBehaviour
         go.layer = 2;
         go.transform.SetParent(transform, false);
 
+        // لا نثبّت على صورة الكيبورد: اللاعب قد يمسك اليد، و Refresh يقرأ المناسب
+        if (promptSprite == null) promptSprite = PromptIcons.For(PromptKey);
         if (promptSprite == null) promptSprite = Resources.Load<Sprite>("KeyE");
 
         // صورة؟ أبسط وأوضح من النص ولا تحتاج خطوطًا
@@ -170,6 +174,7 @@ public class FlagBaseBeacon : MonoBehaviour
         {
             spritePrompt = go.AddComponent<SpriteRenderer>();
             spritePrompt.sprite = promptSprite;
+            spritePrompt.sortingOrder = promptSortingOrder;
             spritePrompt.color = tintPrompt ? color : Color.white;
             promptRenderer = spritePrompt;
             promptRenderer.enabled = false;
@@ -214,6 +219,10 @@ public class FlagBaseBeacon : MonoBehaviour
         promptRenderer = go.GetComponent<MeshRenderer>();
         if (promptRenderer != null) promptRenderer.enabled = false;
     }
+
+    /// <summary>زرّ الوضع من المقبس، أو E إن لم يوجد مقبس.</summary>
+    private UnityEngine.InputSystem.Key PromptKey =>
+        socket != null ? socket.PlaceKey : UnityEngine.InputSystem.Key.E;
 
     /// <summary>حرف زر الوضع من المقبس، أو E إن لم يوجد.</summary>
     private string KeyLabel()
@@ -337,7 +346,13 @@ public class FlagBaseBeacon : MonoBehaviour
         if (prompt != null) prompt.color = c;
         if (legacyPrompt != null) legacyPrompt.color = c;
         if (spritePrompt != null)
+        {
             spritePrompt.color = tintPrompt ? c : new Color(1f, 1f, 1f, promptAlpha);
+
+            // الجهاز قد يتبدّل واللاعب واقفٌ أمام القاعدة، فنسأل ما دامت ظاهرة
+            Sprite wanted = PromptIcons.For(PromptKey);
+            if (wanted != null && spritePrompt.sprite != wanted) spritePrompt.sprite = wanted;
+        }
 
         promptRenderer.enabled = true;
     }

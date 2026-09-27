@@ -170,6 +170,10 @@ public class MenuManager : MonoBehaviour
         if (top.BlockBack || top == rootPanel) return;
 
         stack.RemoveAt(stack.Count - 1);
+
+        // قبل الإخفاء لا بعده: الزرّ الذي ضُغط يبقى على حالة Selected وأنميشنها،
+        // فإن أُخفي بها عاد بها في المرّة القادمة — يُفتح وزرّه منوّرٌ بلا سبب
+        top.ResetVisualStates();
         top.SetVisible(false);
         top.RaiseClosed();
 

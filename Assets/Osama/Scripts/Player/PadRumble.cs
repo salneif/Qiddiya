@@ -34,6 +34,14 @@ public class PadRumble : MonoBehaviour
     /// </summary>
     private const float HoldGrace = 0.1f;
 
+    /// <summary>
+    /// مُعامل عامّ لكل الاهتزازات.
+    ///
+    /// الشدّات مكتوبةٌ بنسبٍ بعضها إلى بعض — الموت أقوى من نقطة الحفظ، والبوابة بينهما —
+    /// فخفضها واحدةً واحدةً يُضيّع تلك النسب. وهذا يخفضها كلّها ويُبقيها.
+    /// </summary>
+    private const float Strength = 0.55f;
+
     private static PadRumble instance;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -184,8 +192,8 @@ public class PadRumble : MonoBehaviour
 
         // الأقوى يفوز لا المجموع: الجمع يشبع المحرّكين عند أول تراكب فيصير كل شيء
         // بنفس الشدّة، وتضيع الفروق التي من أجلها فُرّق بينها
-        float low = Mathf.Max(shotLow, held ? holdLow : 0f);
-        float high = Mathf.Max(shotHigh, held ? holdHigh : 0f);
+        float low = Mathf.Max(shotLow, held ? holdLow : 0f) * Strength;
+        float high = Mathf.Max(shotHigh, held ? holdHigh : 0f) * Strength;
 
         Write(low, high);
     }
