@@ -39,6 +39,9 @@ public class WarningCard : MonoBehaviour
     [SerializeField] private Transform[] showNear;
     [Tooltip("مسافة الاقتراب (متر)")]
     [SerializeField] private float nearDistance = 14f;
+    [Tooltip("لا تظهر إلا بعد بقاء اللاعب داخل المدى هذي الثواني متّصلةً. صفر = فور " +
+             "الدخول. اجعلها ٢٥ للّغز: من حلّه بسرعة لا يُعطى الجواب، ومن علق يُنجَد")]
+    [SerializeField] private float delayInRange = 0f;
     [Tooltip("تظهر عند دخول اللاعب كولايدر هذا الكائن")]
     [SerializeField] private bool showOnTrigger = true;
     [SerializeField] private string playerTag = "Player";
@@ -95,6 +98,7 @@ public class WarningCard : MonoBehaviour
 
     private AudioSource audioSource;
     private Transform player;
+    private float inRangeFor;
     private Texture2D blurred;
     private Sprite blurSprite;
     private bool shown;
@@ -127,21 +131,38 @@ public class WarningCard : MonoBehaviour
             player = go.transform;
         }
 
+        bool near = InRange();
+
+        // العدّ يُصفَّر بالخروج: المطلوب بقاء متّصل، لا مجموع زيارات متفرّقة
+        inRangeFor = near ? inRangeFor + Time.deltaTime : 0f;
+
+        if (near && inRangeFor >= delayInRange) Show();
+    }
+
+    private bool InRange()
+    {
         // بلا قائمة: يقيس من موضع هذا الكائن — اسحبه حيث تريد التنبيه وكفى
         if (showNear == null || showNear.Length == 0)
-        {
-            if (Vector3.Distance(player.position, transform.position) <= nearDistance) Show();
-            return;
-        }
+            return Vector3.Distance(player.position, transform.position) <= nearDistance;
 
         foreach (Transform target in showNear)
         {
             if (target == null) continue;
-            if (Vector3.Distance(player.position, target.position) > nearDistance) continue;
-
-            Show();
-            return;
+            if (Vector3.Distance(player.position, target.position) <= nearDistance) return true;
         }
+
+        return false;
+    }
+
+    /// <summary>
+    /// يمنع ظهورها نهائيًا — اربطه بحدث حلّ اللغز.
+    ///
+    /// من حلّ اللغز قبل انقضاء المهلة لا يُعطى جوابه بعد فوات الحاجة.
+    /// </summary>
+    public void Cancel()
+    {
+        shown = true;
+        inRangeFor = 0f;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -479,6 +500,7 @@ public class WarningCard : MonoBehaviour
     {
         delay = Mathf.Max(0f, delay);
         minShowTime = Mathf.Max(0f, minShowTime);
+        delayInRange = Mathf.Max(0f, delayInRange);
         nearDistance = Mathf.Max(0.5f, nearDistance);
         autoHideAfter = Mathf.Max(0f, autoHideAfter);
     }
