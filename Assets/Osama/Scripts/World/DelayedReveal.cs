@@ -59,6 +59,14 @@ public class DelayedReveal : MonoBehaviour
     [SerializeField] private bool pullPlayer = true;
     [Tooltip("وقفة بعد اكتمال البوابة قبل السحب — لحظة يفهم فيها ما يحدث")]
     [SerializeField] private float pullDelay = 0.5f;
+    [Tooltip("قوّة الشفط: 1 = حركة متّزنة، 3 = يتباطأ في أوّله ثم ينقضّ في آخره")]
+    [Range(1f, 4f)] [SerializeField] private float suction = 2.6f;
+    [Tooltip("كم يصغر اللاعب وهو يدخل. 1 = لا يصغر")]
+    [Range(0.2f, 1f)] [SerializeField] private float suctionShrink = 0.55f;
+    [Tooltip("لفّة حول نفسه في آخر الطريق (درجات). صفر = بلا لفّ")]
+    [SerializeField] private float suctionSpin = 420f;
+    [Tooltip("دمدمةٌ تشتدّ في اليد مع الشفط")]
+    [SerializeField] private bool rumbleWhilePulled = true;
     [Tooltip("مدة السحب")]
     [SerializeField] private float pullTime = 1.6f;
     [Tooltip("متغيّرات المشي في الأنيميتر — تُصفَّر أثناء السحب، وإلا بان ماشيًا في " +
@@ -260,6 +268,14 @@ public class DelayedReveal : MonoBehaviour
                       $"({Vector3.Distance(from, to):0.0} م خلال {pullTime} ث) " +
                       $"• CharacterController={(controller != null ? "نعم" : "لا")}", this);
 
+        // مسافةٌ لا تُرى ليست شفطًا. نقولها بصوتٍ عالٍ بدل أن يبحث أحد عن العلّة
+        float span = Vector3.Distance(from, to);
+        if (span < 0.75f)
+            Debug.LogWarning($"[DelayedReveal] البوابة على بُعد {span:0.00} م من اللاعب فقط — " +
+                             "لن يُرى شفط. ارفع Portal Distance.", this);
+
+        Vector3 fromScale = body.localScale;
+
         Freeze(true);
         SetWalk(go, walkWhilePulled ? walkValue : 0f);
         if (controller != null) controller.enabled = false;
@@ -269,16 +285,31 @@ public class DelayedReveal : MonoBehaviour
             float t = 0f;
             while (t < pullTime && body != null)
             {
-                t += Time.deltaTime;
-                float k = Mathf.SmoothStep(0f, 1f, t / pullTime);
+                // زمنٌ غير متأثّر بالتوقّف: هذا مشهدٌ يُعرض، ولوحةُ تحذيرٍ أو قائمةٌ
+                // تفتح في أثنائه كانت تُجمّده في منتصفه
+                t += Time.unscaledDeltaTime;
+                float n = Mathf.Clamp01(t / pullTime);
+
+                // تسارعٌ لا منحنى ناعم: الناعم يبدأ سريعًا وينتهي بطيئًا فيُقرأ مشيًا،
+                // والقوّة تجعله يتردّد في أوّله ثم ينقضّ في آخره — وهذا ما يُقرأ شفطًا
+                float k = Mathf.Pow(n, suction);
+
                 body.position = Vector3.Lerp(from, to, k);
-                body.rotation = Quaternion.Slerp(fromRot, toRot, k);
+
+                // يستدير نحو البوابة أوّلًا، ثم يلفّ حول نفسه وهو يُبتلع
+                Quaternion facing = Quaternion.Slerp(fromRot, toRot, Mathf.Clamp01(n * 3f));
+                body.rotation = facing * Quaternion.Euler(0f, suctionSpin * k, 0f);
+
+                body.localScale = fromScale * Mathf.Lerp(1f, suctionShrink, k);
+
+                if (rumbleWhilePulled) PadRumble.Hold(0.25f + 0.55f * k, 0.15f + 0.3f * k);
                 yield return null;
             }
         }
         finally
         {
             SetWalk(go, 0f);   // يقف عند الوصول لا يظلّ يمشي في مكانه
+            if (body != null) body.localScale = fromScale;   // لا يدخل السين التالي قزمًا
             if (controller != null) controller.enabled = true;
             Freeze(false);
 
@@ -422,6 +453,7 @@ public class DelayedReveal : MonoBehaviour
         portalDistance = Mathf.Max(0.5f, portalDistance);
         portalGrow = Mathf.Max(0f, portalGrow);
         pullDelay = Mathf.Max(0f, pullDelay);
+        pullTime = Mathf.Max(0.1f, pullTime);
         pullTime = Mathf.Max(0.05f, pullTime);
     }
 
