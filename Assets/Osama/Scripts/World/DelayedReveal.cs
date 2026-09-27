@@ -39,7 +39,12 @@ public class DelayedReveal : MonoBehaviour
     [Tooltip("بريفاب يُنشأ عند الفتح — مؤثّر بوابة مثلًا. بلا هذا يصير الطريق " +
              "تريغرًا خفيًّا ينقل اللاعب بلا أن يرى سببًا")]
     [SerializeField] private GameObject portalPrefab;
-    [Tooltip("أين يُنشأ — فارغ = أول كائن في قائمة Enable")]
+    [Tooltip("تظهر أمام اللاعب مباشرة بدل مكان ثابت. الأصحّ للغز: نقطة أصل اللغز " +
+             "قد تكون تحت الأرضية أو في وسط المجسّم، وأمام اللاعب دائمًا صحيح")]
+    [SerializeField] private bool portalInFrontOfPlayer = true;
+    [Tooltip("كم مترًا أمامه")]
+    [SerializeField] private float portalDistance = 2.6f;
+    [Tooltip("أين يُنشأ إن لم يكن أمام اللاعب — فارغ = أول كائن في قائمة Enable")]
     [SerializeField] private Transform portalAt;
     [Tooltip("إزاحة عن تلك النقطة")]
     [SerializeField] private Vector3 portalOffset;
@@ -320,19 +325,44 @@ public class DelayedReveal : MonoBehaviour
     {
         if (portalPrefab == null) return null;
 
-        Transform at = portalAt;
-        if (at == null && puzzle != null) at = puzzle.transform;
-        if (at == null && enable != null)
-            foreach (GameObject target in enable)
-                if (target != null) { at = target.transform; break; }
+        Vector3 place;
+        Quaternion facing;
 
-        if (at == null)
+        if (portalInFrontOfPlayer)
         {
-            Debug.LogWarning("[DelayedReveal] ما فيه مكان أضع فيه البوابة.", this);
-            return null;
+            var playerGo = PlayerLocator.Find(playerTag);
+            if (playerGo == null)
+            {
+                Debug.LogWarning("[DelayedReveal] ما لقيت اللاعب لأضع البوابة أمامه.", this);
+                return null;
+            }
+
+            Transform p = playerGo.transform;
+            Vector3 ahead = Vector3.ProjectOnPlane(p.forward, Vector3.up).normalized;
+            if (ahead.sqrMagnitude < 0.01f) ahead = Vector3.forward;
+
+            // من قدمي اللاعب لا من مركزه، وإلا طفت البوابة أو دُفنت
+            place = p.position + ahead * portalDistance;
+            facing = Quaternion.LookRotation(-ahead, Vector3.up);
+        }
+        else
+        {
+            Transform at = portalAt;
+            if (at == null && enable != null)
+                foreach (GameObject target in enable)
+                    if (target != null) { at = target.transform; break; }
+
+            if (at == null)
+            {
+                Debug.LogWarning("[DelayedReveal] ما فيه مكان أضع فيه البوابة.", this);
+                return null;
+            }
+
+            place = at.position;
+            facing = at.rotation;
         }
 
-        GameObject portal = Instantiate(portalPrefab, at.position + portalOffset, at.rotation);
+        GameObject portal = Instantiate(portalPrefab, place + portalOffset, facing);
         portal.name = portalPrefab.name + " (بوابة)";
         portal.transform.localScale = portalPrefab.transform.localScale * portalScale;
         portal.SetActive(true);
@@ -362,6 +392,7 @@ public class DelayedReveal : MonoBehaviour
         clearance = Mathf.Max(0f, clearance);
         giveUpAfter = Mathf.Max(0f, giveUpAfter);
         portalScale = Mathf.Max(0.01f, portalScale);
+        portalDistance = Mathf.Max(0.5f, portalDistance);
         portalGrow = Mathf.Max(0f, portalGrow);
         pullDelay = Mathf.Max(0f, pullDelay);
         pullTime = Mathf.Max(0.05f, pullTime);
