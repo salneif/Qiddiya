@@ -157,7 +157,7 @@ public class GameCredits : MonoBehaviour
     [Tooltip("ظهوره واختفاؤه")]
     [SerializeField] private float studioFade = 1.2f;
     [Tooltip("عرضه من الشاشة")]
-    [Range(0.1f, 1f)] [SerializeField] private float studioWidth = 0.35f;
+    [Range(0.1f, 1f)] [SerializeField] private float studioWidth = 0.3f;
 
     [Header("النهاية")]
     [Tooltip("وقفة بعد آخر فقرة قبل بدء التعتيم — تريح الصورة بدل أن تسوّد فجأة")]
@@ -641,7 +641,7 @@ public class GameCredits : MonoBehaviour
 
                 line = go.AddComponent<Text>();
                 line.font = font;
-                line.fontSize = 26;
+                line.fontSize = 30;
                 line.alignment = TextAnchor.LowerCenter;
                 line.color = new Color(1f, 1f, 1f, 0.75f);
                 line.raycastTarget = false;
