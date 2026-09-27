@@ -105329,6 +105329,26 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: fe608695d97e27143a79562de3c2b77e, type: 2}
+    - target: {fileID: 4333400256645314070, guid: 03c648aef1cc7014f81a17e58fc59d03, type: 3}
+      propertyPath: m_Size.x
+      value: 1.1553067
+      objectReference: {fileID: 0}
+    - target: {fileID: 4333400256645314070, guid: 03c648aef1cc7014f81a17e58fc59d03, type: 3}
+      propertyPath: m_Size.z
+      value: 0.9999997
+      objectReference: {fileID: 0}
+    - target: {fileID: 4333400256645314070, guid: 03c648aef1cc7014f81a17e58fc59d03, type: 3}
+      propertyPath: m_Center.x
+      value: 0.07765218
+      objectReference: {fileID: 0}
+    - target: {fileID: 4333400256645314070, guid: 03c648aef1cc7014f81a17e58fc59d03, type: 3}
+      propertyPath: m_Center.y
+      value: -0.0000000031359204
+      objectReference: {fileID: 0}
+    - target: {fileID: 4333400256645314070, guid: 03c648aef1cc7014f81a17e58fc59d03, type: 3}
+      propertyPath: m_Center.z
+      value: -0.00000003664909
+      objectReference: {fileID: 0}
     - target: {fileID: 5134557923520140822, guid: 03c648aef1cc7014f81a17e58fc59d03, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -136702,6 +136722,7 @@ MonoBehaviour:
   blurAmount: 10
   showNear: []
   nearDistance: 7
+  delayInRange: 0
   showOnTrigger: 0
   playerTag: Player
   onlyOnce: 1
@@ -147172,6 +147193,21 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!4 &1164029600
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1688649392}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1164515980
 GameObject:
   m_ObjectHideFlags: 0
@@ -147392,6 +147428,12 @@ MonoBehaviour:
   audioSource: {fileID: 0}
   approachSound: {fileID: 0}
   lockedApproachSound: {fileID: 0}
+  rumbleStrength: 0.35
+  pulseGlow: 0
+  pulseRadius: 3
+  pulsePeriod: 1.8
+  pulseDim: 0.6
+  pulseBright: 1.3
   blockedSound: {fileID: 0}
   ambientLoop: {fileID: 0}
   ambientVolume: 0.6
@@ -182854,6 +182896,7 @@ MonoBehaviour:
   blurAmount: 10
   showNear: []
   nearDistance: 6
+  delayInRange: 0
   showOnTrigger: 0
   playerTag: Player
   onlyOnce: 1
@@ -200312,6 +200355,23 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -2865104911859505335, guid: fb9776097fa91c74bb9b2cbb71d32278, type: 3}
+--- !u!1 &1688649392
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1164029600}
+  - component: {fileID: 1757315628}
+  m_Layer: 0
+  m_Name: ClockPuzzleHint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!1 &1688870388
 GameObject:
   m_ObjectHideFlags: 0
@@ -200985,6 +201045,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1757315628
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1688649392}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e97e8ef1fda4b8c8a7055e0f2926f05, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ClockPuzzleHint
+  hourHand: {fileID: 6322896145930034700}
+  minuteHand: {fileID: 1830411679990164899}
+  targetMinutes: 180
+  tolerance: 2
+  showGhostHands: 1
+  ghostColor: {r: 1, g: 0.85, b: 0.35, a: 1}
+  ghostScale: 0.92
+  ghostPulse: 0.8
+  tintByDistance: 1
+  warmRange: 240
+  nearColor: {r: 1, g: 0.7, b: 0.2, a: 1}
+  solvedColor: {r: 1, g: 1, b: 1, a: 1}
+  hideGhostsWhenSolved: 1
 --- !u!4 &1759466416 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 69d4431e17b823243a4ef4fcd8209b0a, type: 3}
@@ -511082,60 +511167,3 @@ SceneRoots:
   - {fileID: 1256507558}
   - {fileID: 1053223353}
   - {fileID: 1164029600}
---- !u!1 &1688649392
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1164029600}
-  - component: {fileID: 1757315628}
-  m_Layer: 0
-  m_Name: ClockPuzzleHint
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1164029600
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1688649392}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1757315628
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1688649392}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2e97e8ef1fda4b8c8a7055e0f2926f05, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ClockPuzzleHint
-  hourHand: {fileID: 6322896145930034700}
-  minuteHand: {fileID: 1830411679990164899}
-  targetMinutes: 180
-  tolerance: 2
-  showGhostHands: 1
-  ghostColor: {r: 1, g: 0.85, b: 0.35, a: 1}
-  ghostScale: 0.92
-  ghostPulse: 0.8
-  tintByDistance: 1
-  warmRange: 240
-  nearColor: {r: 1, g: 0.7, b: 0.2, a: 1}
-  solvedColor: {r: 1, g: 1, b: 1, a: 1}
-  hideGhostsWhenSolved: 1
