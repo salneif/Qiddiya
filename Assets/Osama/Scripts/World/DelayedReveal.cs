@@ -63,7 +63,12 @@ public class DelayedReveal : MonoBehaviour
     [SerializeField] private float pullTime = 1.6f;
     [Tooltip("متغيّرات المشي في الأنيميتر — تُصفَّر أثناء السحب، وإلا بان ماشيًا في " +
              "مكانه وهو مسحوب: تعطيل سكربت الحركة لا يلمس الأنيميتر")]
-    [SerializeField] private string[] walkParameters = { "speed", "MovementBlend", "isPushing" };
+    [SerializeField] private string[] walkParameters = { "speed", "MovementBlend" };
+    [Tooltip("يُبقي أنميشن المشي شغّالًا أثناء السحب فيبدو ماشيًا نحو البوابة. " +
+             "إيقافه يجعله ينزلق واقفًا، ويُقرأ كأنه لم يُسحب أصلًا")]
+    [SerializeField] private bool walkWhilePulled = true;
+    [Tooltip("قيمة سرعة المشي في الأنيميتر أثناء السحب")]
+    [SerializeField] private float walkValue = 1f;
     [Tooltip("سكربتات حركة اللاعب — تُطفأ أثناء السحب بالاسم لا بمرجع")]
     [SerializeField] private string[] freezeScriptsNamed =
     {
@@ -256,7 +261,7 @@ public class DelayedReveal : MonoBehaviour
                       $"• CharacterController={(controller != null ? "نعم" : "لا")}", this);
 
         Freeze(true);
-        StopWalkAnimation(go);
+        SetWalk(go, walkWhilePulled ? walkValue : 0f);
         if (controller != null) controller.enabled = false;
 
         try
@@ -273,6 +278,7 @@ public class DelayedReveal : MonoBehaviour
         }
         finally
         {
+            SetWalk(go, 0f);   // يقف عند الوصول لا يظلّ يمشي في مكانه
             if (controller != null) controller.enabled = true;
             Freeze(false);
 
@@ -283,10 +289,10 @@ public class DelayedReveal : MonoBehaviour
     }
 
     /// <summary>
-    /// يصفّر متغيّرات المشي. تعطيل سكربت الحركة يوقف اللاعب لكنه لا يلمس الأنيميتر،
-    /// فتبقى قيمة السرعة على آخر ما كانت ويظلّ يمشي في مكانه وهو مسحوب.
+    /// يضبط متغيّرات المشي في الأنيميتر. تعطيل سكربت الحركة لا يلمس الأنيميتر، فلا
+    /// هو يوقف المشي ولا يشغّله — نحن من يقرّر: يمشي وهو مسحوب، ويقف عند الوصول.
     /// </summary>
-    private void StopWalkAnimation(GameObject player)
+    private void SetWalk(GameObject player, float value)
     {
         if (walkParameters == null || player == null) return;
 
@@ -303,9 +309,9 @@ public class DelayedReveal : MonoBehaviour
                 if (parameter.name != wanted.Trim()) continue;
 
                 if (parameter.type == AnimatorControllerParameterType.Float)
-                    animator.SetFloat(parameter.nameHash, 0f);
+                    animator.SetFloat(parameter.nameHash, value);
                 else if (parameter.type == AnimatorControllerParameterType.Bool)
-                    animator.SetBool(parameter.nameHash, false);
+                    animator.SetBool(parameter.nameHash, value > 0.01f);
 
                 break;
             }

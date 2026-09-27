@@ -145,6 +145,20 @@ public class GameCredits : MonoBehaviour
     [Tooltip("ظهور واختفاء نص كل فقرة")]
     [SerializeField] private float textFade = 0.7f;
 
+    [Header("شعار الاستوديو")]
+    [Tooltip("شعار يُعرض بعد آخر فقرة — أبيض على شفاف، فالخلفية سوداء حينها")]
+    [SerializeField] private Sprite studioLogo;
+    [Tooltip("أو: اسمه داخل Osama/Resources إن تُركت الخانة فارغة")]
+    [SerializeField] private string studioLogoFromResources = "GamethonLogo";
+    [Tooltip("سطر فوقه — لاتيني، فالخط المدمج بلا عربية")]
+    [SerializeField] private string studioLine = "PRESENTED BY";
+    [Tooltip("مدة بقائه على الشاشة")]
+    [SerializeField] private float studioSeconds = 6f;
+    [Tooltip("ظهوره واختفاؤه")]
+    [SerializeField] private float studioFade = 1.2f;
+    [Tooltip("عرضه من الشاشة")]
+    [Range(0.1f, 1f)] [SerializeField] private float studioWidth = 0.42f;
+
     [Header("النهاية")]
     [Tooltip("وقفة بعد آخر فقرة قبل بدء التعتيم — تريح الصورة بدل أن تسوّد فجأة")]
     [SerializeField] private float holdBeforeFade = 1.2f;
@@ -233,6 +247,7 @@ public class GameCredits : MonoBehaviour
         if (holdBeforeFade > 0f) yield return new WaitForSeconds(holdBeforeFade);
 
         yield return FadeToBlack();
+        yield return ShowStudio();
 
         if (floatingProps != null) floatingProps.Stop();
 
@@ -584,6 +599,71 @@ public class GameCredits : MonoBehaviour
         blackout.color = new Color(0f, 0f, 0f, 1f);
     }
 
+    /// <summary>
+    /// شعار الاستوديو بعد أن تسوّد الشاشة. يُبنى على كانفس التعتيم نفسه فيظهر فوقه،
+    /// ويُحذف بعده — لا داعي لأن يعيش طوال العرض.
+    /// </summary>
+    private IEnumerator ShowStudio()
+    {
+        if (studioLogo == null && !string.IsNullOrWhiteSpace(studioLogoFromResources))
+            studioLogo = Resources.Load<Sprite>(studioLogoFromResources.Trim());
+
+        if (studioLogo == null || studioSeconds <= 0f) yield break;
+
+        var root = new GameObject("Studio", typeof(RectTransform));
+        root.transform.SetParent(blackout.transform.parent, false);
+        Stretch((RectTransform)root.transform);
+
+        var group = root.AddComponent<CanvasGroup>();
+        group.alpha = 0f;
+
+        var logo = NewImage(root.transform, "Logo", Color.white);
+        logo.sprite = studioLogo;
+        logo.preserveAspect = true;
+        var rect = logo.rectTransform;
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+
+        var canvasRect = (RectTransform)blackout.transform.parent;
+        float width = canvasRect.rect.width * studioWidth;
+        rect.sizeDelta = new Vector2(width, width * studioLogo.rect.height / studioLogo.rect.width);
+
+        Text line = null;
+        if (!string.IsNullOrWhiteSpace(studioLine))
+        {
+            Font font = BuiltinFont();
+            if (font != null)
+            {
+                var go = new GameObject("Line", typeof(RectTransform));
+                go.transform.SetParent(root.transform, false);
+
+                line = go.AddComponent<Text>();
+                line.font = font;
+                line.fontSize = 26;
+                line.alignment = TextAnchor.LowerCenter;
+                line.color = new Color(1f, 1f, 1f, 0.75f);
+                line.raycastTarget = false;
+                line.horizontalOverflow = HorizontalWrapMode.Overflow;
+                line.verticalOverflow = VerticalWrapMode.Overflow;
+                line.text = Spaced(studioLine);
+
+                var lineRect = line.rectTransform;
+                lineRect.anchorMin = lineRect.anchorMax = new Vector2(0.5f, 0.5f);
+                lineRect.pivot = new Vector2(0.5f, 0f);
+                lineRect.anchoredPosition = new Vector2(0f, rect.sizeDelta.y * 0.5f + 24f);
+                lineRect.sizeDelta = new Vector2(1200f, 40f);
+            }
+        }
+
+        yield return FadeGroup(group, 1f, studioFade);
+
+        float hold = Mathf.Max(0f, studioSeconds - studioFade * 2f);
+        if (hold > 0f) yield return new WaitForSeconds(hold);
+
+        yield return FadeGroup(group, 0f, studioFade);
+        Destroy(root);
+    }
+
     private void ReturnToMenu()
     {
         if (string.IsNullOrWhiteSpace(returnScene)) return;
@@ -776,6 +856,8 @@ public class GameCredits : MonoBehaviour
     {
         fadeDuration = Mathf.Max(0f, fadeDuration);
         holdBeforeFade = Mathf.Max(0f, holdBeforeFade);
+        studioSeconds = Mathf.Max(0f, studioSeconds);
+        studioFade = Mathf.Max(0f, studioFade);
         silenceFade = Mathf.Max(0f, silenceFade);
         OnValidateCamera();
         nameFontSize = Mathf.Max(8, nameFontSize);
