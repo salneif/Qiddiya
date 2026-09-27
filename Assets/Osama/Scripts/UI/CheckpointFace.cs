@@ -54,6 +54,15 @@ public class CheckpointFace : MonoBehaviour
     /// وقف على حافة نقطة يدخل ويخرج منها مرارًا. فنصمت عن تكرار النقطة نفسها نصف
     /// دقيقة، وعن أي إعلان ثانٍ لثوانٍ. والعودة بعد موت تُعلن عادةً: هي خبرٌ حينها.
     /// </summary>
+    /// <summary>
+    /// يُعلن نقطة حفظ لا تنتمي لسكربتنا — نقاط علي في التوايلايت مثلًا.
+    /// نفس اللوحة ونفس فترات الصمت.
+    /// </summary>
+    public static void Announce()
+    {
+        if (instance != null) instance.OnCheckpoint(null);
+    }
+
     private void OnCheckpoint(Checkpoint point)
     {
         float now = Time.unscaledTime;

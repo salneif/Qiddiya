@@ -24,6 +24,14 @@ public class UISchemeIcon : MonoBehaviour
     [Tooltip("صورة يد التحكّم")]
     [SerializeField] private Sprite gamepadSprite;
 
+    [Header("الصورة الخام")]
+    [Tooltip("RawImage تتبدّل. فارغ = يبحث عن RawImage على نفس الكائن")]
+    [SerializeField] private RawImage rawImage;
+    [Tooltip("نسيج الكيبورد")]
+    [SerializeField] private Texture keyboardTexture;
+    [Tooltip("نسيج يد التحكّم")]
+    [SerializeField] private Texture gamepadTexture;
+
     [Header("النصّ")]
     [Tooltip("نصّ يتبدّل معها. فارغ = يبحث عن Text على نفس الكائن")]
     [SerializeField] private Text label;
@@ -38,6 +46,7 @@ public class UISchemeIcon : MonoBehaviour
     private void Awake()
     {
         if (image == null) image = GetComponent<Image>();
+        if (rawImage == null) rawImage = GetComponent<RawImage>();
         if (label == null) label = GetComponent<Text>();
     }
 
@@ -60,12 +69,17 @@ public class UISchemeIcon : MonoBehaviour
             // على الصورة لا على الكائن: إطفاء الكائن يوقف OnEnable فلا يصلنا خبرُ
             // العودة، فيبقى مخفيًّا وإن بدّل اللاعب جهازه
             if (image != null) image.enabled = show;
+            if (rawImage != null) rawImage.enabled = show;
             if (label != null) label.enabled = show;
-            if (image == null && label == null) return;
+            if (image == null && rawImage == null && label == null) return;
         }
 
         Sprite sprite = pad ? gamepadSprite : keyboardSprite;
         if (image != null && sprite != null) image.sprite = sprite;
+
+        // شاشة الإعدادات مرسومة بـRawImage لا Image، فالنسيج لا السبرايت
+        Texture texture = pad ? gamepadTexture : keyboardTexture;
+        if (rawImage != null && texture != null) rawImage.texture = texture;
 
         string text = pad ? gamepadText : keyboardText;
         if (label != null && !string.IsNullOrEmpty(text)) label.text = text;
