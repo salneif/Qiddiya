@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -81,6 +83,15 @@ public class GameCredits : MonoBehaviour
              "بالاسم عمدًا لا بمرجع مباشر: الربط بسكربت زميلك يكسر بناء الجميع لو " +
              "غيّر اسمه أو حذفه، وبالاسم يطبع تحذيرًا وكفى.")]
     [SerializeField] private string[] disableScriptsNamed = { "CameraFollow" };
+
+    [Header("تلويح اللاعب")]
+    [Tooltip("يلوّح اللاعب للكاميرا طوال الكريديت، ويستدير معها كلّما تحرّكت")]
+    [SerializeField] private bool waveAtCamera = true;
+    [Tooltip("الحركة. فارغ = تُحمَّل من Osama/Resources بالاسم أدناه")]
+    [SerializeField] private AnimationClip waveClip;
+    [SerializeField] private string waveFromResources = "CreditsWave";
+    [Tooltip("سرعة استدارته نحو الكاميرا")]
+    [SerializeField] private float faceCameraSpeed = 2.5f;
     [Tooltip("سكربتات إضافية تُطفأ بالسحب — اتركها فارغة، القائمة أعلاه تكفي عادة")]
     [SerializeField] private MonoBehaviour[] disableOnCredits;
 
@@ -232,6 +243,8 @@ public class GameCredits : MonoBehaviour
         if (cam != null) BuildStage(cam);
         else Debug.LogWarning("[GameCredits] ما لقيت كاميرا — بلا كاميرا لا منصّة ولا حركة.", this);
 
+        if (cam != null) StartWave(player, cam);
+
         if (floatingProps == null) floatingProps = GetComponent<FloatingProps>();
         if (floatingProps != null && cam != null) floatingProps.Begin(cam);
 
@@ -252,6 +265,7 @@ public class GameCredits : MonoBehaviour
         yield return FadeToBlack();
 
         if (floatingProps != null) floatingProps.Stop();
+        StopWave();
 
         onCreditsFinished?.Invoke();
 
@@ -259,6 +273,101 @@ public class GameCredits : MonoBehaviour
 
         ReturnToMenu();
     }
+
+    // ───────────────────────────── التلويح ─────────────────────────────
+
+    private PlayableGraph waveGraph;
+    private bool waving;
+
+    /// <summary>
+    /// يجعل اللاعب يلوّح للكاميرا ويستدير معها.
+    ///
+    /// الكريديت كان يترك اللاعب واقفًا بظهره أو بجنبه، والكاميرا تبتعد عن شخصٍ
+    /// لا يبالي — والوداع يقتضي أن يُوَدِّع.
+    ///
+    /// والحركة تُشغَّل بـ<c>Playables</c> لا بـ<c>Animator.Play</c>: الأخيرة تحتاج
+    /// حالةً بهذا الاسم داخل كنترولر اللاعب — وكنترولره ليس لنا ولا نضيف إليه —
+    /// أمّا هذي فتُشغّل أي كليب على أي أنيميتور وتتجاوز الكنترولر كلّه، ثم يعود كما
+    /// كان حين يُهدم الرسم البياني.
+    /// </summary>
+    private void StartWave(Transform player, Transform cam)
+    {
+        if (!waveAtCamera || player == null || cam == null) return;
+
+        Animator animator = player.GetComponentInParent<Animator>();
+        if (animator == null) animator = player.GetComponentInChildren<Animator>();
+
+        if (animator == null)
+        {
+            Debug.LogWarning("[GameCredits] ما لقيت Animator على اللاعب — لا تلويح.", this);
+            return;
+        }
+
+        if (waveClip == null && !string.IsNullOrWhiteSpace(waveFromResources))
+            waveClip = Resources.Load<AnimationClip>(waveFromResources.Trim());
+
+        if (waveClip == null)
+        {
+            Debug.LogWarning($"[GameCredits] ما لقيت حركة التلويح " +
+                             $"\"{waveFromResources}\" في Osama/Resources — لا تلويح.", this);
+            return;
+        }
+
+        // الكليب من طراز Humanoid، فلا يُعاد توجيهه إلا لهيكل Humanoid
+        if (animator.avatar != null && !animator.avatar.isHuman)
+            Debug.LogWarning("[GameCredits] هيكل اللاعب ليس Humanoid — قد لا تُعاد " +
+                             "الحركة عليه كما ينبغي.", this);
+
+        // ترجع الـPlayable، والرسم البياني في المعامل الخارج — وهو ما نهدمه لاحقًا
+        AnimationPlayableUtilities.PlayClip(animator, waveClip, out waveGraph);
+        waving = true;
+
+        StartCoroutine(FaceCamera(TurnBody(player, animator), cam));
+    }
+
+    /// <summary>
+    /// ما يُستدار فعلًا: جذع اللاعب لا الكائن الموسوم.
+    ///
+    /// الوسم قد يكون على كولايدر ابن، وتدويره يلوي الكولايدر وحده ويبقى الجسد
+    /// على حاله.
+    /// </summary>
+    private static Transform TurnBody(Transform player, Animator animator)
+    {
+        var controller = player.GetComponentInParent<CharacterController>();
+        if (controller != null) return controller.transform;
+
+        return animator != null ? animator.transform : player;
+    }
+
+    /// <summary>يستدير نحو الكاميرا ما دامت تتحرّك، أفقيًّا فقط فلا يميل ولا يطفو.</summary>
+    private IEnumerator FaceCamera(Transform body, Transform cam)
+    {
+        while (waving && body != null && cam != null)
+        {
+            Vector3 flat = Vector3.ProjectOnPlane(cam.position - body.position, Vector3.up);
+            if (flat.sqrMagnitude > 0.001f)
+            {
+                Quaternion want = Quaternion.LookRotation(flat, Vector3.up);
+                body.rotation = Quaternion.Slerp(body.rotation, want,
+                                                 1f - Mathf.Exp(-faceCameraSpeed * Time.deltaTime));
+            }
+
+            yield return null;
+        }
+    }
+
+    /// <summary>
+    /// الرسم البياني يجب أن يُهدم بيدنا: <c>PlayableGraph</c> لا يُجمع مع الكائن،
+    /// فتركُه يُبقي الأنيميتور محكومًا به إلى ما بعد المشهد.
+    /// </summary>
+    private void StopWave()
+    {
+        waving = false;
+
+        if (waveGraph.IsValid()) waveGraph.Destroy();
+    }
+
+    private void OnDestroy() => StopWave();
 
     // ───────────────────────────── الفقرات ─────────────────────────────
 
