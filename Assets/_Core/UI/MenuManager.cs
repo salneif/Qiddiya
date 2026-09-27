@@ -223,6 +223,20 @@ public class MenuManager : MonoBehaviour
     /// تُنادى من UIPanel حين تُطفأ اللوحة بـ`SetActive` من خارج هذا المدير.
     /// نُسقطها هي وكل ما فوقها من الترتيب حتى يبقى الترتيب مطابقًا لما يراه اللاعب.
     /// </summary>
+    /// <summary>هل تحديد هذا العنصر وحده يُنفّذ أمرًا؟ — نفس فحص UIPanel.</summary>
+    private static bool SelectsWithSideEffect(UnityEngine.UI.Selectable selectable)
+    {
+        var trigger = selectable.GetComponent<EventTrigger>();
+        if (trigger == null || trigger.triggers == null) return false;
+
+        foreach (EventTrigger.Entry entry in trigger.triggers)
+            if (entry != null && entry.eventID == EventTriggerType.Select &&
+                entry.callback != null && entry.callback.GetPersistentEventCount() > 0)
+                return true;
+
+        return false;
+    }
+
     /// <summary>
     /// لوحةٌ أُظهرت من خارجنا بـ<c>SetActive</c> مباشرةً — وأزرارٌ كثيرة في القوائم
     /// تفعل ذلك بدل <c>Open()</c>.
@@ -301,7 +315,15 @@ public class MenuManager : MonoBehaviour
         if (panel == null) return null;
 
         foreach (var selectable in panel.GetComponentsInChildren<UnityEngine.UI.Selectable>(false))
-            if (selectable != null && selectable.IsInteractable()) return selectable.gameObject;
+        {
+            if (selectable == null || !selectable.IsInteractable()) continue;
+
+            // L1_Button و R1_Button يبدّلان التبويب <b>بمجرّد تحديدهما</b> (EventTrigger
+            // على Select). لو وقع عليهما الاختيار لقلب فتحُ اللوحة التبويبَ بنفسه
+            if (SelectsWithSideEffect(selectable)) continue;
+
+            return selectable.gameObject;
+        }
 
         return null;
     }
