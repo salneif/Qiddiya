@@ -95,6 +95,26 @@ public static class InteractInput
         }
     }
 
+    /// <summary>
+    /// أي زرّ في يد التحكّم <b>مضغوط الآن</b> — لِما يُمسك لا لِما يُنقر.
+    ///
+    /// الأزرار وحدها بلا العصيّ والزنادات: <c>HoldToSkip</c> يعدّ الثواني وهو مضغوط،
+    /// ولمسةٌ عابرة للعصا ما ينبغي أن تُحسب إمساكًا.
+    /// </summary>
+    public static bool AnyPadButtonHeld
+    {
+        get
+        {
+            var pad = Gamepad.current;
+            if (pad == null) return false;
+
+            return pad.buttonSouth.isPressed || pad.buttonWest.isPressed ||
+                   pad.buttonNorth.isPressed || pad.buttonEast.isPressed ||
+                   pad.startButton.isPressed || pad.selectButton.isPressed ||
+                   pad.leftShoulder.isPressed || pad.rightShoulder.isPressed;
+        }
+    }
+
     /// <summary>هل اللاعب يستعمل يد التحكّم الآن؟ لاختيار أيقونة التلميح المناسبة.</summary>
     public static bool UsingGamepad =>
         Gamepad.current != null && Gamepad.current.lastUpdateTime >
