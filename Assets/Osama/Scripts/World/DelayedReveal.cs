@@ -69,12 +69,39 @@ public class DelayedReveal : MonoBehaviour
         "BoxPusher",
     };
 
+    [Header("يبدأ من لغز الأعمدة")]
+    [Tooltip("يلقى RotaryPuzzle في السين ويشترك في حدث حلّه بنفسه. اللغز داخل بريفاب، " +
+             "وربط حدثه بكائن في السين يدويًا لا يعبر حدود البريفاب بثبات")]
+    [SerializeField] private bool watchRotaryPuzzle;
+
     [Header("أحداث")]
     [Tooltip("لحظة الفتح — صوت، تلميح، ضوء...")]
     public UnityEvent onRevealed;
+    [Tooltip("بعد أن يصل اللاعب البوابة — هنا يُربط الانتقال إلى السين التالي")]
+    public UnityEvent onArrived;
 
     private bool running;
     private bool done;
+    private RotaryPuzzle puzzle;
+
+    private void Start()
+    {
+        if (!watchRotaryPuzzle) return;
+
+        puzzle = FindFirstObjectByType<RotaryPuzzle>();
+        if (puzzle == null)
+        {
+            Debug.LogWarning("[DelayedReveal] ما لقيت RotaryPuzzle في السين.", this);
+            return;
+        }
+
+        puzzle.onSolved.AddListener(Reveal);
+    }
+
+    private void OnDestroy()
+    {
+        if (puzzle != null) puzzle.onSolved.RemoveListener(Reveal);
+    }
 
     /// <summary>يبدأ العدّ ثم يفتح — اربطه بحدث حلّ اللغز.</summary>
     public void Reveal()
@@ -183,6 +210,8 @@ public class DelayedReveal : MonoBehaviour
 
         if (pullDelay > 0f) yield return new WaitForSeconds(pullDelay);
         yield return Pull(portal);
+
+        onArrived?.Invoke();   // هنا يُنادى الانتقال، بعد أن يصل اللاعب فعلًا
     }
 
     /// <summary>
@@ -292,6 +321,7 @@ public class DelayedReveal : MonoBehaviour
         if (portalPrefab == null) return null;
 
         Transform at = portalAt;
+        if (at == null && puzzle != null) at = puzzle.transform;
         if (at == null && enable != null)
             foreach (GameObject target in enable)
                 if (target != null) { at = target.transform; break; }
