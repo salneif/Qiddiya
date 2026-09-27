@@ -44,6 +44,17 @@ public class PlayerKillable : MonoBehaviour
     /// <summary>Is the player currently dead? (used by enemies to avoid double-kills)</summary>
     public bool IsDead { get; private set; }
 
+    /// <summary>
+    /// يُطلق لحظة الموت، أيًّا كان سببه. ساكنٌ عمدًا: من يريد أن يردّ على الموت —
+    /// كاهتزاز اليد — يستمع مرّة، بدل أن يُربط في <c>On Death</c> في كل سين ويُنسى
+    /// في واحد منها.
+    /// </summary>
+    public static event System.Action Died;
+
+    /// <summary>يونيتي يُبقي المشتركين بين تشغيلتين في المحرر.</summary>
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics() => Died = null;
+
     /// <summary>The current respawn point (last checkpoint), or null.</summary>
     public Transform RespawnPoint => respawnPoint;
 
@@ -73,6 +84,7 @@ public class PlayerKillable : MonoBehaviour
 
         SetControlEnabled(false);
         onDeath?.Invoke();
+        Died?.Invoke();
 
         StopAllCoroutines();
         StartCoroutine(DeathRoutine());
