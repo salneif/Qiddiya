@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
@@ -29,7 +30,9 @@ public class HoldToSkip : MonoBehaviour
     private const float FadeSeconds = 0.9f;
     private const float ReleaseDrain = 3f;      // التصفير أسرع من العدّ: رفع اليد قرار
     private const float BreathSeconds = 2.6f;   // نفَسٌ بطيء في الانتظار
-    private const float LingerSeconds = 6f;     // كم يبقى معروضًا قبل أن ينسحب
+    private const float LingerSeconds = 4f;     // كم يبقى معروضًا قبل أن ينسحب
+    private const float LeaveSeconds = 1.1f;    // تعتيمٌ قبل المغادرة
+    private const float ArriveSeconds = 0.7f;   // وانكشافٌ بعد الوصول
 
     /// <summary>
     /// حبرٌ أسود لا أبيض: خلفية الانترو ورقٌ كريميّ، والأبيض عليه لا يُرى.
@@ -58,11 +61,15 @@ public class HoldToSkip : MonoBehaviour
     }
 
     private MonoBehaviour skipper;          // VideoSkipButton الخاص بعلي
+    private MonoBehaviour ender;            // A_AfterIntro — ينقل وحده حين ينتهي العدّ
+    private FieldInfo enderClock;
     private GameObject skipButton;          // زرّه، نُخفيه فما يبقى تخطّيان
     private Canvas canvas;
     private CanvasGroup group;
     private Image fill;
+    private Image black;
     private Text label;
+    private float volume = 1f;
 
     private float held;
     private float shown;
@@ -81,8 +88,13 @@ public class HoldToSkip : MonoBehaviour
                                UnityEngine.SceneManagement.LoadSceneMode mode)
     {
         scanned = false;
-        skipping = false;
         held = shown = linger = alpha = 0f;
+
+        if (group != null) group.alpha = 0f;
+
+        // غادرنا في سواد: نكشفه هنا لا في السين السابق، وإلا رأى اللاعب ومضة
+        // الانتقال نفسها — وهي ما كان يفاجئه
+        if (skipping) { StartCoroutine(Arrive()); return; }
 
         if (canvas != null) canvas.gameObject.SetActive(false);
     }
@@ -129,7 +141,14 @@ public class HoldToSkip : MonoBehaviour
         label.color = Fade(Ink, Mathf.Lerp(0.72f, 1f, progress));
         fill.color = Fade(Ink, Mathf.Lerp(0.8f, 1f, progress));
 
-        if (progress >= 1f) Skip();
+        if (progress >= 1f) { Skip(); return; }
+
+        // العدّ يقارب نهايته وسينقل بنفسه: نعتّم الآن فيكتمل السواد لحظة النقل
+        if (ender != null && (float)enderClock.GetValue(ender) <= LeaveSeconds)
+        {
+            skipping = true;
+            StartCoroutine(Leave(load: false));
+        }
     }
 
     private static Color Fade(Color color, float alpha) =>
@@ -154,8 +173,62 @@ public class HoldToSkip : MonoBehaviour
     private void Skip()
     {
         skipping = true;
-        group.alpha = 0f;
+        StartCoroutine(Leave(load: true));
+    }
 
+    /// <summary>
+    /// السواد قبل النقل لا بعده.
+    ///
+    /// النداء المباشر كان يقطع الفيديو في منتصف لقطة ويرمي السين التالي في وجه
+    /// اللاعب في إطار واحد — صوتٌ يُقطع وصورةٌ تُستبدل بلا مهلة. فنعتّم ونخفت الصوت
+    /// أولًا، والفيديو يكمل تحت السواد، ثم ننتقل.
+    ///
+    /// و<c>load</c> يكون false حين تكون نهاية الفيديو الطبيعية هي التي ستنقل: نعتّم
+    /// لها ولا ننقل نحن، فالنقل يبقى نقلها.
+    /// </summary>
+    private IEnumerator Leave(bool load)
+    {
+        volume = AudioListener.volume;
+
+        for (float t = 0f; t < LeaveSeconds; t += Time.unscaledDeltaTime)
+        {
+            float k = Mathf.Clamp01(t / LeaveSeconds);
+            k = k * k * (3f - 2f * k);
+
+            black.color = Fade(Color.black, k);
+            group.alpha *= 1f - k;               // التلميح ينطفئ مع اللقطة
+            AudioListener.volume = volume * (1f - k);
+            yield return null;
+        }
+
+        black.color = Color.black;
+        AudioListener.volume = 0f;
+
+        if (load) Load();
+    }
+
+    /// <summary>
+    /// والانكشاف في السين الجديد: لو لم نفعل بقي السواد على شاشته، ولو أطفأناه دفعةً
+    /// عادت الومضة التي عتّمنا من أجلها.
+    /// </summary>
+    private IEnumerator Arrive()
+    {
+        for (float t = 0f; t < ArriveSeconds; t += Time.unscaledDeltaTime)
+        {
+            float k = Mathf.Clamp01(t / ArriveSeconds);
+            black.color = Fade(Color.black, 1f - k * k * (3f - 2f * k));
+            AudioListener.volume = Mathf.Lerp(0f, volume, k);
+            yield return null;
+        }
+
+        AudioListener.volume = volume;
+        black.color = Fade(Color.black, 0f);
+        skipping = false;
+        canvas.gameObject.SetActive(false);
+    }
+
+    private void Load()
+    {
         MethodInfo method = skipper.GetType().GetMethod("SkipVideo",
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
             null, System.Type.EmptyTypes, null);
@@ -179,6 +252,8 @@ public class HoldToSkip : MonoBehaviour
         }
 
         Debug.LogWarning("[HoldToSkip] ما عرفت وين أنتقل — التخطّي ما صار.", this);
+        AudioListener.volume = volume;
+        black.color = Fade(Color.black, 0f);
         skipping = false;
     }
 
@@ -199,6 +274,25 @@ public class HoldToSkip : MonoBehaviour
 
             skipper = component;
             skipButton = component.GetComponent<Button>()?.gameObject;
+            break;
+        }
+
+        // ونهاية الفيديو الطبيعية تنقل هي الأخرى في إطار واحد، فنعتّم قبلها بمثل ما
+        // نعتّم قبل التخطّي — وإلا كان الانتقالان اثنين بإحساسين
+        ender = null;
+        enderClock = null;
+        foreach (var component in FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
+        {
+            if (component == null || component.GetType().Name != "A_AfterIntro") continue;
+
+            FieldInfo clock = component.GetType().GetField("_currentTime",
+                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+
+            if (clock != null && clock.FieldType == typeof(float))
+            {
+                ender = component;
+                enderClock = clock;
+            }
             break;
         }
 
@@ -230,17 +324,24 @@ public class HoldToSkip : MonoBehaviour
         scaler.referenceResolution = new Vector2(1920f, 1080f);
         scaler.matchWidthOrHeight = 0.5f;
 
-        group = root.AddComponent<CanvasGroup>();
+        Sprite white = White();
+
+        // التلميح في طبقة وحده، فالسواد بعده يغطّيه ولا يتبع شفافيته
+        var promptRoot = new GameObject("Prompt", typeof(RectTransform));
+        promptRoot.transform.SetParent(root.transform, false);
+        Stretch((RectTransform)promptRoot.transform);
+
+        group = promptRoot.AddComponent<CanvasGroup>();
         group.blocksRaycasts = false;      // لا يحجب شيئًا — نقرأ الأزرار بأنفسنا
         group.interactable = false;
 
-        Sprite white = White();
+        Transform prompt = promptRoot.transform;
 
         // هالةٌ فاتحة تحت الحوض بقليل: تفصل الحبر عن أي لقطة مهما كان لونها
-        Panel(root.transform, "Halo", white, Halo, new Vector2(566f, 16f), new Vector2(0f, 96f));
+        Panel(prompt, "Halo", white, Halo, new Vector2(566f, 16f), new Vector2(0f, 96f));
 
         // الحوض: شريط رقيق أسفل الشاشة، بعرض الثلث فيُقرأ ولا يزحم الصورة
-        RectTransform track = Panel(root.transform, "Track", white,
+        RectTransform track = Panel(prompt, "Track", white,
                                    Fade(Ink, 0.22f),
                                    new Vector2(560f, 10f), new Vector2(0f, 96f));
 
@@ -256,12 +357,27 @@ public class HoldToSkip : MonoBehaviour
         fill.fillOrigin = (int)Image.OriginHorizontal.Left;
         fill.fillAmount = 0f;
 
-        label = Label(root.transform, "HOLD ANY BUTTON TO SKIP", new Vector2(0f, 134f));
+        label = Label(prompt, "HOLD ANY BUTTON TO SKIP", new Vector2(0f, 134f));
 
         // حدٌّ فاتح حول الحروف: الحبر يبقى مقروءًا ولو أظلمت اللقطة تحته
         var outline = label.gameObject.AddComponent<Outline>();
         outline.effectColor = Halo;
         outline.effectDistance = new Vector2(2f, -2f);
+
+        // السواد آخر الأبناء فيُرسم فوق الجميع، ويعيش بين السينين معنا
+        black = Panel(root.transform, "Black", white, Fade(Color.black, 0f),
+                      Vector2.zero, Vector2.zero).GetComponent<Image>();
+        Stretch((RectTransform)black.transform);
+    }
+
+    /// <summary>يملأ الشاشة كاملة مهما كان مقاسها.</summary>
+    private static void Stretch(RectTransform rect)
+    {
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.sizeDelta = Vector2.zero;
+        rect.anchoredPosition = Vector2.zero;
     }
 
     private static RectTransform Panel(Transform parent, string name, Sprite sprite,
