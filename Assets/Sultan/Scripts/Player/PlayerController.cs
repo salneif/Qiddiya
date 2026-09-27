@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
@@ -51,9 +52,11 @@ public class PlayerController : MonoBehaviour
 
     // double jump 
     private bool alreadyDoubleJumped = false;
+    
 
     // Ali - Conections
     [SerializeField] private A_CrouchAndJump crouchAndJumpSystem;
+    
 
     // ref 
     [SerializeField] private A_PlayerDeath_WaterSection a_PlayerDeath;
@@ -134,6 +137,7 @@ public class PlayerController : MonoBehaviour
     {
         _verticalVelocity = Mathf.Sqrt(jumpForce * -2f * gravity);
         animator.SetTrigger("Jump");
+        alreadyDoubleJumped = false;
     }
 
     private void OnCrouch(bool isCrouching, float CrouchMoveSpeed)
@@ -162,9 +166,9 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        if (!_inputEnabled) { _inputX = 0f; _inputZ = 0f; return; }
-        _inputX = Input.GetAxisRaw("Horizontal");
-        _inputZ = Input.GetAxisRaw("Vertical");
+      //  if (!_inputEnabled) { _inputX = 0f; _inputZ = 0f; return; }
+        //_inputX = Input.GetAxisRaw("Horizontal");
+     //   _inputZ = Input.GetAxisRaw("Vertical");
 
         if (CanMove)
         {
@@ -291,4 +295,12 @@ public class PlayerController : MonoBehaviour
     public bool IsGrounded => _isGrounded;
     public float MoveInput => _inputX;
     public float CurrentSpeed => _currentSpeed;
+
+
+    public void OnMove(InputAction.CallbackContext context)
+    {
+        if (!_inputEnabled) { _inputX = 0f; _inputZ = 0f; return; }
+        _inputX = context.ReadValue<Vector2>().x;
+        _inputZ = context.ReadValue<Vector2>().y;
+    }
 }
