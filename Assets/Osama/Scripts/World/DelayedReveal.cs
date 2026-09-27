@@ -35,6 +35,17 @@ public class DelayedReveal : MonoBehaviour
     [Tooltip("كائنات تُطفأ في نفس اللحظة")]
     [SerializeField] private GameObject[] disable;
 
+    [Header("بوابة تظهر")]
+    [Tooltip("بريفاب يُنشأ عند الفتح — مؤثّر بوابة مثلًا. بلا هذا يصير الطريق " +
+             "تريغرًا خفيًّا ينقل اللاعب بلا أن يرى سببًا")]
+    [SerializeField] private GameObject portalPrefab;
+    [Tooltip("أين يُنشأ — فارغ = أول كائن في قائمة Enable")]
+    [SerializeField] private Transform portalAt;
+    [Tooltip("إزاحة عن تلك النقطة")]
+    [SerializeField] private Vector3 portalOffset;
+    [Tooltip("حجمه")]
+    [SerializeField] private float portalScale = 1f;
+
     [Header("أحداث")]
     [Tooltip("لحظة الفتح — صوت، تلميح، ضوء...")]
     public UnityEvent onRevealed;
@@ -103,6 +114,8 @@ public class DelayedReveal : MonoBehaviour
         done = true;
         running = false;
 
+        SpawnPortal();
+
         foreach (GameObject target in enable)
             if (target != null) target.SetActive(true);
 
@@ -110,6 +123,36 @@ public class DelayedReveal : MonoBehaviour
             if (target != null) target.SetActive(false);
 
         onRevealed?.Invoke();
+    }
+
+    /// <summary>
+    /// يُظهر البوابة في مكان الطريق. تُنشأ قبل تفعيل التريغر بسطر واحد فتكون
+    /// موجودة لحظة انفتاحه — فيرى اللاعب بوابةً يمشي إليها، لا تريغرًا خفيًّا
+    /// يخطفه من مكانه.
+    /// </summary>
+    private void SpawnPortal()
+    {
+        if (portalPrefab == null) return;
+
+        Transform at = portalAt;
+        if (at == null && enable != null)
+            foreach (GameObject target in enable)
+                if (target != null) { at = target.transform; break; }
+
+        if (at == null)
+        {
+            Debug.LogWarning("[DelayedReveal] ما فيه مكان أضع فيه البوابة.", this);
+            return;
+        }
+
+        GameObject portal = Instantiate(portalPrefab, at.position + portalOffset, at.rotation);
+        portal.name = portalPrefab.name + " (بوابة)";
+        portal.transform.localScale = portalPrefab.transform.localScale * portalScale;
+        portal.SetActive(true);
+
+        // زينة لا جسم: لا نريد لمؤثّر أن يدفع اللاعب أو يسدّ عليه الطريق
+        foreach (var collider in portal.GetComponentsInChildren<Collider>(true))
+            collider.enabled = false;
     }
 
     [ContextMenu("تجربة: افتح الآن")]
@@ -129,6 +172,7 @@ public class DelayedReveal : MonoBehaviour
         delay = Mathf.Max(0f, delay);
         clearance = Mathf.Max(0f, clearance);
         giveUpAfter = Mathf.Max(0f, giveUpAfter);
+        portalScale = Mathf.Max(0.01f, portalScale);
     }
 
     private void OnDrawGizmosSelected()
