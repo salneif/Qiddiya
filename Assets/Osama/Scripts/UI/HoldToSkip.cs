@@ -35,6 +35,13 @@ public class HoldToSkip : MonoBehaviour
     private const float ArriveSeconds = 0.7f;   // وانكشافٌ بعد الوصول
 
     /// <summary>
+    /// وجهة الانترو. سكربتا علي يعودان بها إلى <c>Hub-Menu</c> — أي أن اللاعب يضغط
+    /// «العب» فيرى الفيلم ثم يجد نفسه في القائمة مرّة أخرى، بلا لعب. وأول مرحلة في
+    /// اللعبة هي ستيم تاون، فإليها يذهب.
+    /// </summary>
+    private const string FirstLevel = "Steam_Final";
+
+    /// <summary>
     /// حبرٌ أسود لا أبيض: خلفية الانترو ورقٌ كريميّ، والأبيض عليه لا يُرى.
     /// ومعه هالةٌ فاتحة رقيقة، فلو أظلمت لقطةٌ لاحقًا بقي مقروءًا.
     /// </summary>
@@ -143,11 +150,13 @@ public class HoldToSkip : MonoBehaviour
 
         if (progress >= 1f) { Skip(); return; }
 
-        // العدّ يقارب نهايته وسينقل بنفسه: نعتّم الآن فيكتمل السواد لحظة النقل
+        // العدّ يقارب نهايته: نعتّم الآن، ونؤجّل عدّه إلى ما لا نهاية فيبقى النقل
+        // واحدًا — نقلنا نحن، إلى المرحلة الأولى لا إلى القائمة
         if (ender != null && (float)enderClock.GetValue(ender) <= LeaveSeconds)
         {
+            enderClock.SetValue(ender, float.MaxValue);
             skipping = true;
-            StartCoroutine(Leave(load: false));
+            StartCoroutine(Leave(load: true));
         }
     }
 
@@ -167,8 +176,11 @@ public class HoldToSkip : MonoBehaviour
     }
 
     /// <summary>
-    /// ننادي سكربت علي ليبقى الانتقال كما كتبه. والعودة لاسم السين من حقله احتياطٌ
-    /// إن غُيّر اسم الدالّة، فلا يبقى اللاعب حبيس فيديو لا يُتخطّى.
+    /// ننتقل بشاشة التحميل: صورةُ ستيم تاون واسمها تقولان للاعب إلى أين هو ذاهب،
+    /// بدل أن يجد نفسه في مكان لم يُهيَّأ له.
+    ///
+    /// ولا نستعمل <c>VideoSkipButton.SkipVideo()</c> ولا <c>nextSceneName</c>: كلاهما
+    /// يعود بالقائمة الرئيسية، وهذا ما كان يجعل «العب» يعرض الفيلم ثم يرجع من حيث بدأ.
     /// </summary>
     private void Skip()
     {
@@ -229,32 +241,11 @@ public class HoldToSkip : MonoBehaviour
 
     private void Load()
     {
-        MethodInfo method = skipper.GetType().GetMethod("SkipVideo",
-            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-            null, System.Type.EmptyTypes, null);
+        if (LoadingOverlay.Go(FirstLevel)) return;
 
-        if (method != null)
-        {
-            try { method.Invoke(skipper, null); return; }
-            catch (System.Exception e)
-            {
-                Debug.LogWarning($"[HoldToSkip] SkipVideo رفض: {e.Message}", skipper);
-            }
-        }
-
-        FieldInfo next = skipper.GetType().GetField("nextSceneName",
-            BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-
-        if (next?.GetValue(skipper) is string scene && !string.IsNullOrEmpty(scene))
-        {
-            UnityEngine.SceneManagement.SceneManager.LoadScene(scene);
-            return;
-        }
-
-        Debug.LogWarning("[HoldToSkip] ما عرفت وين أنتقل — التخطّي ما صار.", this);
-        AudioListener.volume = volume;
-        black.color = Fade(Color.black, 0f);
-        skipping = false;
+        // الشاشة رفضت (السين ليس في قائمة البناء مثلًا): ننقل بأنفسنا ولا نترك
+        // اللاعب في سواد لا ينتهي
+        UnityEngine.SceneManagement.SceneManager.LoadScene(FirstLevel);
     }
 
     // ---------- البناء ----------

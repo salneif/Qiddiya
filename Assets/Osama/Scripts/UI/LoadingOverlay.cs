@@ -71,6 +71,9 @@ public class LoadingOverlay : MonoBehaviour
     [SerializeField] private float runnerHeight = 125f;
     [Tooltip("إطارات ركض علي في الثانية")]
     [SerializeField] private float runnerFps = 12f;
+
+    [Tooltip("ارتفاع رأس الشخصية في ركن الشاشة. صفر = بلا رأس")]
+    [SerializeField] private float headHeight = 150f;
     [Tooltip("يكتب اسم الوجهة تحت البار")]
     [SerializeField] private bool showTitle = true;
 
@@ -106,6 +109,7 @@ public class LoadingOverlay : MonoBehaviour
     private RectTransform barFill;
     private RectTransform runner;
     private Image runnerImage;
+    private TurningHead head;
     private Text label;
 
     private Sprite[] runFrames;
@@ -225,6 +229,11 @@ public class LoadingOverlay : MonoBehaviour
 
         BuildBar();
         BuildLabel();
+
+        // آخر ما يُبنى فيُرسم فوق الجميع: ركن أسفل اليمين، صغيرًا، يلتفت وهي تُحمِّل
+        if (headHeight > 0f)
+            head = TurningHead.Build(transform, headHeight, new Vector2(1f, 0f),
+                                     new Vector2(56f, 40f));
     }
 
     private void BuildBar()
@@ -503,6 +512,8 @@ public class LoadingOverlay : MonoBehaviour
             runner.anchoredPosition = new Vector2(width * fill, barSize.y * 0.5f);
             Animate(deltaTime);
         }
+
+        head?.Turn(deltaTime);
     }
 
     /// <summary>يكبّر الصورة لتغطّي الشاشة كاملة بلا أشرطة، مع تكبير بطيء أثناء التحميل.</summary>
@@ -549,6 +560,7 @@ public class LoadingOverlay : MonoBehaviour
         barDuration = Mathf.Max(0f, barDuration);
         runnerFps = Mathf.Max(0f, runnerFps);
         runnerHeight = Mathf.Max(1f, runnerHeight);
+        headHeight = Mathf.Max(0f, headHeight);
         barSize = new Vector2(Mathf.Max(1f, barSize.x), Mathf.Max(1f, barSize.y));
     }
 }
