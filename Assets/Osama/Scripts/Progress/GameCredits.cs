@@ -244,10 +244,12 @@ public class GameCredits : MonoBehaviour
             if (section != null) yield return PlaySection(section, cam);
         }
 
+        // فوق العالم لا بعد السواد: الشعار جزء من المشهد، لا بطاقة على شاشة فارغة
+        yield return ShowStudio();
+
         if (holdBeforeFade > 0f) yield return new WaitForSeconds(holdBeforeFade);
 
         yield return FadeToBlack();
-        yield return ShowStudio();
 
         if (floatingProps != null) floatingProps.Stop();
 
@@ -600,8 +602,8 @@ public class GameCredits : MonoBehaviour
     }
 
     /// <summary>
-    /// شعار الاستوديو بعد أن تسوّد الشاشة. يُبنى على كانفس التعتيم نفسه فيظهر فوقه،
-    /// ويُحذف بعده — لا داعي لأن يعيش طوال العرض.
+    /// شعار الاستوديو فوق العالم قبل التعتيم، فيراه اللاعب والمشهد خلفه حيّ.
+    /// يُبنى على كانفس التعتيم نفسه ويُحذف بعده — لا داعي لأن يعيش طوال العرض.
     /// </summary>
     private IEnumerator ShowStudio()
     {
