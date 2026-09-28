@@ -116,7 +116,8 @@ public class PauseMenuFix : MonoBehaviour
         var pad = Gamepad.current;
         if (pad == null) return false;
 
-        if (pad.startButton.wasPressedThisFrame)
+        // تركيبة الإنقاذ تنتهي بـOptions، فلولا هذا لمات اللاعب وفُتحت له القائمة معًا
+        if (pad.startButton.wasPressedThisFrame && !StuckRescue.SuppressPause)
         {
             Toggle();
             return !open;

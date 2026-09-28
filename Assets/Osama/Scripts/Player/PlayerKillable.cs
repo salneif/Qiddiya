@@ -40,6 +40,11 @@ public class PlayerKillable : MonoBehaviour
     [Tooltip("Current respawn point. Updated by checkpoints at runtime. " +
              "If null, the player returns to its start position.")]
     [SerializeField] private Transform respawnPoint;
+    [Tooltip("لا يُقتل خلال هذي المدّة بعد عودته — وإلا قتله ما قتله أوّل مرّة قبل " +
+             "أن يتحرّك. صفر يُلغيها")]
+    [SerializeField] private float safeAfterRespawn = 1.4f;
+    [Tooltip("يتذكّر آخر أرضٍ وقف عليها، ويعود إليها إن لم يمرّ بنقطة حفظ بعد")]
+    [SerializeField] private bool rememberLastGround = true;
 
     /// <summary>Is the player currently dead? (used by enemies to avoid double-kills)</summary>
     public bool IsDead { get; private set; }
@@ -61,12 +66,55 @@ public class PlayerKillable : MonoBehaviour
     private Vector3 startPosition;
     private Quaternion startRotation;
 
+    private float safeUntil;
+    private Vector3 lastGround;
+    private bool hasLastGround;
+    private float groundTimer;
+    private CharacterController groundSource;
+
     private void Awake()
     {
         startPosition = transform.position;
         startRotation = transform.rotation;
+        groundSource = GetComponent<CharacterController>();
         if (deathEffect == null)
             deathEffect = GetComponent<DeathDissolveEffect>();
+
+        StartCoroutine(CaptureStart());
+    }
+
+    /// <summary>
+    /// موضع البداية يُلتقط بعد أوّل إطار لا في <c>Awake</c>.
+    ///
+    /// <c>PlayerSpawnRouter</c> ينقل اللاعب إلى مدخل السين في <c>Start</c>، فالموضع
+    /// الملتقط قبله هو الذي وُضع في السين لا الذي يقف فيه اللاعب فعلًا — ومن مات بلا
+    /// نقطة حفظ عاد إلى مكانٍ لم يره قطّ.
+    /// </summary>
+    private IEnumerator CaptureStart()
+    {
+        yield return null;
+
+        startPosition = transform.position;
+        startRotation = transform.rotation;
+    }
+
+    /// <summary>
+    /// يتذكّر آخر أرضٍ وقف عليها ساكنًا لحظة.
+    ///
+    /// شبكة أمانٍ لمن لم يمرّ بنقطة حفظ بعد: أقرب نقطةٍ في السيرك تبعد عن كمين
+    /// المهرّج أكثر من مئة متر، فالعودة إليها عقوبةٌ لا استئناف.
+    /// </summary>
+    private void Update()
+    {
+        if (IsDead || !rememberLastGround) return;
+        if (groundSource != null && !groundSource.isGrounded) { groundTimer = 0f; return; }
+
+        groundTimer += Time.deltaTime;
+        if (groundTimer < 0.6f) return;
+
+        groundTimer = 0f;
+        lastGround = transform.position;
+        hasLastGround = true;
     }
 
     /// <summary>Sets the last checkpoint the player will respawn at.</summary>
@@ -80,6 +128,7 @@ public class PlayerKillable : MonoBehaviour
     public void Kill()
     {
         if (IsDead) return;
+        if (Time.time < safeUntil) return;   // عاد للتوّ — لا يُقتل قبل أن يتحرّك
         IsDead = true;
 
         SetControlEnabled(false);
@@ -129,9 +178,27 @@ public class PlayerKillable : MonoBehaviour
 
     private void MoveToSpawn()
     {
-        Vector3 pos = respawnPoint != null ? respawnPoint.position : startPosition;
-        Quaternion rot = respawnPoint != null ? respawnPoint.rotation : startRotation;
+        Vector3 pos;
+        Quaternion rot;
+
+        if (respawnPoint != null)
+        {
+            pos = respawnPoint.position;
+            rot = respawnPoint.rotation;
+        }
+        else if (rememberLastGround && hasLastGround)
+        {
+            pos = lastGround;                 // آخر أرضٍ وقف عليها، أقرب من بداية السين
+            rot = transform.rotation;
+        }
+        else
+        {
+            pos = startPosition;
+            rot = startRotation;
+        }
+
         TeleportTo(pos, rot);
+        safeUntil = Time.time + Mathf.Max(0f, safeAfterRespawn);
     }
 
     /// <summary>

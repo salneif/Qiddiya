@@ -4418,9 +4418,9 @@ RectTransform:
   - {fileID: 355678703}
   m_Father: {fileID: 1287451763}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 986.61975, y: 525.4304}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 909.2, y: 484.2}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &348239025
@@ -5041,7 +5041,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 2800000, guid: 7df4dcc9068e2b841b1c1457b2b2da17, type: 3}
+  m_Texture: {fileID: 2800000, guid: 29d3ccec703f3bc4c8521235899f947f, type: 3}
   m_UVRect:
     serializedVersion: 2
     x: 0
@@ -6311,7 +6311,6 @@ GameObject:
   - component: {fileID: 508125383}
   - component: {fileID: 508125385}
   - component: {fileID: 508125384}
-  - component: {fileID: 1715487539}
   m_Layer: 5
   m_Name: X_png
   m_TagString: Untagged
@@ -8494,9 +8493,9 @@ RectTransform:
   - {fileID: 1605672885}
   m_Father: {fileID: 1139384951}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 1007.66425, y: 514.45703}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 948.4, y: 484.2}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &693396717
@@ -8846,7 +8845,6 @@ GameObject:
   - component: {fileID: 742704964}
   - component: {fileID: 742704966}
   - component: {fileID: 742704965}
-  - component: {fileID: 1330303337}
   m_Layer: 5
   m_Name: Options_png
   m_TagString: Untagged
@@ -16613,7 +16611,6 @@ GameObject:
   - component: {fileID: 1340226585}
   - component: {fileID: 1340226587}
   - component: {fileID: 1340226586}
-  - component: {fileID: 1003996708}
   m_Layer: 5
   m_Name: Square_png
   m_TagString: Untagged
@@ -18573,9 +18570,9 @@ RectTransform:
   - {fileID: 1949503048}
   m_Father: {fileID: 1139384951}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 986.61975, y: 525.4304}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 909.2, y: 484.2}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1440574342
@@ -18590,7 +18587,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 259340880d37a1141b94aa563bef7d50, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIPanel
-  firstSelected: {fileID: 15489147}
+  firstSelected: {fileID: 1448274588}
   hidePrevious: 1
   pauseGameWhileOpen: 0
   blockBack: 0
@@ -19390,7 +19387,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 2800000, guid: 7df4dcc9068e2b841b1c1457b2b2da17, type: 3}
+  m_Texture: {fileID: 2800000, guid: 29d3ccec703f3bc4c8521235899f947f, type: 3}
   m_UVRect:
     serializedVersion: 2
     x: 0
@@ -25713,7 +25710,6 @@ GameObject:
   - component: {fileID: 2071772899}
   - component: {fileID: 2071772901}
   - component: {fileID: 2071772900}
-  - component: {fileID: 1470325622}
   m_Layer: 5
   m_Name: O_png
   m_TagString: Untagged
@@ -35826,95 +35822,3 @@ SceneRoots:
   - {fileID: 1817134750}
   - {fileID: 1294473550}
   - {fileID: 1410878935}
---- !u!114 &1003996708
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1340226584}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8cec54d2d98c4cb19173973dd7687d74, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  image: {fileID: 0}
-  keyboardSprite: {fileID: 0}
-  gamepadSprite: {fileID: 0}
-  rawImage: {fileID: 1340226586}
-  keyboardTexture: {fileID: 2800000, guid: 465c43bfb6595e671d7f4edc1af99c05, type: 3}
-  gamepadTexture: {fileID: 2800000, guid: 7fc456312a03c9845aec7bfb88ad8fc8, type: 3}
-  label: {fileID: 0}
-  keyboardText: 
-  gamepadText: 
-  keyboardOnly: 0
-  gamepadOnly: 0
---- !u!114 &1715487539
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 508125382}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8cec54d2d98c4cb19173973dd7687d74, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  image: {fileID: 0}
-  keyboardSprite: {fileID: 0}
-  gamepadSprite: {fileID: 0}
-  rawImage: {fileID: 508125384}
-  keyboardTexture: {fileID: 2800000, guid: 04a1a867eede4e90a08f501c6a34c86a, type: 3}
-  gamepadTexture: {fileID: 2800000, guid: 8f888ba509f54884aa6e965214628395, type: 3}
-  label: {fileID: 0}
-  keyboardText: 
-  gamepadText: 
-  keyboardOnly: 0
-  gamepadOnly: 0
---- !u!114 &1470325622
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2071772898}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8cec54d2d98c4cb19173973dd7687d74, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  image: {fileID: 0}
-  keyboardSprite: {fileID: 0}
-  gamepadSprite: {fileID: 0}
-  rawImage: {fileID: 2071772900}
-  keyboardTexture: {fileID: 2800000, guid: dbf051253dd64942a1a3631a158262ba, type: 3}
-  gamepadTexture: {fileID: 2800000, guid: c6a99ab93af4ba6439221290f195aec2, type: 3}
-  label: {fileID: 0}
-  keyboardText: 
-  gamepadText: 
-  keyboardOnly: 0
-  gamepadOnly: 0
---- !u!114 &1330303337
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 742704963}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8cec54d2d98c4cb19173973dd7687d74, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  image: {fileID: 0}
-  keyboardSprite: {fileID: 0}
-  gamepadSprite: {fileID: 0}
-  rawImage: {fileID: 742704965}
-  keyboardTexture: {fileID: 2800000, guid: d9eae13fecfe4f2cb65912b79f036116, type: 3}
-  gamepadTexture: {fileID: 2800000, guid: 438579b151896d748a77d435a11ebf3c, type: 3}
-  label: {fileID: 0}
-  keyboardText: 
-  gamepadText: 
-  keyboardOnly: 0
-  gamepadOnly: 0

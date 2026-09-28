@@ -86,7 +86,7 @@ public class RemoteSlideControl : MonoBehaviour
     [Tooltip("المسافة بين الأيقونتين (متر)")]
     [SerializeField] private float keysSpacing = 0.45f;
     [Tooltip("حجم الأيقونة")]
-    [SerializeField] private float keysSize = 0.3f;
+    [SerializeField] private float keysSize = 0.44f;
     [Tooltip("سرعة ظهورهما واختفائهما")]
     [SerializeField] private float keysFadeSpeed = 6f;
     [Tooltip("أيقونة E فوق المرفاع قبل الإمساك، تدعو اللاعب للضغط")]
