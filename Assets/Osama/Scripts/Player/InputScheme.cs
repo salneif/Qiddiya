@@ -15,6 +15,10 @@ using UnityEngine.InputSystem;
 /// يُركّب نفسه، فلا كائن في أي مشهد.
 /// </summary>
 [DisallowMultipleComponent]
+// قبل كل شيء في الإطار: من يسأل «يدٌ أم كيبورد؟» يجب أن يسمع جواب هذا الإطار لا
+// الذي قبله. بلا هذا، ESC على الكيبورد بعد لمسةٍ لليد كان يقرأه MenuManager بحالة
+// «يد» القديمة فيُعيد تحديد الزرّ الذي خرج منه اللاعب — فيولع
+[DefaultExecutionOrder(-1000)]
 public class InputScheme : MonoBehaviour
 {
     /// <summary>ميلٌ يُقصد به التحريك — أقلّ منه انحرافُ عصا لا يدٌ تلعب.</summary>
