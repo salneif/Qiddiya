@@ -124,7 +124,10 @@ public class FootstepSounds : MonoBehaviour
         float speed = Time.deltaTime > 0f ? step.magnitude / Time.deltaTime : 0f;
         bool walking = grounded && speed >= MoveThreshold;
 
-        FootstepSurface.Kind surface = FootstepSurface.TryGet(now, out var zone) ? zone : sceneDefault;
+        // الأرض تحت القدمين أوّلًا، ثم المنطقة، ثم أرض السين
+        FootstepSurface.Kind surface =
+            FootstepSurface.TryGetGround(Ground(now), out var floor) ? floor :
+            FootstepSurface.TryGet(now, out var zone) ? zone : sceneDefault;
         AudioClip want = surface == FootstepSurface.Kind.Plate ? loopPlate
                        : surface == FootstepSurface.Kind.Wood ? loopWood
                        : null;                                   // العشب خطواتٌ مفردة
@@ -139,6 +142,29 @@ public class FootstepSounds : MonoBehaviour
 
         travelled -= StepLength;
         Shot(stepGrass, StepVolume);
+    }
+
+    private readonly RaycastHit[] hits = new RaycastHit[8];
+
+    /// <summary>
+    /// الكولايدر الذي يقف عليه. شعاعٌ قصير لأسفل، يتخطّى اللاعب نفسه — فقد يحمل
+    /// كولايدرات أبناءٍ (مناطق إصابة) تقع تحت الشعاع قبل الأرض.
+    /// </summary>
+    private Collider Ground(Vector3 at)
+    {
+        int n = Physics.RaycastNonAlloc(at + Vector3.up * 0.5f, Vector3.down, hits, 2.5f,
+                                        ~0, QueryTriggerInteraction.Ignore);
+        Collider best = null;
+        float nearest = float.MaxValue;
+
+        for (int i = 0; i < n; i++)
+        {
+            Collider c = hits[i].collider;
+            if (c == null || c.transform.IsChildOf(body)) continue;
+            if (hits[i].distance < nearest) { nearest = hits[i].distance; best = c; }
+        }
+
+        return best;
     }
 
     /// <summary>

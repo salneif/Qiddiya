@@ -15,7 +15,16 @@ public class FootstepSurface : MonoBehaviour
 {
     public enum Kind { Grass, Wood, Plate }
 
-    [Tooltip("صوت الخطوات داخل هذي المنطقة")]
+    /// <summary>
+    /// <b>منطقة</b>: دائرةٌ على الأرض، لما لا كولايدر له يخصّه (جزر الهب).
+    /// <b>أرض</b>: كل كولايدرٍ تحت هذا الكائن — لمبنى له أرضيّته كالباك ستيج: يشمل
+    /// الأرضيّة والدرج والطابق الأعلى معًا، بلا قياسٍ ولا دائرةٍ تخطئ حدوده.
+    /// </summary>
+    public enum Mode { Area, Ground }
+
+    [Tooltip("منطقة = دائرة حول هذا الكائن. أرض = أي كولايدر تحته يقف عليه اللاعب")]
+    [SerializeField] private Mode mode = Mode.Area;
+    [Tooltip("صوت الخطوات هنا")]
     [SerializeField] private Kind surface = Kind.Grass;
     [Tooltip("نصف قطر المنطقة أفقيًّا (متر)")]
     [SerializeField] private float radius = 3.6f;
@@ -38,7 +47,7 @@ public class FootstepSurface : MonoBehaviour
     {
         foreach (FootstepSurface zone in all)
         {
-            if (zone == null) continue;
+            if (zone == null || zone.mode != Mode.Area) continue;
 
             Vector3 d = position - zone.transform.position;
             if (Mathf.Abs(d.y) > zone.height) continue;
@@ -52,8 +61,27 @@ public class FootstepSurface : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// سطح الأرض التي يقف عليها — إن كان الكولايدر داخل كائنٍ عليه هذا السكربت
+    /// بوضع «أرض».
+    /// </summary>
+    public static bool TryGetGround(Collider ground, out Kind kind)
+    {
+        FootstepSurface owner = ground != null ? ground.GetComponentInParent<FootstepSurface>() : null;
+        if (owner != null && owner.mode == Mode.Ground)
+        {
+            kind = owner.surface;
+            return true;
+        }
+
+        kind = default;
+        return false;
+    }
+
     private void OnDrawGizmosSelected()
     {
+        if (mode != Mode.Area) return;
+
         Gizmos.color = new Color(0.3f, 1f, 0.35f, 0.8f);
         Gizmos.matrix = Matrix4x4.TRS(transform.position, Quaternion.identity, new Vector3(1f, 0.02f, 1f));
         Gizmos.DrawWireSphere(Vector3.zero, radius);
