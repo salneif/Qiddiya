@@ -31,6 +31,19 @@ public class FootstepSurface : MonoBehaviour
     [Tooltip("كم فوقها وتحتها يُعدّ داخلها — جزيرةٌ فوق جزيرة لا تتداخلان")]
     [SerializeField] private float height = 3f;
 
+    [Header("الطوابق (لوضع «أرض» فقط)")]
+    [Tooltip("ما علا أرضيّة المبنى بأكثر من هذا يأخذ الصوت أدناه — للدرج والطابق الأعلى " +
+             "حين يكون المبنى كلّه كولايدرًا واحدًا. صفر = يُطفئه")]
+    [SerializeField] private float aboveHeight = 0f;
+    [Tooltip("صوت ما فوق الأرضيّة")]
+    [SerializeField] private Kind aboveSurface = Kind.Wood;
+
+    /// <summary>
+    /// أخفض نقطةٍ وطئها اللاعب هنا — أرضيّة المبنى، تُعرَف بالمشي عليها لا بمحور
+    /// المجسّم: المحور قد يكون في وسط المبنى أو تحت أساسه، ولا يدلّ على الأرضيّة.
+    /// </summary>
+    private float lowest = float.MaxValue;
+
     private static readonly List<FootstepSurface> all = new List<FootstepSurface>();
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -65,12 +78,17 @@ public class FootstepSurface : MonoBehaviour
     /// سطح الأرض التي يقف عليها — إن كان الكولايدر داخل كائنٍ عليه هذا السكربت
     /// بوضع «أرض».
     /// </summary>
-    public static bool TryGetGround(Collider ground, out Kind kind)
+    public static bool TryGetGround(Collider ground, float footY, out Kind kind)
     {
         FootstepSurface owner = ground != null ? ground.GetComponentInParent<FootstepSurface>() : null;
         if (owner != null && owner.mode == Mode.Ground)
         {
-            kind = owner.surface;
+            // الباك ستيج مبنى كامل في كولايدرٍ واحد — أرضيّته ودرجه وطابقه الأعلى —
+            // فلا فرق بينها إلا الارتفاع. اللاعب يدخل من الأسفل، فأوّل ما يطؤه هو الأرضيّة
+            owner.lowest = Mathf.Min(owner.lowest, footY);
+            bool above = owner.aboveHeight > 0f && footY > owner.lowest + owner.aboveHeight;
+
+            kind = above ? owner.aboveSurface : owner.surface;
             return true;
         }
 
@@ -91,5 +109,6 @@ public class FootstepSurface : MonoBehaviour
     {
         radius = Mathf.Max(0.1f, radius);
         height = Mathf.Max(0.1f, height);
+        aboveHeight = Mathf.Max(0f, aboveHeight);
     }
 }

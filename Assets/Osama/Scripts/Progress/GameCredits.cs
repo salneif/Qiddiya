@@ -189,11 +189,11 @@ public class GameCredits : MonoBehaviour
     /// <summary>الفريق كما اتفقنا عليه — يُستعمل إن تُركت القائمة فارغة.</summary>
     private static Section[] DefaultSections() => new[]
     {
-        new Section { title = "ABEER",  role = "ART & ENVIRONMENT DESIGN", duration = 8f },
-        new Section { title = "RAZAN",  role = "ART & ENVIRONMENT DESIGN", duration = 8f },
-        new Section { title = "SULTAN", role = "STEAM TOWN & THE CIRCUS",  duration = 8f },
-        new Section { title = "OSAMA",  role = "THE HUB & THE CIRCUS",     duration = 8f },
-        new Section { title = "ALI",    role = "TWILIGHT",                 duration = 8f },
+        new Section { title = "SULTAN ALNEIF",   role = "STEAM TOWN & THE CIRCUS",           duration = 8f },
+        new Section { title = "RAZAN AL MALKI",  role = "ART & ENVIRONMENT DESIGN",          duration = 8f },
+        new Section { title = "ABEER ALMUBARAK", role = "ART & ENVIRONMENT DESIGN",          duration = 8f },
+        new Section { title = "ALI AL SHAIBAN",  role = "TWILIGHT",                          duration = 8f },
+        new Section { title = "OSAMA ALTAMIMI",  role = "STEAM TOWN, THE HUB & THE CIRCUS",  duration = 8f },
     };
 
     private Transform stage;

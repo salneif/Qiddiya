@@ -125,8 +125,9 @@ public class FootstepSounds : MonoBehaviour
         bool walking = grounded && speed >= MoveThreshold;
 
         // الأرض تحت القدمين أوّلًا، ثم المنطقة، ثم أرض السين
+        Collider ground = Ground(now, out float footY);
         FootstepSurface.Kind surface =
-            FootstepSurface.TryGetGround(Ground(now), out var floor) ? floor :
+            FootstepSurface.TryGetGround(ground, footY, out var floor) ? floor :
             FootstepSurface.TryGet(now, out var zone) ? zone : sceneDefault;
         AudioClip want = surface == FootstepSurface.Kind.Plate ? loopPlate
                        : surface == FootstepSurface.Kind.Wood ? loopWood
@@ -147,21 +148,29 @@ public class FootstepSounds : MonoBehaviour
     private readonly RaycastHit[] hits = new RaycastHit[8];
 
     /// <summary>
-    /// الكولايدر الذي يقف عليه. شعاعٌ قصير لأسفل، يتخطّى اللاعب نفسه — فقد يحمل
-    /// كولايدرات أبناءٍ (مناطق إصابة) تقع تحت الشعاع قبل الأرض.
+    /// الكولايدر الذي يقف عليه، وارتفاع النقطة تحت قدميه. شعاعٌ قصير لأسفل، يتخطّى
+    /// اللاعب نفسه — فقد يحمل كولايدرات أبناءٍ (مناطق إصابة) تقع تحت الشعاع قبل الأرض.
+    ///
+    /// الارتفاع لازمٌ حين يكون المبنى كولايدرًا واحدًا: هو وحده ما يفرّق الأرضيّة
+    /// عن الدرج والطابق الأعلى.
     /// </summary>
-    private Collider Ground(Vector3 at)
+    private Collider Ground(Vector3 at, out float footY)
     {
         int n = Physics.RaycastNonAlloc(at + Vector3.up * 0.5f, Vector3.down, hits, 2.5f,
                                         ~0, QueryTriggerInteraction.Ignore);
         Collider best = null;
         float nearest = float.MaxValue;
+        footY = at.y;
 
         for (int i = 0; i < n; i++)
         {
             Collider c = hits[i].collider;
             if (c == null || c.transform.IsChildOf(body)) continue;
-            if (hits[i].distance < nearest) { nearest = hits[i].distance; best = c; }
+            if (hits[i].distance >= nearest) continue;
+
+            nearest = hits[i].distance;
+            best = c;
+            footY = hits[i].point.y;
         }
 
         return best;
