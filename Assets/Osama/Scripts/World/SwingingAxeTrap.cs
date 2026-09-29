@@ -54,24 +54,7 @@ public class SwingingAxeTrap : MonoBehaviour
     [Tooltip("صوت 'شووش' يُشغَّل كل ما عبر الفاس منتصف تأرجحه (أسرع نقطة) — تنبيه سمعي للاعب")]
     [SerializeField] private AudioClip whooshSound;
 
-    [Header("اهتزاز اليد")]
-    [Tooltip("أبعد مسافة تُحسّ فيها مرورة الفاس في اليد. صفر = بلا اهتزاز")]
-    [SerializeField] private float rumbleRange = 6f;
-
-    /// <summary>
-    /// آخر لحظةٍ اهتزّت فيها اليد لفأسٍ — <b>مشتركةٌ بين كل الفؤوس</b>.
-    ///
-    /// في السيرك مطارق كثيرة متجاورة، وكلّ واحدة تمرّ مرّتين في الدورة. فبلا هذا
-    /// تتراكب ضرباتها فتصير اليد ترتجّ بلا توقّف — وهو ما اشتكى منه اللاعب: ليس
-    /// اهتزازًا يقول «مرّ الفأس» بل ضجيجًا متّصلًا لا معنى له.
-    ///
-    /// ساكنةٌ عمدًا: المطلوب فاصلٌ بين <b>أيّ</b> ضربتين لا بين ضربتي فأسٍ واحد.
-    /// </summary>
-    private static float lastAxeRumble = -999f;
-
-    /// <summary>أقلّ فاصلٍ بين ضربتين — أطول من دورة فأسٍ واحد فلا تتراكب اثنتان.</summary>
-    private const float RumbleGap = 2f;       // مرورٌ كل ثانيتين يُحسّ، لا كل تأرجح
-    private const float RumbleRangeCap = 3.5f; // مَن كان تحت الفاس فعلًا
+    // لا اهتزاز للمطارق: كانت ترجّ اليد طوال المرور بالسيرك (أسامة). الهزّة لحلّ اللغز.
     [Tooltip("صرير مستمر (سلسلة/خشب) يدور بلا توقف — يعلو مع قوة التأرجح ويسكت لما يهدأ الفاس. " +
              "يشتغل على نفس الـ AudioSource مع الشووش.")]
     [SerializeField] private AudioClip creakLoop;
@@ -169,17 +152,6 @@ public class SwingingAxeTrap : MonoBehaviour
 
         if (whooshSound != null && audioSource != null && passedBottom)
             audioSource.PlayOneShot(whooshSound);
-
-        // ونفس اللحظة في اليد: مرورُ الفاس بجانبك يُحسّ لا يُسمع وحده. وبقوّة التأرجح
-        // لا ثابتةً — فاسٌ يتباطأ يهدأ في اليد كما يهدأ في الصورة
-        if (passedBottom && rumbleRange > 0f && Time.time - lastAxeRumble >= RumbleGap)
-        {
-            // نسجّل قبل أن نعرف أستُجيب أم لا: الأقرب والأبعد يتنافسان على نفس
-            // الفاصل، ولو سجّل القريب وحده لأمسك البعيد الفاصل كلّما خرج اللاعب من مداه
-            lastAxeRumble = Time.time;
-            PadRumble.At(transform.position, 0.2f * amplitudeScale,
-                         0.08f * amplitudeScale, 0.08f, Mathf.Min(rumbleRange, RumbleRangeCap));
-        }
 
         lastAngle = angle;
         SyncKillComponent();

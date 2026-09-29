@@ -131,7 +131,11 @@ public class ClockPuzzleHint : MonoBehaviour
         {
             solved = true;
             // ساعةٌ محلولةٌ أصلًا لحظة دخول السين ليست حلًّا يُحتفل به
-            if (Time.timeSinceLevelLoad > 1.5f) ChromaEvents.RaisePuzzleSolved(transform.position);
+            if (Time.timeSinceLevelLoad > 1.5f)
+            {
+                PadRumble.Open(0.9f);   // انحلّت الساعة — تُحسّ في اليد
+                ChromaEvents.RaisePuzzleSolved(transform.position);
+            }
         }
 
         if (tintByDistance) Tint(off, hit);

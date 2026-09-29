@@ -222,7 +222,7 @@ public class LevelPortal : MonoBehaviour
         float closeness = 1f - Mathf.Clamp01(dist / approachDistance);
         closeness *= closeness;                       // تشتدّ في المتر الأخير لا في الطريق كله
 
-        float strength = rumbleStrength * 0.6f * closeness * (IsUnlocked ? 1f : 0.45f);   // همهمةٌ خفيفة تقوى بالاقتراب
+        float strength = rumbleStrength * closeness * (IsUnlocked ? 1f : 0.45f);
         PadRumble.Hold(strength, strength * 0.35f);
     }
 

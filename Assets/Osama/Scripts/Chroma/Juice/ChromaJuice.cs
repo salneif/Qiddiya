@@ -271,7 +271,7 @@ public class ChromaJuice : MonoBehaviour
         StartCoroutine(Fountain(from, 32, 16, 0.7f, 1.12f));
         StartCoroutine(Confetti(from, floor, 24, 60, 1.6f));
         ChromaSfx.Play("Pulse_Whoosh", 0.8f, 0.86f);
-        PadRumble.Open(0.5f);
+        PadRumble.Open(1f);
         Remember(at);
     }
 

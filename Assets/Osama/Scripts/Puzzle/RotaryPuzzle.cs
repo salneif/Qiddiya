@@ -111,6 +111,7 @@ public class RotaryPuzzle : MonoBehaviour
     private void Solve()
     {
         IsSolved = true;
+        PadRumble.Open(0.9f);   // اللحظة تُحسّ في اليد: انحلّ
         ChromaEvents.RaisePuzzleSolved(transform.position);
         if (debugLog) Debug.Log($"[RotaryPuzzle] {name}: انحلّ — On Solved ينطلق الآن.", this);
 

@@ -40,7 +40,7 @@ public class PadRumble : MonoBehaviour
     /// الشدّات مكتوبةٌ بنسبٍ بعضها إلى بعض — الموت أقوى من نقطة الحفظ، والبوابة بينهما —
     /// فخفضها واحدةً واحدةً يُضيّع تلك النسب. وهذا يخفضها كلّها ويُبقيها.
     /// </summary>
-    private const float Strength = 0.4f;   // أسامة: الاهتزاز لمسةٌ تُحسّ، لا ضجيجٌ في اليد
+    private const float Strength = 0.55f;
 
     private static PadRumble instance;
 

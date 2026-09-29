@@ -330,7 +330,7 @@ public class Gate : MonoBehaviour
         if (isOpen) return;   // بلا هذا يتكرر صوت الفتح كل مرة يُنادى الحدث
         isOpen = true;
         Play(openSound);
-        PadRumble.At(transform.position, 0.3f, 0.12f, 0.4f, 18f);
+        PadRumble.At(transform.position, 0.5f, 0.22f, 0.6f, 18f);
         ChromaEvents.RaiseGateOpened(transform.position);
     }
 
