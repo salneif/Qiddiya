@@ -49,6 +49,13 @@ public class FootstepSounds : MonoBehaviour
     /// <summary>بعد صوت الهبوط لا خطوة فورًا — وإلا سُمع الهبوط مرّتين.</summary>
     private const float QuietAfterLanding = 0.2f;
 
+    /// <summary>
+    /// صوت الهبوط لهبوطٍ حقيقي فقط: طيرانٌ بهذه المدة على الأقل، أو سقوطٌ بهذه السرعة.
+    /// <c>isGrounded</c> يرتجف إطارًا على المنحدر والدرج، وكل رجفةٍ كانت "هبوطًا" له صوت.
+    /// </summary>
+    private const float MinAirForLanding = 0.25f;
+    private const float HardLandingSpeed = -4f;
+
     /// <summary>للشخصيات بلا هيكلٍ بشري: خطوةٌ كل هذه المسافة (م).</summary>
     private const float StrideFallback = 0.85f;
 
@@ -102,6 +109,7 @@ public class FootstepSounds : MonoBehaviour
     private bool useFeet;
 
     private Vector3 previous;
+    private float lastY, airTime, fallSpeed;
     private bool wasGrounded = true;
     private bool silenced;
     private bool scanned;
@@ -139,13 +147,26 @@ public class FootstepSounds : MonoBehaviour
         if (dt <= 0f || dt > 0.1f)   // توقّف أو تهنيقة تحميل: لا نقيس سرعةً منها
         {
             previous = body.position;
+            lastY = previous.y;
             SampleFeet(0f);
             return;
         }
 
         bool grounded = controller == null || controller.isGrounded;
 
-        if (grounded && !wasGrounded && land != null)
+        float y = body.position.y;
+        float vy = (y - lastY) / dt;
+        lastY = y;
+        if (!grounded)
+        {
+            airTime += dt;
+            fallSpeed = Mathf.Min(fallSpeed, vy);
+        }
+
+        bool realLanding = airTime >= MinAirForLanding || fallSpeed <= HardLandingSpeed;
+        if (grounded) { airTime = 0f; fallSpeed = 0f; }
+
+        if (grounded && !wasGrounded && realLanding && land != null)
         {
             source.pitch = Random.Range(0.92f, 1.06f);
             source.PlayOneShot(land, LandVolume * Random.Range(0.85f, 1f));
@@ -305,6 +326,8 @@ public class FootstepSounds : MonoBehaviour
         FindFeet();
 
         previous = body.position;
+        lastY = previous.y;
+        airTime = fallSpeed = 0f;
         wasGrounded = true;
         walkingSince = -1f;
         stillSince = -10f;

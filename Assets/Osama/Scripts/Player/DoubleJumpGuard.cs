@@ -50,7 +50,8 @@ public class DoubleJumpGuard : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (failed) return;
+        // JumpPolish يغلق النافذة نفسها في كل مرحلة ولحظة القفز — لا نكتب فوقه
+        if (failed || JumpPolish.Active) return;
         if (!ready && !Bind()) return;
 
         bool grounded = controller.isGrounded;
