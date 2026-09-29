@@ -1,0 +1,95 @@
+using UnityEngine;
+
+/// <summary>
+/// جسد القطرة المرئي: كرةٌ، وهالةٌ مضيئة خلفها، وحلقةٌ للذهبية والكبيرة. بلا
+/// كولايدر — لا تصطدم بشيء ولا يصيبها شعاعُ أحد — وبلا سكربتٍ لكل قطرة: الحقل يحرّكها
+/// كلها من حلقةٍ واحدة.
+///
+/// <b>تُعاد ولا تُهدم</b>: قطرةٌ جُمعت تُطفأ وتنتظر في المخزون، والدفعة التالية
+/// تأخذها. فلا إنشاء ولا هدم في كل التقاط.
+/// </summary>
+internal sealed class ChromaDropView
+{
+    private readonly GameObject root;
+    private readonly Transform orb, glow, ring;
+    private readonly MeshRenderer orbRenderer, glowRenderer, ringRenderer;
+
+    private ChromaDropView(GameObject root, Transform orb, Transform glow, Transform ring,
+                           MeshRenderer orbRenderer, MeshRenderer glowRenderer, MeshRenderer ringRenderer)
+    {
+        this.root = root;
+        this.orb = orb;
+        this.glow = glow;
+        this.ring = ring;
+        this.orbRenderer = orbRenderer;
+        this.glowRenderer = glowRenderer;
+        this.ringRenderer = ringRenderer;
+    }
+
+    /// <summary>هل ما زال حيًّا؟ يموت مع سينه.</summary>
+    public bool Alive => root != null;
+
+    public static ChromaDropView Create(Transform parent)
+    {
+        var root = new GameObject("Drop");
+        root.transform.SetParent(parent, false);
+
+        var orbGo = new GameObject("Orb");
+        orbGo.transform.SetParent(root.transform, false);
+        MeshRenderer orbRenderer = ChromaDropArt.Renderer(orbGo, ChromaDropArt.Ball, ChromaDropArt.Orb);
+
+        var glowGo = new GameObject("Glow");
+        glowGo.transform.SetParent(root.transform, false);
+        MeshRenderer glowRenderer = ChromaDropArt.Renderer(glowGo, ChromaDropArt.Card, ChromaDropArt.Glow);
+
+        var ringGo = new GameObject("Ring");
+        ringGo.transform.SetParent(root.transform, false);
+        MeshRenderer ringRenderer = ChromaDropArt.Renderer(ringGo, ChromaDropArt.Card, ChromaDropArt.Ring);
+        ringGo.SetActive(false);
+
+        root.SetActive(false);
+        return new ChromaDropView(root, orbGo.transform, glowGo.transform, ringGo.transform,
+                                  orbRenderer, glowRenderer, ringRenderer);
+    }
+
+    public void Show(bool withRing)
+    {
+        if (root == null) return;
+        if (ring.gameObject.activeSelf != withRing) ring.gameObject.SetActive(withRing);
+        if (!root.activeSelf) root.SetActive(true);
+    }
+
+    public void Hide()
+    {
+        if (root != null && root.activeSelf) root.SetActive(false);
+    }
+
+    /// <summary>
+    /// الكرة في موضعها وحجمها، تدور حول نفسها ببطء — ضوؤها مخبوزٌ فيها، فجانبها
+    /// المضيء يلفّ معها ويُرى الدوران على كرةٍ لا نقش عليها. والهالة والحلقة تواجهان
+    /// الكاميرا، والحلقة تدور حول محور النظر.
+    /// </summary>
+    public void Place(Vector3 at, float size, float glowSize, float ringSize, Quaternion facing, float spin)
+    {
+        if (root == null) return;
+        root.transform.position = at;
+        orb.localScale = new Vector3(size, size, size);
+        orb.localRotation = Quaternion.Euler(0f, spin, 0f);
+
+        glow.rotation = facing;
+        glow.localScale = new Vector3(glowSize, glowSize, glowSize);
+
+        if (ring.gameObject.activeSelf)
+        {
+            ring.rotation = facing * Quaternion.Euler(0f, 0f, spin);
+            ring.localScale = new Vector3(ringSize, ringSize, ringSize);
+        }
+    }
+
+    public void Paint(Color orbColor, Color glowColor, Color ringColor)
+    {
+        ChromaDropArt.Tint(orbRenderer, orbColor);
+        ChromaDropArt.Tint(glowRenderer, glowColor);
+        if (ring != null && ring.gameObject.activeSelf) ChromaDropArt.Tint(ringRenderer, ringColor);
+    }
+}
