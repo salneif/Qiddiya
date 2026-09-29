@@ -57,7 +57,7 @@ public static class ChromaSkinFx
             var main = embers.main;
             main.startLifetime = new ParticleSystem.MinMaxCurve(1.1f, 1.9f);
             main.startSize = new ParticleSystem.MinMaxCurve(0.035f, 0.08f);
-            Rate(embers, 12f);
+            Rate(embers, 8f);
             Shape(embers, ParticleSystemShapeType.Circle, 0.26f, new Vector3(90f, 0f, 0f));
             Rise(embers, 0.35f, 0.8f);
             Wander(embers, 0.35f, 0.9f, 0.6f);

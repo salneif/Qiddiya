@@ -221,8 +221,8 @@ public class ChromaJuice : MonoBehaviour
         Splash(grounded ? floor + Vector3.up * ZoneLift : at, 6f, 0.45f, 1f, 3f);
         fx.Flash(floor + Vector3.up * 0.7f, 3f, 0.3f, Warm);
         if (grounded) fx.Ring(floor + Vector3.up * RingLift, 4.2f, 0.65f, Bright(style.gold));
-        StartCoroutine(Column(floor, 36, 0.9f));
-        ChromaSfx.Play("Pulse_Whoosh", 0.55f, Random.Range(0.97f, 1.04f));
+        StartCoroutine(Column(floor, 20, 0.9f));
+        ChromaSfx.Play("Pulse_Whoosh", 0.45f, Random.Range(0.97f, 1.04f));
         Remember(at);
     }
 
@@ -244,8 +244,8 @@ public class ChromaJuice : MonoBehaviour
             StartCoroutine(RingLater(0.12f, floor + Vector3.up * RingLift, 4f, 0.6f,
                                      Bright(style.Palette(hue + 3))));
         }
-        StartCoroutine(Fountain(from, 40, 18, 0.45f, 1f));
-        ChromaSfx.Play("Pulse_Whoosh", 0.85f, Random.Range(0.98f, 1.03f));
+        StartCoroutine(Fountain(from, 24, 10, 0.45f, 1f));
+        ChromaSfx.Play("Pulse_Whoosh", 0.65f, Random.Range(0.98f, 1.03f));
         PadRumble.Pickup();
         Remember(at);
     }
@@ -268,9 +268,9 @@ public class ChromaJuice : MonoBehaviour
             StartCoroutine(RingLater(0.15f, floor + Vector3.up * RingLift, 5.5f, 0.8f,
                                      Bright(style.Palette(hue + 2))));
         }
-        StartCoroutine(Fountain(from, 55, 30, 0.7f, 1.12f));
-        StartCoroutine(Confetti(from, floor, 40, 150, 1.6f));
-        ChromaSfx.Play("Pulse_Whoosh", 1f, 0.86f);
+        StartCoroutine(Fountain(from, 32, 16, 0.7f, 1.12f));
+        StartCoroutine(Confetti(from, floor, 24, 60, 1.6f));
+        ChromaSfx.Play("Pulse_Whoosh", 0.8f, 0.86f);
         PadRumble.Open(1f);
         Remember(at);
     }
@@ -294,7 +294,7 @@ public class ChromaJuice : MonoBehaviour
         Vector3 center = Floor(at, out Vector3 floor) ? floor + Vector3.up * ZoneLift : at;
         Splash(center, 8f, 0.35f, 0.9f, 3f);
         fx.Flash(center, 2.8f, 0.28f, Warm);
-        Burst(center, 28, 8);
+        Burst(center, 18, 5);
         ChromaSfx.Play("Pulse_Whoosh", 0.4f, Random.Range(1.08f, 1.16f));
         Remember(at);
     }
