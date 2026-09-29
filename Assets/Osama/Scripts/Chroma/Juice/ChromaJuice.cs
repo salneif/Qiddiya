@@ -11,7 +11,7 @@ using UnityEngine.SceneManagement;
 /// <b>اللون من النبضة لا من الجسيمات</b>: الشاشة تُرمَّد بعد رسم كل شيء، والجسيمات معه. فكل
 /// احتفالٍ يُطلق <see cref="ColorZones.Pulse"/> في اللحظة نفسها فيتلوّن ما تحتها، وما خرج عنها
 /// يبقى أبيض مضيئًا يُقرأ على الرمادي. وإن رُفضت النبضة (نفد المخزون، أو سينٌ بلا نظام لون)
-/// بقي الاحتفال كما هو، رماديًّا.
+/// بقي الاحتفال كما هو، رماديًّا. وفي سينٍ فيه ملاجئ لا نبضة أصلًا (<see cref="Splash"/>).
 ///
 /// <b>لا يحتفل بما لم يفعله اللاعب</b>:
 /// <list type="bullet">
@@ -60,8 +60,14 @@ public class ChromaJuice : MonoBehaviour
     /// <summary>بعد الموت لا غبار: الجسد يحترق، أو يُنقل عند علي بلا إعلان.</summary>
     private const float QuietAfterDeath = 1.5f;
 
+    /// <summary>
+    /// حبر الموت في آخر احتراق <see cref="DeathDissolveEffect"/> (ثانيةٌ مع كل
+    /// <see cref="PlayerKillable"/> — ستيم والسيرك) لا معه: سحابةٌ فوق الجسد تحجب الاحتراق، وهو
+    /// خبر الموت الحقيقي. وموت علي بلا احتراق، فحبره فوري.
+    /// </summary>
+    private const float BurnTime = 0.85f;
+
     private static readonly Color Warm = new Color(1f, 0.94f, 0.82f, 1f);
-    private static readonly RaycastHit[] hits = new RaycastHit[8];
 
     private static ChromaJuice instance;
 
@@ -76,6 +82,9 @@ public class ChromaJuice : MonoBehaviour
     private ChromaJuiceCamera lens;
     private ChromaStyle style;
     private int groundMask;
+
+    /// <summary>في هذا السين ملاجئ (<see cref="SafeZone"/>)؟ يُسأل مع كل سين، لا مع كل احتفال.</summary>
+    private bool shelters;
 
     private readonly List<Vector3> celebrated = new List<Vector3>();
     private readonly Moment[] recent = new Moment[6];
@@ -153,6 +162,7 @@ public class ChromaJuice : MonoBehaviour
         groundMask = Physics.DefaultRaycastLayers & ~(body >= 0 ? 1 << body : 0);
 
         loadedAt = Time.unscaledTime;
+        shelters = HasShelters();
         ForgetRecent();
     }
 
@@ -197,6 +207,7 @@ public class ChromaJuice : MonoBehaviour
         killable = null;
         nextSearch = 0f;
         loadedAt = Time.unscaledTime;
+        shelters = HasShelters();
     }
 
     // ---------- اللحظات ----------
@@ -207,7 +218,7 @@ public class ChromaJuice : MonoBehaviour
         if (!FirstTime(at) || !Ready() || Crowded(at)) return;
 
         bool grounded = Floor(at, out Vector3 floor);
-        ColorZones.Pulse(grounded ? floor + Vector3.up * ZoneLift : at, 6f, 0.18f, 0.45f, 1f, 3f);
+        Splash(grounded ? floor + Vector3.up * ZoneLift : at, 6f, 0.45f, 1f, 3f);
         fx.Flash(floor + Vector3.up * 0.7f, 3f, 0.3f, Warm);
         if (grounded) fx.Ring(floor + Vector3.up * RingLift, 4.2f, 0.65f, Bright(style.gold));
         StartCoroutine(Column(floor, 36, 0.9f));
@@ -225,7 +236,7 @@ public class ChromaJuice : MonoBehaviour
 
         bool grounded = Floor(at, out Vector3 floor);
         Vector3 from = grounded ? Source(at, floor) : at;
-        ColorZones.Pulse(grounded ? floor + Vector3.up * ZoneLift : at, 12f, 0.18f, 0.6f, 0.9f, 3.5f);
+        Splash(grounded ? floor + Vector3.up * ZoneLift : at, 12f, 0.6f, 0.9f, 3.5f);
         fx.Flash(from, 4f, 0.35f, Warm);
         if (grounded)
         {
@@ -249,7 +260,7 @@ public class ChromaJuice : MonoBehaviour
 
         bool grounded = Floor(at, out Vector3 floor);
         Vector3 from = grounded ? Source(at, floor) : at;
-        ColorZones.Pulse(grounded ? floor + Vector3.up * ZoneLift : at, 16f, 0.18f, 1.2f, 2f, 4f);
+        Splash(grounded ? floor + Vector3.up * ZoneLift : at, 16f, 1.2f, 2f, 4f);
         fx.Flash(from, 5.5f, 0.45f, Warm);
         if (grounded)
         {
@@ -281,7 +292,7 @@ public class ChromaJuice : MonoBehaviour
         if (Crowded(at)) return;
 
         Vector3 center = Floor(at, out Vector3 floor) ? floor + Vector3.up * ZoneLift : at;
-        ColorZones.Pulse(center, 8f, 0.18f, 0.35f, 0.9f, 3f);
+        Splash(center, 8f, 0.35f, 0.9f, 3f);
         fx.Flash(center, 2.8f, 0.28f, Warm);
         Burst(center, 28, 8);
         ChromaSfx.Play("Pulse_Whoosh", 0.4f, Random.Range(1.08f, 1.16f));
@@ -289,25 +300,14 @@ public class ChromaJuice : MonoBehaviour
     }
 
     /// <summary>
-    /// الموت: سحابة حبرٍ داكنة تلفّ مكانه وتذوب، وقطراتٌ قليلة تتطاير. خفيفةٌ عمدًا — تقول
-    /// «هنا اختفى» لا أكثر، والاحتراق نفسه مؤثّر <see cref="DeathDissolveEffect"/>.
+    /// الموت: نفخة حبرٍ صغيرة حيث اختفى، وقطراتٌ قليلة تتطاير. خفيفةٌ عمدًا — تقول «هنا اختفى»
+    /// لا أكثر — وبعد الاحتراق لا فوقه (<see cref="BurnTime"/>).
     /// </summary>
     private void OnPlayerDied(Vector3 at)
     {
         Vector3 spot = steps.Vanished(at);
         steps.Suspend(QuietAfterDeath);
-        if (!Ready()) return;
-
-        Color cloud = style.ink;
-        cloud.a = 0.6f;
-        for (int i = 0; i < 12; i++)
-        {
-            Vector3 dir = Random.onUnitSphere;
-            fx.Dust(spot + dir * 0.15f, dir * Random.Range(0.4f, 1.1f) + Vector3.up * Random.Range(0.2f, 0.6f),
-                    Random.Range(0.6f, 1.1f), Random.Range(0.8f, 1.2f), cloud);
-        }
-        for (int i = 0; i < 6; i++)
-            fx.Blob(spot, Throw(2f, 3.5f, 1.2f, 2.6f), Random.Range(0.05f, 0.08f), Random.Range(0.55f, 0.8f), style.ink);
+        if (Ready()) StartCoroutine(Ink(spot, killable != null ? BurnTime : 0f));
     }
 
     // ---------- على مهل ----------
@@ -325,6 +325,23 @@ public class ChromaJuice : MonoBehaviour
     {
         for (float t = 0f; t < delay; t += Time.deltaTime) yield return null;
         fx.Ring(at, radius, life, color);
+    }
+
+    /// <summary>حبر الموت بعد <paramref name="delay"/>: سحابةٌ صغيرة تذوب، وقطراتٌ تتطاير.</summary>
+    private IEnumerator Ink(Vector3 spot, float delay)
+    {
+        for (float t = 0f; t < delay; t += Time.deltaTime) yield return null;
+
+        Color cloud = style.ink;
+        cloud.a = 0.4f;
+        for (int i = 0; i < 8; i++)
+        {
+            Vector3 dir = Random.onUnitSphere;
+            fx.Dust(spot + dir * 0.15f, dir * Random.Range(0.5f, 1.2f) + Vector3.up * Random.Range(0.2f, 0.5f),
+                    Random.Range(0.35f, 0.6f), Random.Range(0.7f, 1f), cloud);
+        }
+        for (int i = 0; i < 6; i++)
+            fx.Blob(spot, Throw(2f, 3.5f, 1.2f, 2.6f), Random.Range(0.05f, 0.08f), Random.Range(0.55f, 0.8f), style.ink);
     }
 
     /// <summary>عمود شررٍ يصعد حول النقطة، موزّعٌ بالزاوية الذهبية فلا يتكتّل في جهة.</summary>
@@ -427,6 +444,19 @@ public class ChromaJuice : MonoBehaviour
     private bool Ready() => isActiveAndEnabled && Live && Player != null;
 
     /// <summary>
+    /// نبضة الاحتفال — إلا بين الملاجئ. في السيرك اللون أمان: الملجأ يُلوّن ما يحميه بالضبط
+    /// («ما تراه هو ما يحميك»)، فدائرة لونٍ لا تحمي تكذب على اللاعب — يقف فيها والفئران آتية.
+    /// هناك يبقى الاحتفال بشرره وصوته، أبيض.
+    /// </summary>
+    private void Splash(Vector3 at, float radius, float hold, float fade, float reach)
+    {
+        if (!shelters) ColorZones.Pulse(at, radius, 0.18f, hold, fade, reach);
+    }
+
+    /// <summary>ولو مطفأً: ملجأٌ لم يُشعَل بعد يبقى قانون السين.</summary>
+    private static bool HasShelters() => FindAnyObjectByType<SafeZone>(FindObjectsInactive.Include) != null;
+
+    /// <summary>
     /// أوّل مرّة لهذا الموضع في الزيارة؟ ويُحفظ وإن لم يُحتفل به: بوابةٌ فُتحت وقت التحميل أو
     /// نقطةٌ وُلد فيها لا تحتفل حين يعود إليها.
     /// </summary>
@@ -485,25 +515,31 @@ public class ChromaJuice : MonoBehaviour
     private static Vector3 Source(Vector3 at, Vector3 floor) =>
         at.y < floor.y + 0.5f ? floor + Vector3.up * 0.9f : at;
 
-    /// <summary>أقرب سطحٍ تحت <paramref name="at"/>، لا جسد اللاعب ولا تريغر.</summary>
+    /// <summary>
+    /// أقرب سطحٍ تحت <paramref name="at"/>، لا جسد اللاعب ولا تريغر. شعاعٌ يرجع الأقرب بعينه —
+    /// <c>RaycastNonAlloc</c> لا يضمنه إن امتلأ مخزنه، فتضيع الأرضية تحت كومة كولايدرات — وما
+    /// كان من جسد اللاعب (ابنٌ على طبقةٍ غير طبقته) يُعبَر إلى ما تحته.
+    /// </summary>
     private bool Ground(Vector3 at, float depth, out Vector3 point)
     {
         point = at;
-        int count = Physics.RaycastNonAlloc(at + Vector3.up * 0.3f, Vector3.down, hits, depth + 0.3f,
-                                            groundMask, QueryTriggerInteraction.Ignore);
-        float best = float.MaxValue;
-        bool found = false;
-        for (int i = 0; i < count; i++)
+        Vector3 from = at + Vector3.up * 0.3f;
+        float reach = depth + 0.3f;
+        for (int tries = 0; tries < 3 && reach > 0f; tries++)
         {
-            Collider c = hits[i].collider;
-            if (c == null || hits[i].distance >= best) continue;
-            if (player != null && c.transform.IsChildOf(player)) continue;
+            if (!Physics.Raycast(from, Vector3.down, out RaycastHit hit, reach, groundMask,
+                                 QueryTriggerInteraction.Ignore)) return false;
+            if (player == null || !hit.collider.transform.IsChildOf(player))
+            {
+                point = hit.point;
+                return true;
+            }
 
-            best = hits[i].distance;
-            point = hits[i].point;
-            found = true;
+            float step = hit.distance + 0.01f;
+            from += Vector3.down * step;
+            reach -= step;
         }
-        return found;
+        return false;
     }
 
     private static float Flat(Vector3 d) => Mathf.Sqrt(d.x * d.x + d.z * d.z);

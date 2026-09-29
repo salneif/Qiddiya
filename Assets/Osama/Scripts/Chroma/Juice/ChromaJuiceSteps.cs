@@ -1,9 +1,9 @@
 using UnityEngine;
 
 /// <summary>
-/// غبار القدمين: نفخةٌ عند القفز، وحلقة غبارٍ عند الهبوط بقدر السقطة، ونفخاتٌ صغيرة خلف
-/// القدمين وهو يجري. والسقطة الكبيرة تُسمع وتُحَسّ: نفخة صوتٍ خافتة، ورجّةٌ في اليد، وانخفاضةٌ
-/// صغيرة في الكاميرا (<see cref="ChromaJuiceCamera"/>).
+/// غبار القدمين: نفخةٌ عند القفز — وحلقةٌ في الهواء للقفزة المزدوجة — وحلقة غبارٍ عند الهبوط
+/// بقدر السقطة، ونفخاتٌ صغيرة خلف القدمين وهو يجري. والسقطة الكبيرة تُسمع وتُحَسّ: نفخة صوتٍ
+/// خافتة، ورجّةٌ في اليد، وانخفاضةٌ صغيرة في الكاميرا (<see cref="ChromaJuiceCamera"/>).
 ///
 /// <b>كله من حركة اللاعب نفسها</b>، لا من سكربت حركته — فيعمل مع أيٍّ منها بلا سؤال:
 /// <list type="bullet">
@@ -19,7 +19,8 @@ using UnityEngine;
 /// الجاذبية ٢٠ والقفزة مترٌ واحد، فكل قفزةٍ تترك نفخةً صغيرة عند هبوطها (طيرانها ٠٫٦ ث)،
 /// والسقوط عن حافّةٍ من نحو متر، والسقطة الكبيرة من نحو مترين ونصف. والشخصية بطول مترٍ وتجري ٢–٣
 /// م/ث (٢ في الهب)، فحدّ الجري ١٫٧: الانحناء (١) والعصا المائلة نصف ميلٍ لا يثيران شيئًا،
-/// و٤٫٥ م/ث لا تُبلغ في أي سين.
+/// و٤٫٥ م/ث لا تُبلغ في أي سين. والنفخة فوقه بقدر السرعة: أثرٌ باهت لمشي الهب، وكاملةٌ لجري
+/// السيرك والتوايلايت (<see cref="FullRun"/>).
 /// </summary>
 [DisallowMultipleComponent]
 public class ChromaJuiceSteps : MonoBehaviour
@@ -46,7 +47,16 @@ public class ChromaJuiceSteps : MonoBehaviour
     /// </summary>
     private const float JumpRise = 0.2f, JumpSpeed = 3.5f, JumpWindow = 0.35f;
 
+    /// <summary>
+    /// ركلةٌ في الهواء (المزدوجة بعد البالون في التوايلايت، أو نطّاطة): الصعود يزيد بهذا (م/ث)
+    /// في إطارٍ واحد، بعد <see cref="KickAfter"/> من الإقلاع — فقفزة الأرض نفسها لا تُعدّ.
+    /// </summary>
+    private const float KickRise = 4f, KickAfter = 0.1f;
+
     private const float RunSpeed = 1.7f, RunEvery = 0.3f;
+
+    /// <summary>أسرع ما تجري الشخصية (السيرك والتوايلايت): الغبار كاملًا، وتحته يخفت ويصغر.</summary>
+    private const float FullRun = 3f;
 
     /// <summary>بعد الهبوط لا غبار جري — نفخة الهبوط تكفي.</summary>
     private const float CalmAfterLanding = 0.2f;
@@ -61,9 +71,9 @@ public class ChromaJuiceSteps : MonoBehaviour
 
     private ChromaJuice juice;
 
-    private bool tracking, airborne, jumped, running;
-    private Vector3 lastFeet, lastGround, takeoff, heading;
-    private float leftAt, peakFall, lastSeenAt, nextDustAt, calmUntil, quietUntil, speed;
+    private bool tracking, airborne, jumped, kicking, running;
+    private Vector3 lastFeet, lastGround, takeoff, kickAt, heading;
+    private float leftAt, peakFall, lastRise, lastSeenAt, nextDustAt, calmUntil, quietUntil, speed;
     private Transform floor;
     private Vector3 floorAt;
 
@@ -132,6 +142,7 @@ public class ChromaJuiceSteps : MonoBehaviour
             tracking = true;
             airborne = !grounded;
             jumped = true;
+            kicking = false;
             running = false;
             leftAt = Time.time;
             peakFall = 0f;
@@ -158,25 +169,46 @@ public class ChromaJuiceSteps : MonoBehaviour
         Run(spot, (delta - carried) / dt, dt);
     }
 
-    /// <summary>في الهواء: أسرع سقوطٍ حتى الآن، وهل ارتفع كمن قفز.</summary>
+    /// <summary>في الهواء: أسرع سقوطٍ حتى الآن، وهل ارتفع كمن قفز — من الأرض أو في الهواء.</summary>
     private void Fly(Vector3 feet, float rise)
     {
         if (!airborne)
         {
             airborne = true;
             jumped = false;
+            kicking = false;
             leftAt = Time.time;
             takeoff = lastGround;
             peakFall = 0f;
         }
 
         peakFall = Mathf.Max(peakFall, -rise);
+        Kick(feet, rise);
 
         if (jumped || Time.time - leftAt > JumpWindow) return;
         if (feet.y - takeoff.y < JumpRise || rise < JumpSpeed) return;
 
         jumped = true;
         JumpPuff(takeoff);
+    }
+
+    /// <summary>
+    /// ركلةٌ في الهواء: الصعود قفز فجأةً في الإطار الماضي وبقي — فليس دفعة إطارٍ واحد (درجةٌ
+    /// رفعته، حافّةٌ لامسها). نفخةٌ حيث ركلت القدمان، وهي إقلاعٌ جديد: لا نفخة أرضٍ بعدها،
+    /// والهبوط يُقاس بالسقوط بعدها لا قبلها.
+    /// </summary>
+    private void Kick(Vector3 feet, float rise)
+    {
+        if (kicking && rise > JumpSpeed)
+        {
+            jumped = true;
+            peakFall = 0f;
+            AirPuff(kickAt);
+        }
+
+        kicking = Time.time - leftAt > KickAfter && rise > JumpSpeed && rise - lastRise > KickRise;
+        if (kicking) kickAt = feet;
+        lastRise = rise;
     }
 
     /// <summary>
@@ -223,7 +255,9 @@ public class ChromaJuiceSteps : MonoBehaviour
         if (!kick && Time.time < nextDustAt) return;
 
         nextDustAt = Time.time + RunEvery * Random.Range(0.85f, 1.15f);
-        RunPuff(spot, heading, kick);
+        // بالسرعة الآن لا المنعَّمة: تلك تعبر حدّ الجري لحظة الانطلاقة والقدمان قد بلغتا
+        // سرعتهما، فتخرج الانطلاقة أبهت نفخة
+        RunPuff(spot, heading, kick, Mathf.InverseLerp(RunSpeed, FullRun, velocity.magnitude));
     }
 
     // ---------- الأرض ----------
@@ -281,6 +315,24 @@ public class ChromaJuiceSteps : MonoBehaviour
     }
 
     /// <summary>
+    /// ركلةٌ في الهواء لا أرض تحتها: ستّ نفخاتٍ صغيرة تنفرش من القدمين إلى الجوانب والأسفل —
+    /// دفعةٌ على الهواء نفسه — وحلقةٌ باهتة تحتهما.
+    /// </summary>
+    private void AirPuff(Vector3 spot)
+    {
+        Color color = Dust(0.35f);
+        float turn = Random.value * Mathf.PI * 2f;
+        for (int i = 0; i < 6; i++)
+        {
+            float a = turn + i * (Mathf.PI / 3f);
+            var dir = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
+            juice.Fx.Dust(spot + dir * 0.1f, dir * Random.Range(1f, 1.4f) + Vector3.down * 0.3f,
+                          Random.Range(0.3f, 0.45f), Random.Range(0.3f, 0.4f), color);
+        }
+        juice.Fx.Ring(spot, 0.6f, 0.3f, new Color(1f, 1f, 1f, 0.3f));
+    }
+
+    /// <summary>
     /// حلقة غبارٍ تنفرش على الأرض، عددها وحجمها وسرعتها بقدر السقطة. والكبيرة يُسمع لها
     /// ويُحَسّ بها وتنخفض لها الكاميرا، وتترك حلقةً باهتة.
     /// </summary>
@@ -310,15 +362,18 @@ public class ChromaJuiceSteps : MonoBehaviour
         juice.Lens.Dip(Mathf.Lerp(0.08f, 0.18f, k));
     }
 
-    /// <summary>نفخةٌ صغيرة خلف القدمين تبقى مكانها وهو يبتعد. الانطلاقة أكبر قليلًا.</summary>
-    private void RunPuff(Vector3 spot, Vector3 forward, bool kick)
+    /// <summary>
+    /// نفخةٌ صغيرة خلف القدمين تبقى مكانها وهو يبتعد. الانطلاقة أكبر قليلًا، وكلتاهما بقدر
+    /// <paramref name="pace"/> (٠ عند حدّ الجري، ١ بأسرعه): تخفت وتصغر مع البطء.
+    /// </summary>
+    private void RunPuff(Vector3 spot, Vector3 forward, bool kick, float pace)
     {
-        Color color = Dust(kick ? 0.4f : 0.3f);
+        Color color = Dust((kick ? 0.4f : 0.3f) * Mathf.Lerp(0.4f, 1f, pace));
         var side = new Vector3(-forward.z, 0f, forward.x);
         int count = kick ? 2 : 1;
         for (int i = 0; i < count; i++)
         {
-            float size = Random.Range(0.3f, 0.45f) * (kick ? 1.25f : 1f);
+            float size = Random.Range(0.3f, 0.45f) * (kick ? 1.25f : 1f) * Mathf.Lerp(0.8f, 1f, pace);
             juice.Fx.Dust(spot - forward * 0.15f + side * Random.Range(-0.1f, 0.1f) + Vector3.up * (size * 0.3f),
                           -forward * Random.Range(0.3f, 0.6f) + Vector3.up * Random.Range(0.2f, 0.45f),
                           size, Random.Range(0.45f, 0.6f), color);
