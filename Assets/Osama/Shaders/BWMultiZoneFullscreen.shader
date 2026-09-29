@@ -33,6 +33,7 @@ Shader "Osama/BWMultiZoneFullscreen"
             #define MAX_INTERACTORS 100
 
             float4 _InteractorData[MAX_INTERACTORS]; // xyz = الموقع، w = نصف القطر
+            float  _InteractorReach[MAX_INTERACTORS]; // أقصى بُعد رأسي (م)، 0 = بلا حدّ
             int    _InteractorCount;
 
             float  _WorldBWAmount;  // 0 ملوّن بالكامل → 1 أبيض/أسود
@@ -63,11 +64,16 @@ Shader "Osama/BWMultiZoneFullscreen"
                     if (radius <= 0.0001) continue;
 
                     float3 diff = worldPos - _InteractorData[i].xyz;
+                    float dy = abs(diff.y);
                     diff.y *= (1.0 - _FlatOnGround);
                     float dist = length(diff);
 
                     // داخل نصف القطر = ملوّن، خارجه = أبيض/أسود (حدّ قاطع بنعومة بسيطة)
                     float ins = 1.0 - smoothstep(radius, radius + max(_EdgeSoftness, 1e-4), dist);
+
+                    // الحدّ الرأسي: عمود اللون لا يخترق الطوابق فوق المنطقة وتحتها
+                    float reach = _InteractorReach[i];
+                    if (reach > 0.0) ins *= 1.0 - smoothstep(reach, reach + 0.5, dy);
                     inside = max(inside, ins);
 
                     // الخط: شريط رفيع ينتهي عند نصف القطر بالضبط (داخل الحدّ، لا يتجاوزه)

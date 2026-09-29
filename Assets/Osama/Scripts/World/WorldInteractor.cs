@@ -18,6 +18,12 @@ public class WorldInteractor : MonoBehaviour
     [Tooltip("دوران البصمة بالدرجات (Euler)")]
     public Vector3 Rotation = Vector3.zero;
 
+    [Tooltip("أقصى بُعدٍ رأسيّ (م) فوق المنطقة وتحتها يصله اللون. 0 = بلا حدّ (عمودٌ لا نهائي، " +
+             "مناسب للأراضي المفتوحة). داخل مبنى بطوابق: 2–3 يحصر اللون في الطابق الذي هي فيه " +
+             "فلا يخترق السقف والأرضية والجدران فوقها وتحتها.")]
+    [Min(0f)]
+    public float HeightReach = 0f;
+
     [Header("الصورة")]
     [Tooltip("رقم الشكل داخل الـ Texture 2D Array (0 = أول صورة)")]
     [Range(0, 15)]
@@ -27,6 +33,7 @@ public class WorldInteractor : MonoBehaviour
     {
         // نصف قطر سالب أو صفر يجعل الشيدر يتخطى المنطقة تمامًا (continue)
         if (Radius < 0f) Radius = 0f;
+        if (HeightReach < 0f) HeightReach = 0f;
     }
 
     private void OnDrawGizmosSelected()

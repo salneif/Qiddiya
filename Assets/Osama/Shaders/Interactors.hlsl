@@ -16,6 +16,7 @@ float4 _InteractorData[MAX_INTERACTORS];     // xyz = الموقع، w = نصف 
 float4 _InteractorScale[MAX_INTERACTORS];    // xyz = الحجم
 float4 _InteractorRotation[MAX_INTERACTORS]; // xyz = الدوران بالدرجات
 float  _InteractorTexIndex[MAX_INTERACTORS]; // رقم الشكل في المصفوفة
+float  _InteractorReach[MAX_INTERACTORS];    // أقصى بُعد رأسي (م)، 0 = بلا حدّ
 int    _InteractorCount;                     // عدد الكائنات الفعّالة
 
 // يدوّر نقطة حول المحاور الثلاثة (بترتيب Y ثم X ثم Z)
@@ -45,6 +46,11 @@ void CalculateInteractors_float(float3 WorldPosition, UnityTexture2DArray Textur
     {
         // الإزاحة عن مركز الكائن، مدوّرة بعكس دورانه (حتى تدور البصمة معه)
         float3 offset = WorldPosition - _InteractorData[i].xyz;
+
+        // البصمة إسقاطٌ من فوق (xz فقط) فتخترق كل الطوابق. الحدّ الرأسي يحصرها
+        // في طابق المنطقة، بتلاشٍ نصف متر كي لا يظهر خطٌّ أفقي حادّ على الجدران
+        float reach = _InteractorReach[i];
+        float vertical = reach > 0.0 ? 1.0 - smoothstep(reach, reach + 0.5, abs(offset.y)) : 1.0;
         offset = RotateEulerDeg(offset, -_InteractorRotation[i].xyz);
 
         // القسمة على الحجم × نصف القطر ثم +0.5 لتوسيط الصورة على الكائن
@@ -59,7 +65,7 @@ void CalculateInteractors_float(float3 WorldPosition, UnityTexture2DArray Textur
         float mask = SAMPLE_TEXTURE2D_ARRAY_LOD(TextureArray.tex, TextureArray.samplerstate,
                                                 uv, _InteractorTexIndex[i], 0).r;
 
-        OutMask += mask * inside;
+        OutMask += mask * inside * vertical;
     }
 
     OutMask = saturate(OutMask);

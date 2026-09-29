@@ -32,11 +32,13 @@ public class InteractorManager : MonoBehaviour
     private readonly Vector4[] scales = new Vector4[MaxInteractors];
     private readonly Vector4[] rotations = new Vector4[MaxInteractors];
     private readonly float[] texIndices = new float[MaxInteractors];
+    private readonly float[] reaches = new float[MaxInteractors];
 
     private static readonly int DataId = Shader.PropertyToID("_InteractorData");
     private static readonly int ScaleId = Shader.PropertyToID("_InteractorScale");
     private static readonly int RotationId = Shader.PropertyToID("_InteractorRotation");
     private static readonly int TexIndexId = Shader.PropertyToID("_InteractorTexIndex");
+    private static readonly int ReachId = Shader.PropertyToID("_InteractorReach");
     private static readonly int CountId = Shader.PropertyToID("_InteractorCount");
 
     private void Start() => Refresh();
@@ -80,6 +82,7 @@ public class InteractorManager : MonoBehaviour
             scales[count] = it.Scale;
             rotations[count] = it.Rotation;
             texIndices[count] = it.TextureIndex;
+            reaches[count] = it.HeightReach;
             count++;
         }
 
@@ -88,5 +91,6 @@ public class InteractorManager : MonoBehaviour
         Shader.SetGlobalVectorArray(ScaleId, scales);
         Shader.SetGlobalVectorArray(RotationId, rotations);
         Shader.SetGlobalFloatArray(TexIndexId, texIndices);
+        Shader.SetGlobalFloatArray(ReachId, reaches);
     }
 }
