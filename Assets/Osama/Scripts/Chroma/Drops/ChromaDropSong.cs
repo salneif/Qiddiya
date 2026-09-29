@@ -1,13 +1,15 @@
 using UnityEngine;
 
 /// <summary>
-/// لحن الالتقاط: كل قطرةٍ نغمةٌ من <c>Drop_Note</c>، وكل قطرةٍ خلال ١٫٢ ث من التي قبلها
-/// تصعد درجةً في السلّم الخماسي — صفّ القطرات يُسمع سلّمًا يُعزف لا نقرًا يتكرّر.
-/// وحين تنقطع سلسلةٌ من خمسٍ فأكثر يُختم اللحن بـ<c>Combo_End</c>.
+/// لحن الالتقاط: كل قطرةٍ نغمةٌ من <c>Drop_Note</c>، وكل قطرةٍ خلال <see cref="Window"/>
+/// من التي قبلها تصعد درجةً في السلّم الخماسي — صفّ القطرات يُسمع سلّمًا يُعزف لا نقرًا
+/// يتكرّر. وحين تنقطع سلسلةٌ من خمسٍ فأكثر يُختم اللحن بـ<c>Combo_End</c>.
 ///
 /// <b>السلّم يبدأ تحت نغمة المقطع برابعة</b> (صول تحت دو): <see cref="ChromaSfx"/> يسقف
 /// الطبقة عند ×٣، أي ١٩ نصف درجة. والسلّم من دو يبلغ ٢٤ فتُسحق درجاته الأخيرة في
 /// درجةٍ واحدة؛ ومن صول يتّسع كله (١١ درجة) ويبقى على نغمات دو الخماسيّة نفسها.
+/// وبعد القمّة تدور درجاته الخمس العليا: صعودٌ يتجدّد إلى آخر الأثر، لا نغمةٌ واحدة
+/// حادّة (×٣) تُنقر عشرين مرّة.
 ///
 /// <b>ودفعةٌ من القطرات لا تُسمع ضجّة</b>: النغمات تُصفّ وتُعزف بفاصلٍ قصير، فخمس عشرة
 /// قطرةً تُلتقط معًا تصير عَفقةً سريعة صاعدة. والزمن زمن اللعب: الإيقاف يجمّد السلسلة
@@ -15,7 +17,15 @@ using UnityEngine;
 /// </summary>
 internal sealed class ChromaDropSong
 {
-    private const float Window = 1.2f;
+    /// <summary>صمتٌ يقطع السلسلة على مسارٍ بقطرةٍ كل ١٫٦ م.</summary>
+    private const float BaseWindow = 1.2f;
+
+    /// <summary>وكل خطوة تفريقٍ في المسار (٣٫٢ م بدل ١٫٦) تُمهلها هذا.</summary>
+    private const float WindowPerStride = 0.7f;
+
+    /// <summary>الدرجات العليا التي تدور بعد القمّة.</summary>
+    private const int TopLoop = 5;
+
     private const int ChordAt = 5;
     private const float Gap = 0.055f;
     private const int Backlog = 8;
@@ -32,6 +42,15 @@ internal sealed class ChromaDropSong
     /// <summary>طول السلسلة الجارية (٠ = لا سلسلة).</summary>
     public int Combo { get; private set; }
 
+    /// <summary>أطول صمتٍ بين قطرتين في سلسلةٍ واحدة.</summary>
+    public float Window { get; private set; } = BaseWindow;
+
+    /// <summary>
+    /// المسار أخذ قطرةً من كل <paramref name="stride"/>: الماشي في ستيم (٢٫٥ م/ث) يبلغ
+    /// التالية بعد ١٫٣ ث لا ٠٫٦، فالنافذة الثابتة كانت تقطع كل سلسلةٍ في المراحل الطويلة.
+    /// </summary>
+    public void Spread(int stride) => Window = BaseWindow + WindowPerStride * Mathf.Max(0, stride - 1);
+
     /// <summary>التقاطٌ جديد: يمدّ السلسلة أو يبدأ غيرها، ويصفّ نغمته.</summary>
     public void Pickup(bool golden, float now)
     {
@@ -46,7 +65,8 @@ internal sealed class ChromaDropSong
         }
 
         if (queued == Backlog) return;   // دفعةٌ كبيرة: تكفي ثمانٍ تُسمع، والعدّ لا ينقص
-        float step = Steps[Mathf.Min(Combo - 1, Steps.Length - 1)];
+        int n = Combo - 1;
+        float step = Steps[n < Steps.Length ? n : Steps.Length - TopLoop + (n - Steps.Length) % TopLoop];
         queue[(head + queued) % Backlog] = step;
         queued++;
     }
@@ -72,6 +92,7 @@ internal sealed class ChromaDropSong
         Combo = 0;
         lastPickup = -10f;
         nextNoteAt = 0f;
+        Window = BaseWindow;
     }
 
     private void Finish()

@@ -6,8 +6,8 @@ using Object = UnityEngine.Object;
 
 /// <summary>
 /// أين توضع القطرات في مرحلةٍ لم يرسمها أحدٌ لها: مسارٌ بين معالم المرحلة — بداية
-/// اللاعب ونقاط الحفظ والأعلام وقواعدها والبوابات — وقطرةٌ كل ١٫٦ م على كل مقطع،
-/// وحلقةٌ صغيرة حول كل نقطة حفظ، وثلاث قطراتٍ ذهبية خارج الطريق بقليل.
+/// اللاعب ونقاط الحفظ والأعلام وقواعدها والبوابات وأبواب النقل ووجهاتها — وقطرةٌ كل
+/// ١٫٦ م على كل مقطع، وحلقةٌ صغيرة حول كل نقطة حفظ، وثلاث قطراتٍ ذهبية خارج الطريق بقليل.
 ///
 /// <b>المعرّف ثابتٌ بين الزيارات</b>، وإلا عادت قطرةٌ جُمعت أو اختفت أخرى لم تُجمع.
 /// فالمعالم تُلتقط لحظة تحميل السين (<see cref="Capture"/>) قبل أن يحرّك <c>Start</c>
@@ -18,6 +18,10 @@ using Object = UnityEngine.Object;
 /// <b>المسار شجرة لا سلسلة</b>: كل معلمٍ يُربط بأقرب معلمٍ سبق ربطه، بدءًا من اللاعب
 /// (أقرب جارٍ ينمو من البداية). السلسلة كانت تقفز في السيرك من البوابة إلى العلم عبر
 /// المرحلة كلها، والشجرة تربط الكواليس ببعضها ثم بالبداية — ترتيب المرحلة نفسه.
+///
+/// <b>وباب النقل ووجهته وصلٌ بلا مشي</b> (خيام السيرك، ممرّات ستيم): مناطق لا يصل بينها
+/// إلا بابٌ ينقل كانت الشجرة تربطها بخطٍّ مستقيم عبر الجدران — فخرج من بداية السيرك
+/// أثران إلى المدرّجات، وبقي الباب الوحيد المفتوح بلا أثر.
 ///
 /// وكل مقطع يُمشى من طرفيه نحو منتصفه: الجدار الذي يقطع المقطع لا يحرم إلا ما بعده،
 /// فيبقى عند كل معلمٍ أثرٌ يدلّ على الذي بعده.
@@ -74,6 +78,7 @@ public sealed class ChromaDropPlanner
         public int slot;          // يُبنى منه المعرّف: "<السين>:<slot>"
         public Vector3 ground;
         public Collider floor;
+        public Vector3 local;     // الأرض بإحداثيّات أرضها لحظة الفحص — المركب يمشي والتخطيط يطول
         public int colour;        // رقمٌ في لوحة الألوان؛ الذهبية تتجاهله
         public bool golden;
         public float phase;       // طور التمايل: الأثر يتموّج من معلمه للخارج
@@ -86,6 +91,7 @@ public sealed class ChromaDropPlanner
     {
         public readonly List<Vector3> anchors = new List<Vector3>();
         public readonly List<Vector3> checkpoints = new List<Vector3>();
+        public readonly List<Vector2Int> jumps = new List<Vector2Int>();   // بابٌ ينقل: رقما طرفيه في anchors
         public bool hasStart;
     }
 
@@ -147,6 +153,7 @@ public sealed class ChromaDropPlanner
 
         foreach (Vector3 c in layout.checkpoints) Merge(layout.anchors, c);
         foreach (Vector3 r in rest) Merge(layout.anchors, r);
+        AddTeleports(layout);
         return layout;
     }
 
@@ -165,14 +172,40 @@ public sealed class ChromaDropPlanner
             if (o is Component c && c != null) into.Add(c.transform.position);
     }
 
-    private static void Merge(List<Vector3> anchors, Vector3 point)
+    /// <summary>
+    /// أبواب النقل (<c>TeleportTent</c>) ووجهاتها معالم، وكل بابٍ مع وجهته وصلٌ في
+    /// <see cref="Tree"/>. والمطفأة منها أيضًا: أبواب السيرك الأخرى تُفتح بعد العلم.
+    /// </summary>
+    private static void AddTeleports(Layout layout)
     {
-        foreach (Vector3 a in anchors)
+        Type type = typeof(ChromaDropPlanner).Assembly.GetType("TeleportTent");
+        if (type == null) return;
+
+        var doors = new List<Component>();
+        foreach (Object o in Object.FindObjectsByType(type, FindObjectsInactive.Include, FindObjectsSortMode.None))
+            if (o is Component c && c != null) doors.Add(c);
+        doors.Sort((a, b) => Compare(a.transform.position, b.transform.position));
+
+        foreach (Component door in doors)
         {
+            if (!ChromaDropProbe.Read(door, "destination", out Transform to) || to == null) continue;
+            int from = Merge(layout.anchors, door.transform.position);
+            int into = Merge(layout.anchors, to.position);
+            if (from != into) layout.jumps.Add(new Vector2Int(from, into));
+        }
+    }
+
+    /// <summary>يضيف المعلم إلا إن قاربه معلمٌ سبقه، ويرجع رقم الباقي منهما.</summary>
+    private static int Merge(List<Vector3> anchors, Vector3 point)
+    {
+        for (int i = 0; i < anchors.Count; i++)
+        {
+            Vector3 a = anchors[i];
             Vector2 flat = new Vector2(a.x - point.x, a.z - point.z);
-            if (flat.sqrMagnitude < MergeFlat * MergeFlat && Mathf.Abs(a.y - point.y) < MergeTall) return;
+            if (flat.sqrMagnitude < MergeFlat * MergeFlat && Mathf.Abs(a.y - point.y) < MergeTall) return i;
         }
         anchors.Add(point);
+        return anchors.Count - 1;
     }
 
     private static int Compare(Vector3 a, Vector3 b)
@@ -190,9 +223,12 @@ public sealed class ChromaDropPlanner
     private int work;
 
     // لماذا وقفت الآثار — تُطبع سطرًا واحدًا لكل سين
-    private int anchorCount, edgeCount, stride = 1, noGround, walls, hazards, cramped;
+    private int anchorCount, doorCount, edgeCount, stride = 1, noGround, walls, hazards, cramped;
 
     public ChromaDropPlanner(ChromaDropProbe probe) => this.probe = probe;
+
+    /// <summary>المسار أخذ قطرةً من كل كم (١ = بلا تفريق) — يُقرأ بعد <see cref="Plan"/>.</summary>
+    public int Stride => stride;
 
     /// <summary>
     /// سطرٌ يقول ما حدث: كم معلمًا، وكم قطرةً من كل نوع، ولماذا وقفت الآثار. اقرأه قبل
@@ -207,7 +243,7 @@ public sealed class ChromaDropPlanner
             else if (s.trail >= 0) route++;
             else ring++;
         }
-        return $"[ChromaDrops] {scene}: {anchorCount} معالم، {edgeCount} مقاطع — مسار {route}" +
+        return $"[ChromaDrops] {scene}: {anchorCount} معالم، {doorCount} أبواب نقل، {edgeCount} مقاطع — مسار {route}" +
                (stride > 1 ? $" (واحدة من كل {stride})" : "") + $"، حلقات {ring}، ذهبية {gold}. " +
                $"وقف الأثر: بلا أرض {noGround}، جدار {walls}، خطر {hazards}. مواضع تُخطّيت: {cramped}.";
     }
@@ -224,15 +260,22 @@ public sealed class ChromaDropPlanner
         uint seed = Hash(scene);
 
         var anchors = new List<Vector3>(layout.anchors);
-        if (!layout.hasStart) anchors.Insert(0, start);
+        var jumps = new List<Vector2Int>(layout.jumps);
+        if (!layout.hasStart)
+        {
+            // البداية أوّل المعالم دائمًا، فأرقام أطراف الأبواب تتأخّر معها
+            anchors.Insert(0, start);
+            for (int i = 0; i < jumps.Count; i++) jumps[i] += Vector2Int.one;
+        }
 
         int count = anchors.Count;
         var grounds = new Vector3[count];
         var grounded = new bool[count];
         for (int i = 0; i < count; i++) grounded[i] = Settle(anchors[i], out grounds[i]);
 
-        List<Vector2Int> edges = Tree(anchors);
+        List<Vector2Int> edges = Tree(anchors, jumps);
         anchorCount = count;
+        doorCount = jumps.Count;
         edgeCount = edges.Count;
 
         // ١) المسار: كل مقطعٍ من طرفيه
@@ -298,7 +341,7 @@ public sealed class ChromaDropPlanner
 
             accepted.Add(new Spot
             {
-                slot = firstSlot + k - 1, ground = hit.point, floor = hit.collider,
+                slot = firstSlot + k - 1, ground = hit.point, floor = hit.collider, local = Local(hit),
                 colour = k - 1, phase = -0.6f * k, trail = trail, rank = rank++,
             });
             level = hit.point.y;
@@ -381,7 +424,7 @@ public sealed class ChromaDropPlanner
 
             accepted.Add(new Spot
             {
-                slot = firstSlot + j, ground = hit.point, floor = hit.collider,
+                slot = firstSlot + j, ground = hit.point, floor = hit.collider, local = Local(hit),
                 colour = j, phase = j * 1.05f,
             });
         }
@@ -427,7 +470,7 @@ public sealed class ChromaDropPlanner
 
                     accepted.Add(new Spot
                     {
-                        slot = firstSlot + k, ground = hit.point, floor = hit.collider,
+                        slot = firstSlot + k, ground = hit.point, floor = hit.collider, local = Local(hit),
                         golden = true, phase = k * 2.1f,
                     });
                     placed = true;
@@ -447,6 +490,12 @@ public sealed class ChromaDropPlanner
         return true;
     }
 
+    /// <summary>
+    /// موضع الإصابة بإحداثيّات ما أصابته، لحظتها: التخطيط يمتدّ على إطارات، والقارب الذي
+    /// فُحص في أوّلها يكون قد مشى قبل أن تولد قطرته.
+    /// </summary>
+    private static Vector3 Local(RaycastHit hit) => hit.collider.transform.InverseTransformPoint(hit.point);
+
     private bool Crowded(Vector3 drop, float gap)
     {
         float g2 = gap * gap;
@@ -460,8 +509,11 @@ public sealed class ChromaDropPlanner
     /// <summary>
     /// أقرب جارٍ ينمو من البداية (Prim): كل معلمٍ يُربط بأقرب ما رُبط قبله. التعادل
     /// للأصغر رقمًا فالشجرة واحدةٌ في كل زيارة.
+    ///
+    /// والباب ووجهته (<paramref name="jumps"/>) بلا طول: من بلغ أحدهما بلغ الآخر قبل أيّ
+    /// مشي، ولا يُرجع بينهما مقطع — المقاطع المرجَعة كلها تُمشى.
     /// </summary>
-    private static List<Vector2Int> Tree(List<Vector3> points)
+    private static List<Vector2Int> Tree(List<Vector3> points, List<Vector2Int> jumps)
     {
         int n = points.Count;
         var edges = new List<Vector2Int>(Mathf.Max(0, n - 1));
@@ -470,8 +522,29 @@ public sealed class ChromaDropPlanner
         var linked = new bool[n];
         var best = new float[n];
         var from = new int[n];
-        linked[0] = true;
-        for (int i = 1; i < n; i++) best[i] = (points[i] - points[0]).sqrMagnitude;
+        var hop = new bool[n];      // وصلته وجهةُ بابٍ لا مشي
+
+        void Link(int node)
+        {
+            linked[node] = true;
+            for (int i = 0; i < n; i++)
+            {
+                if (linked[i]) continue;
+                float d = (points[i] - points[node]).sqrMagnitude;
+                if (d < best[i]) { best[i] = d; from[i] = node; hop[i] = false; }
+            }
+            foreach (Vector2Int j in jumps)
+            {
+                int other = j.x == node ? j.y : j.y == node ? j.x : -1;
+                if (other < 0 || linked[other]) continue;
+                best[other] = 0f;
+                from[other] = node;
+                hop[other] = true;
+            }
+        }
+
+        for (int i = 1; i < n; i++) best[i] = float.MaxValue;
+        Link(0);
 
         for (int added = 1; added < n; added++)
         {
@@ -479,15 +552,8 @@ public sealed class ChromaDropPlanner
             for (int i = 1; i < n; i++)
                 if (!linked[i] && (pick < 0 || best[i] < best[pick])) pick = i;
 
-            linked[pick] = true;
-            edges.Add(new Vector2Int(from[pick], pick));
-
-            for (int i = 1; i < n; i++)
-            {
-                if (linked[i]) continue;
-                float d = (points[i] - points[pick]).sqrMagnitude;
-                if (d < best[i]) { best[i] = d; from[i] = pick; }
-            }
+            if (!hop[pick]) edges.Add(new Vector2Int(from[pick], pick));
+            Link(pick);
         }
         return edges;
     }

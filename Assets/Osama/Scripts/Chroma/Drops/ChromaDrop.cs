@@ -52,11 +52,20 @@ internal sealed class ChromaDrop
         (state == Phase.Resting || state == Phase.Arcing) && now >= collectibleAt;
 
     /// <summary>يربطها بأرضها بإحداثيّات الأرض نفسها، فتركب ما تحرّك.</summary>
-    public void Anchor(Vector3 ground, Collider collider)
+    public void Anchor(Vector3 ground, Collider collider) =>
+        Anchor(ground, collider, collider != null ? collider.transform.InverseTransformPoint(ground) : ground);
+
+    /// <summary>
+    /// كالتي قبلها بإحداثيّاتٍ حُسبت لحظة فحص الأرض (<paramref name="local"/>)، لا بعد
+    /// التخطيط كله: القارب يكون قد مشى، فتولد القطرة بجانبه فوق الماء. وأرضٌ ذهبت في
+    /// الأثناء تُبقيها حيث فُحصت، ثم تذوب في أوّل <see cref="Follow"/>.
+    /// </summary>
+    public void Anchor(Vector3 ground, Collider collider, Vector3 local)
     {
-        rest = ground + Vector3.up * ChromaDropProbe.Hover;
         floor = collider;
-        floorLocal = collider != null ? collider.transform.InverseTransformPoint(ground) : ground;
+        bool held = collider != null;
+        floorLocal = held ? local : ground;
+        rest = (held ? collider.transform.TransformPoint(local) : ground) + Vector3.up * ChromaDropProbe.Hover;
     }
 
     /// <summary>
