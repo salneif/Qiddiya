@@ -118,6 +118,7 @@ public class PauseMenuFix : MonoBehaviour
 
         // خزانة الأزياء مفتوحة: الدائرة تُغلقها هي، وOptions لا يفتح لوحةً فوقها
         if (ChromaWardrobe.IsOpen) return false;
+        if (ChromaPhotoMode.IsOpen) return false;   // وضع التصوير: الدائرة تُخرج منه هو
 
         // تركيبة الإنقاذ تنتهي بـOptions، فلولا هذا لمات اللاعب وفُتحت له القائمة معًا
         if (pad.startButton.wasPressedThisFrame && !StuckRescue.SuppressPause)

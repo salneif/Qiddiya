@@ -21,6 +21,8 @@ internal sealed class ChromaDrop
     public int value = 1;
     public Color color;
     public bool golden, big;
+    public bool runaway;          // الوجه الهارب: ينطّ بعيدًا حين يُقترب منه
+    public int hopsLeft;
 
     public Vector3 rest;          // موضع الطفو
     public Collider floor;        // أرضها — تتبعها إن تحرّكت، وتذوب إن اختفت

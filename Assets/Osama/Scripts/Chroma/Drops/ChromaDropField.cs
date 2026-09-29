@@ -133,6 +133,11 @@ public class ChromaDropField : MonoBehaviour
 
     private ChromaDropZones zones;
     private ChromaDropProbe probe;
+
+    // الوجه الهارب: وجهٌ في منتصف المسار ينطّ بعيدًا ثلاث مرّات ثم يُمسك
+    private const int RunawayValue = 25, RunawayHops = 3;
+    private const float RunawayNear = 4f, HopMin = 7f, HopMax = 12f;
+    private readonly List<ChromaDropPlanner.Spot> route = new List<ChromaDropPlanner.Spot>();
     private ChromaDropPlanner.Layout layout;
     private Transform stage;
     private ParticleSystem sparks, rings;
@@ -243,16 +248,26 @@ public class ChromaDropField : MonoBehaviour
         float now = Time.time;
         int collected = 0;
 
+        // مواضع المسار تبقى: الهارب ينطّ إليها. والهارب نفسه وسط المسار، ثابتٌ لكل سين
+        route.Clear();
+        foreach (ChromaDropPlanner.Spot s in spots) if (s.trail >= 0) route.Add(s);
+        int runnerSlot = route.Count >= 6 ? route[route.Count / 2].slot : -1;
+
         foreach (ChromaDropPlanner.Spot s in spots)
         {
             string id = scene + ":" + s.slot;
             if (ChromaBank.IsCollected(id)) { collected++; continue; }
+            bool runner = s.slot == runnerSlot && !s.golden;
 
             var d = new ChromaDrop
             {
                 id = id,
                 golden = s.golden,
-                value = s.golden ? GoldenValue : 1,
+                value = s.golden ? GoldenValue : runner ? RunawayValue : 1,
+                runaway = runner,
+                big = runner,
+                hopsLeft = runner ? RunawayHops : 0,
+                collectibleAt = runner ? float.PositiveInfinity : 0f,
                 color = s.golden ? style.gold : style.Palette(s.colour),
                 phase = s.phase,
                 state = ChromaDrop.Phase.Waiting,
@@ -425,6 +440,11 @@ public class ChromaDropField : MonoBehaviour
                         continue;
                     }
                     Hover(d, now);
+                    if (alive && d.runaway && d.hopsLeft > 0 && (d.rest - chest).sqrMagnitude < RunawayNear * RunawayNear)
+                    {
+                        Hop(d, chest, now);
+                        continue;
+                    }
                     if (alive) Attract(d, chest, now);
                     if (now >= d.nextSpark && away < SparkRange * SparkRange) Twinkle(d, now);
                     break;
@@ -441,7 +461,7 @@ public class ChromaDropField : MonoBehaviour
                     else
                     {
                         d.position = Vector3.LerpUnclamped(d.from, d.rest, k) + Vector3.up * (d.height * 4f * k * (1f - k));
-                        d.scale = Mathf.Min(1f, 0.4f + 1.6f * k);
+                        d.scale = d.runaway ? 1f : Mathf.Min(1f, 0.4f + 1.6f * k);
                     }
                     if (alive) Attract(d, chest, now);
                     break;
@@ -498,6 +518,40 @@ public class ChromaDropField : MonoBehaviour
         if (!rescue && probe != null && !probe.Sight(chest, d.position)) return;
 
         Pull(d, chest, now);
+    }
+
+    /// <summary>
+    /// الهارب ينطّ: إلى موضعٍ على المسار أبعد عن اللاعب بـ٧–١٢ م ويُرى منه. لا موضع = يستسلم.
+    /// بعد آخر نطّة يصير قابلًا للإمساك حين يهبط.
+    /// </summary>
+    private void Hop(ChromaDrop d, Vector3 chest, float now)
+    {
+        float here = (d.rest - chest).sqrMagnitude;
+        ChromaDropPlanner.Spot best = null;
+        float bestScore = float.MinValue;
+        foreach (ChromaDropPlanner.Spot s in route)
+        {
+            Vector3 spot = s.ground + Vector3.up * ChromaDropProbe.Hover;
+            float jump = Vector3.Distance(spot, d.rest);
+            float away = (spot - chest).sqrMagnitude;
+            if (jump < HopMin || jump > HopMax || away <= here) continue;
+            if (probe != null && !probe.Sight(d.position, spot)) continue;
+            float score = away - Mathf.Abs(jump - 9f) * 4f;
+            if (score > bestScore) { bestScore = score; best = s; }
+        }
+
+        d.hopsLeft = best == null ? 0 : d.hopsLeft - 1;
+        if (best == null) { d.collectibleAt = now; return; }
+
+        d.from = d.position;
+        d.Anchor(best.ground, best.floor, best.local);
+        float distance = Vector3.Distance(d.from, d.rest);
+        d.state = ChromaDrop.Phase.Arcing;
+        d.since = now;
+        d.duration = 0.55f + 0.05f * distance;
+        d.height = 1.4f + 0.2f * distance;
+        d.collectibleAt = d.hopsLeft > 0 ? float.PositiveInfinity : now + d.duration + 0.15f;
+        ChromaSfx.Play("Hop", 0.8f, ChromaSfx.Semitones(3f * (RunawayHops - d.hopsLeft)));
     }
 
     /// <summary>تطير إلى صدره الآن، بلا شرط مدًى ولا نظر.</summary>
@@ -587,7 +641,7 @@ public class ChromaDropField : MonoBehaviour
         LastColor = d.color;
 
         Burst(d, at);
-        song.Pickup(d.golden, now);
+        song.Pickup(d.golden || d.runaway, now);
         // الوجوه العادية بلا اهتزاز — جمعها سريعٌ متتابع، ونقرةٌ لكل ثلاثة كانت طنينًا دائمًا
         if (d.golden) PadRumble.Tick();
 
@@ -596,7 +650,12 @@ public class ChromaDropField : MonoBehaviour
         else if (now >= nextPulse && ColorZones.Pulse(at, 2.2f, 0.12f, 0.1f, 0.55f)) nextPulse = now + PulseGap;
 
         Bank(d.value, at);
-        ChromaFunEvents.RaiseDropCollected(d.id, d.golden, false, at);
+        ChromaFunEvents.RaiseDropCollected(d.id, d.golden, d.runaway, at);
+        if (d.runaway)
+        {
+            ChromaSfx.Play("Drop_Gold", 0.9f, 1.1f);
+            ChromaFunEvents.RaiseRunawayCaught(at);
+        }
     }
 
     /// <summary>
