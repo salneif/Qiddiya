@@ -268,6 +268,11 @@ public class ChromaDropField : MonoBehaviour
 
         PlacedTotal = spots.Count;
         PlacedCollected = collected;
+
+        var goldenIds = new List<string>();
+        foreach (ChromaDropPlanner.Spot s in spots)
+            if (s.golden) goldenIds.Add(sceneName + ":" + s.slot);
+        ChromaFunEvents.RaiseDropsPlanned(sceneName, spots.Count, goldenIds.ToArray());
     }
 
     /// <summary>حاوية السين: القطرات وجسيماتها ومراسي اللون — تموت مع السين كلّها.</summary>
@@ -591,6 +596,7 @@ public class ChromaDropField : MonoBehaviour
         else if (now >= nextPulse && ColorZones.Pulse(at, 2.2f, 0.12f, 0.1f, 0.55f)) nextPulse = now + PulseGap;
 
         Bank(d.value, at);
+        ChromaFunEvents.RaiseDropCollected(d.id, d.golden, false, at);
     }
 
     /// <summary>

@@ -426,6 +426,9 @@ public class LevelPortal : MonoBehaviour
             // من أين جاء اللاعب — يقرأها PlayerSpawnRouter في الوجهة
             GameProgress.Instance.SetLastScene(SceneManager.GetActiveScene().name);
 
+        // الخروج مؤكَّد الآن (بعد كل الشروط): الميداليات والأوسمة تسمعه
+        ChromaFunEvents.RaiseLevelLeft(SceneManager.GetActiveScene().name, sceneName);
+
         // الشاشة تتولّى التعتيم بنفسها، فلا نجمع تعتيمين فوق بعض
         if (useLoadingScreen && LoadingOverlay.Go(sceneName)) yield break;
 
