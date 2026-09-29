@@ -10,7 +10,7 @@ using UnityEngine.SceneManagement;
 ///
 /// <b>خطوةٌ لكل قدمٍ تنزل، لا تسجيلٌ يدور.</b> تسجيل المشي الطويل كان يُسمع كأنه فيديو
 /// يشتغل تحت اللاعب: إيقاعه إيقاع من سجّله لا إيقاع الشخصية. فقُطِّع إلى تسع خطواتٍ
-/// منفصلة (<c>Plate_01..09</c>)، لكل واحدة تلاشٍ قصير في أولها يمنع الطقّة وذيلٌ ناعم في
+/// منفصلة (<c>Tile_01..10</c>)، لكل واحدة تلاشٍ قصير في أولها يمنع الطقّة وذيلٌ ناعم في
 /// آخرها، وتُشغَّل <b>لحظة نزول القدم في الأنميشن</b>: عظمتا القدمين في الهيكل البشري
 /// تُراقَبان، والقدم التي كانت تهبط ثم ثبتت قرب أدنى نقطة لها = خطوة. فيبقى الصوت على
 /// الإيقاع مهما تغيّرت سرعة المشي أو الجري.
@@ -28,7 +28,7 @@ using UnityEngine.SceneManagement;
 public class FootstepSounds : MonoBehaviour
 {
     private const string Folder = "Footsteps/";
-    private const string StepPrefix = "Plate_";
+    private const string StepPrefix = "Tile_";   // خطوات حذاءٍ على بلاط، تسجيل استوديو (Epidemic، من أصوات رزان)
 
     /// <summary>أقلّ سرعة تُعدّ مشيًا — دون ذلك انزلاقٌ أو دفعُ جدار.</summary>
     private const float MoveThreshold = 0.6f;
