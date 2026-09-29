@@ -18,7 +18,8 @@ public static class ChromaDropArt
 
     public static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
-    private static Material orb, glow, ring, sparkle;
+    private static Material orb, glow, ring, sparkle, face;
+    private static bool faceLooked;
     private static Mesh ball, card;
     private static MaterialPropertyBlock block;
     private static ParticleSystem.EmitParams emit;
@@ -27,7 +28,8 @@ public static class ChromaDropArt
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics()
     {
-        orb = glow = ring = sparkle = null;
+        orb = glow = ring = sparkle = face = null;
+        faceLooked = false;
         ball = card = null;
         block = null;
         emit = new ParticleSystem.EmitParams();
@@ -55,6 +57,19 @@ public static class ChromaDropArt
     }
 
     public static Material Orb => orb;
+
+    /// <summary>
+    /// <b>وجه الولد</b> — القطرة عملةٌ بوجهه تلفّ حول نفسها (طلب أسامة: "الفيس هو النقاط").
+    /// إن غابت مادّته رجعت القطرة كرةً كما كانت.
+    /// </summary>
+    public static Material Face
+    {
+        get
+        {
+            if (!faceLooked) { faceLooked = true; face = Resources.Load<Material>("Chroma/Face/FxFaceCoin"); }
+            return face;
+        }
+    }
     public static Material Glow => glow;
     public static Material Ring => ring;
 

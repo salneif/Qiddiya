@@ -13,10 +13,18 @@ internal sealed class ChromaDropView
     private readonly GameObject root;
     private readonly Transform orb, glow, ring;
     private readonly MeshRenderer orbRenderer, glowRenderer, ringRenderer;
+    private readonly bool isFace;
+
+    /// <summary>الوجه بطاقةٌ مربّعة والكرة قطرها متر — الوجه أعرض ليُقرأ من بعيد.</summary>
+    private const float FaceScale = 2f;
+    /// <summary>كم يأخذ الوجه من لون قطرته: لمسةٌ من القوس، والوجه يبقى وجهه.</summary>
+    private const float FaceTint = 0.45f;
 
     private ChromaDropView(GameObject root, Transform orb, Transform glow, Transform ring,
-                           MeshRenderer orbRenderer, MeshRenderer glowRenderer, MeshRenderer ringRenderer)
+                           MeshRenderer orbRenderer, MeshRenderer glowRenderer, MeshRenderer ringRenderer,
+                           bool isFace)
     {
+        this.isFace = isFace;
         this.root = root;
         this.orb = orb;
         this.glow = glow;
@@ -36,7 +44,10 @@ internal sealed class ChromaDropView
 
         var orbGo = new GameObject("Orb");
         orbGo.transform.SetParent(root.transform, false);
-        MeshRenderer orbRenderer = ChromaDropArt.Renderer(orbGo, ChromaDropArt.Ball, ChromaDropArt.Orb);
+        Material face = ChromaDropArt.Face;
+        MeshRenderer orbRenderer = face != null
+            ? ChromaDropArt.Renderer(orbGo, ChromaDropArt.Card, face)
+            : ChromaDropArt.Renderer(orbGo, ChromaDropArt.Ball, ChromaDropArt.Orb);
 
         var glowGo = new GameObject("Glow");
         glowGo.transform.SetParent(root.transform, false);
@@ -49,7 +60,7 @@ internal sealed class ChromaDropView
 
         root.SetActive(false);
         return new ChromaDropView(root, orbGo.transform, glowGo.transform, ringGo.transform,
-                                  orbRenderer, glowRenderer, ringRenderer);
+                                  orbRenderer, glowRenderer, ringRenderer, face != null);
     }
 
     public void Show(bool withRing)
@@ -73,7 +84,8 @@ internal sealed class ChromaDropView
     {
         if (root == null) return;
         root.transform.position = at;
-        orb.localScale = new Vector3(size, size, size);
+        float s = isFace ? size * FaceScale : size;
+        orb.localScale = new Vector3(s, s, s);
         orb.localRotation = Quaternion.Euler(0f, spin, 0f);
 
         glow.rotation = facing;
@@ -88,7 +100,7 @@ internal sealed class ChromaDropView
 
     public void Paint(Color orbColor, Color glowColor, Color ringColor)
     {
-        ChromaDropArt.Tint(orbRenderer, orbColor);
+        ChromaDropArt.Tint(orbRenderer, isFace ? Color.Lerp(Color.white, orbColor, FaceTint) : orbColor);
         ChromaDropArt.Tint(glowRenderer, glowColor);
         if (ring != null && ring.gameObject.activeSelf) ChromaDropArt.Tint(ringRenderer, ringColor);
     }

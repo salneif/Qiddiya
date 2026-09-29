@@ -249,6 +249,7 @@ public class ChromaWardrobe : MonoBehaviour
         previousTimeScale = Time.timeScale;
         Time.timeScale = 0f;
         IsOpen = true;
+        ChromaHud.ForceVisible = true;    // رصيدك ظاهرٌ وأنت تختار، واللعبة موقوفة
         Mute();
 
         cursor = ChromaSkins.Equipped;
@@ -272,6 +273,7 @@ public class ChromaWardrobe : MonoBehaviour
     {
         if (!IsOpen) return;
         IsOpen = false;
+        ChromaHud.ForceVisible = false;
 
         if (restoreTime && Time.timeScale == 0f) Time.timeScale = previousTimeScale;
         Unmute();

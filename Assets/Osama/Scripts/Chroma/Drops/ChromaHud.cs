@@ -395,8 +395,10 @@ public class ChromaHud : MonoBehaviour
 
         icon = Rect("Icon", corner, new Vector2(0.5f, 0.5f), IconAt, new Vector2(IconSize, IconSize));
         iconColor = style.Palette(0);
-        fill = Picture("Fill", icon, Resources.Load<Sprite>("Chroma/Fx/DropFill"), iconColor);
-        Picture("Ink", icon, Resources.Load<Sprite>("Chroma/Fx/DropInk"), style.ink);
+        // وجه الولد هو العدّاد (وحبره فيه)؛ وإن غاب رجعت القطرة بحبرها
+        Sprite face = Resources.Load<Sprite>("Chroma/Face/FaceIcon");
+        fill = Picture("Fill", icon, face != null ? face : Resources.Load<Sprite>("Chroma/Fx/DropFill"), iconColor);
+        if (face == null) Picture("Ink", icon, Resources.Load<Sprite>("Chroma/Fx/DropInk"), style.ink);
 
         count = Label("Count", corner, body, CountSize, new Vector2(1f, 0.5f), new Vector2(-CountRight, CountY),
                       new Vector2(260f, 80f), TextAlignmentOptions.Right, style.paper, style.ink);
