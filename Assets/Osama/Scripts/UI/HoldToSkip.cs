@@ -33,6 +33,7 @@ public class HoldToSkip : MonoBehaviour
     private const float LingerSeconds = 4f;     // كم يبقى معروضًا قبل أن ينسحب
     private const float LeaveSeconds = 1.1f;    // تعتيمٌ قبل المغادرة
     private const float ArriveSeconds = 0.7f;   // وانكشافٌ بعد الوصول
+    private const float RiseSeconds = 1.5f;     // ودخول صوت الفيلم من الصمت
 
     /// <summary>
     /// وجهة الانترو. سكربتا علي يعودان بها إلى <c>Hub-Menu</c> — أي أن اللاعب يضغط
@@ -68,8 +69,9 @@ public class HoldToSkip : MonoBehaviour
     }
 
     private MonoBehaviour skipper;          // VideoSkipButton الخاص بعلي
-    private VideoPlayer video;              // صوته لا يمرّ بـAudioListener، فنخفته بيده
-    private float[] tracks;                 // شدّة كل مسار صوتي قبل أن نخفته
+    private VideoPlayer video;              // صوته لا يمرّ بـAudioListener، فنُدخله ونخفته بيدنا
+    private float[] tracks;                 // شدّة كل مسار صوتي، منها ندخل ونخفت
+    private Coroutine rising;               // دخول صوت الفيلم، يقف حيث وصل إن غادرنا قبل تمامه
     private MonoBehaviour ender;            // A_AfterIntro — ينقل وحده حين ينتهي العدّ
     private FieldInfo enderClock;
     private GameObject skipButton;          // زرّه، نُخفيه فما يبقى تخطّيان
@@ -78,7 +80,6 @@ public class HoldToSkip : MonoBehaviour
     private Image fill;
     private Image black;
     private Text label;
-    private float volume = 1f;
 
     private float held;
     private float shown;
@@ -166,7 +167,7 @@ public class HoldToSkip : MonoBehaviour
         new Color(color.r, color.g, color.b, alpha);
 
     /// <summary>
-    /// شدّة مسارات الفيديو الصوتية قبل أن نلمسها.
+    /// شدّة مسارات الفيديو الصوتية كما هي الآن، فمنها يبدأ الدخول والخفوت.
     ///
     /// مخرج صوت الفيديو هنا <b>Direct</b>، أي أنه يخرج من المشغّل نفسه ولا يمرّ
     /// بـ<c>AudioListener</c> ولا بأي <c>AudioSource</c> — فخفض صوت اللعبة كلها لا
@@ -193,6 +194,26 @@ public class HoldToSkip : MonoBehaviour
 
         for (ushort i = 0; i < tracks.Length; i++)
             video.SetDirectAudioVolume(i, tracks[i] * scale);
+    }
+
+    /// <summary>
+    /// صوت الفيلم يدخل كما يدخل صوت كل سين في <see cref="ChromaAudioFade"/>: من الصمت إلى
+    /// الرئيسي الذي حفظه اللاعب، والشدّة مربّع الزمن. وأقصر منه: الصوت هنا جزءٌ من الفيلم
+    /// نفسه، فلا نُضيّع أوّله.
+    /// </summary>
+    private IEnumerator Rise()
+    {
+        float master = ChromaAudioFade.Master;
+
+        for (float t = 0f; t < RiseSeconds; t += Time.unscaledDeltaTime)
+        {
+            float k = t / RiseSeconds;
+            Tracks(master * k * k);
+            yield return null;
+        }
+
+        Tracks(master);
+        rising = null;
     }
 
     /// <summary>أي زرّ: كيبورد أو يد أو ماوس. العصيّ لا تُحسب إمساكًا.</summary>
@@ -229,11 +250,16 @@ public class HoldToSkip : MonoBehaviour
     ///
     /// و<c>load</c> يكون false حين تكون نهاية الفيديو الطبيعية هي التي ستنقل: نعتّم
     /// لها ولا ننقل نحن، فالنقل يبقى نقلها.
+    ///
+    /// صوت السين يخفته <see cref="ChromaAudioFade"/> — المالك الوحيد لـ<c>AudioListener</c>،
+    /// فلا يتصارع كاتبان عليه — ويُدخله وحده في السين التالي. وصوت الفيديو نخفته هنا بيدنا.
     /// </summary>
     private IEnumerator Leave(bool load)
     {
-        volume = AudioListener.volume;
+        // الخفوت يبدأ من حيث وصل الدخول، لا من شدّة الفيلم الأصلية
+        if (rising != null) { StopCoroutine(rising); rising = null; }
         RememberTracks();
+        ChromaAudioFade.FadeOut(LeaveSeconds);
 
         for (float t = 0f; t < LeaveSeconds; t += Time.unscaledDeltaTime)
         {
@@ -242,13 +268,11 @@ public class HoldToSkip : MonoBehaviour
 
             black.color = Fade(Color.black, k);
             group.alpha *= 1f - k;               // التلميح ينطفئ مع اللقطة
-            AudioListener.volume = volume * (1f - k);
             Tracks(1f - k);
             yield return null;
         }
 
         black.color = Color.black;
-        AudioListener.volume = 0f;
         Tracks(0f);
 
         // ووقفٌ تامّ بعد الخفوت: شاشة التحميل تبقى ثوانٍ والانترو ما زال حيًّا تحتها،
@@ -260,7 +284,7 @@ public class HoldToSkip : MonoBehaviour
 
     /// <summary>
     /// والانكشاف في السين الجديد: لو لم نفعل بقي السواد على شاشته، ولو أطفأناه دفعةً
-    /// عادت الومضة التي عتّمنا من أجلها.
+    /// عادت الومضة التي عتّمنا من أجلها. (والصوت يعلو وحده مع دخول كل سين.)
     /// </summary>
     private IEnumerator Arrive()
     {
@@ -268,11 +292,9 @@ public class HoldToSkip : MonoBehaviour
         {
             float k = Mathf.Clamp01(t / ArriveSeconds);
             black.color = Fade(Color.black, 1f - k * k * (3f - 2f * k));
-            AudioListener.volume = Mathf.Lerp(0f, volume, k);
             yield return null;
         }
 
-        AudioListener.volume = volume;
         black.color = Fade(Color.black, 0f);
         skipping = false;
         canvas.gameObject.SetActive(false);
@@ -299,6 +321,12 @@ public class HoldToSkip : MonoBehaviour
         video = FindAnyObjectByType<VideoPlayer>();
         tracks = null;
         if (video == null) return;
+
+        // صوت الفيلم لا يمرّ بالسامع، فلا يدخل مع صوت السين ولا يسمع الرئيسي: كان يبدأ
+        // بكامل قوّته بعد صمت شاشة التحميل، ولو خفض اللاعب الرئيسي
+        RememberTracks();
+        if (rising != null) StopCoroutine(rising);
+        rising = StartCoroutine(Rise());
 
         foreach (var component in FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
         {

@@ -121,7 +121,7 @@ public class AudioFadeZone : MonoBehaviour
             {
                 if (targets[i] == null) continue;
                 float to = volume < 0f ? originalVolumes[i] : volume;
-                targets[i].volume = Mathf.Lerp(from[i], to, k);
+                targets[i].volume = Blend(from[i], to, k);
             }
             yield return null;
         }
@@ -137,6 +137,16 @@ public class AudioFadeZone : MonoBehaviour
 
         Log("اكتمل التلاشي — On Fade Complete ينطلق الآن.");
         onFadeComplete?.Invoke();
+    }
+
+    /// <summary>
+    /// المزج على جذر الشدّة لا عليها: التقدّم خطّي على الجذر، فيُسمع التلاشي متّصلًا حتى
+    /// آخره. الخطّي على الشدّة يبقى عاليًا معظم المدّة ثم يهوي في آخرها — فيبدو كأنه قُطع.
+    /// </summary>
+    private static float Blend(float from, float to, float k)
+    {
+        float root = Mathf.Lerp(Mathf.Sqrt(Mathf.Max(0f, from)), Mathf.Sqrt(Mathf.Max(0f, to)), k);
+        return root * root;
     }
 
     private void Log(string message)

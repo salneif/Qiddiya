@@ -55,6 +55,9 @@ public class LoadingOverlay : MonoBehaviour
     [SerializeField] private float fadeOutDuration = 0.45f;
     [Tooltip("انتظار بعد تفعيل المشهد ليمرّ Start فيه (نقل اللاعب) قبل أن تنكشف الشاشة")]
     [SerializeField] private float holdAfterActivate = 0.15f;
+    [Tooltip("خفوت صوت المشهد الذي نغادره. أطول من ظهور الشاشة عمدًا: يذوب الصوت تحتها بدل " +
+             "أن ينقطع لحظة تغطّي. ويدخل صوت الوجهة وحده بعد التفعيل (ChromaAudioFade)")]
+    [SerializeField] private float audioFadeOut = 0.9f;
 
     [Header("الشكل")]
     [Tooltip("تعتيم فوق الصورة ليقرأ البار والنص")]
@@ -466,10 +469,14 @@ public class LoadingOverlay : MonoBehaviour
     /// <summary>
     /// التسلسل كاملًا: ظهور → تحميل بلا تفعيل → بار أربع ثوانٍ → تفعيل → انتظار
     /// لحظة ليمرّ Start في الوجهة → اختفاء.
+    ///
+    /// والصوت يخفت مع الظهور ويبقى صامتًا طوال التحميل: المشهد القديم حيٌّ تحت الشاشة
+    /// ثوانيَ، وموسيقاه كانت تعزف فوق صورة الوجهة ثم تنقطع لحظة التفعيل.
     /// </summary>
     private IEnumerator Run(string sceneName)
     {
         busy = true;
+        ChromaAudioFade.FadeOut(audioFadeOut);
         Apply(Lookup(sceneName));
         fill = 0f;
         frameTimer = 0f;
@@ -486,6 +493,7 @@ public class LoadingOverlay : MonoBehaviour
         if (operation == null)
         {
             Debug.LogError($"[LoadingOverlay] فشل تحميل \"{sceneName}\".");
+            ChromaAudioFade.FadeIn(audioFadeOut);   // بقينا حيث كنّا، فيعود صوته
             yield return FadeTo(0f, fadeOutDuration);
             Hide();
             busy = false;
@@ -730,6 +738,7 @@ public class LoadingOverlay : MonoBehaviour
     private void OnValidate()
     {
         barDuration = Mathf.Max(0f, barDuration);
+        audioFadeOut = Mathf.Max(0f, audioFadeOut);
         runnerFps = Mathf.Max(0f, runnerFps);
         runnerBob = Mathf.Max(0f, runnerBob);
         tipSeconds = Mathf.Max(1f, tipSeconds);
