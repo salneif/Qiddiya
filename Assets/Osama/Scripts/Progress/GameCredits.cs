@@ -206,11 +206,18 @@ public class GameCredits : MonoBehaviour
     private AudioSource musicSource;
     private bool playing;
 
+    /// <summary>هل النهاية تعمل الآن؟ من يرسم فوق اللعب (عدّادات، مؤثّرات) يسكت لها.</summary>
+    public static bool Rolling { get; private set; }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetRolling() => Rolling = false;
+
     /// <summary>يشغّل النهاية — اربطه بـ <c>FlagBase.On All Flags Planted</c>.</summary>
     public void Play()
     {
         if (playing) return;
         playing = true;
+        Rolling = true;
         StartCoroutine(Sequence());
     }
 
@@ -368,7 +375,11 @@ public class GameCredits : MonoBehaviour
         if (waveGraph.IsValid()) waveGraph.Destroy();
     }
 
-    private void OnDestroy() => StopWave();
+    private void OnDestroy()
+    {
+        StopWave();
+        if (playing) Rolling = false;
+    }
 
     // ───────────────────────────── الفقرات ─────────────────────────────
 

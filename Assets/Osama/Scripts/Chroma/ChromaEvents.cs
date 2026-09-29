@@ -34,6 +34,22 @@ public static class ChromaEvents
     /// <summary>مات اللاعب.</summary>
     public static event Action<Vector3> PlayerDied;
 
+    /// <summary>
+    /// سينٌ يُلعب فيه: ليس القائمة ولا الانترو. يُحسب مرّة عند تحميل كل سين.
+    /// </summary>
+    public static bool GameplayScene { get; private set; }
+
+    /// <summary>
+    /// <b>لا احتفال الآن</b>: قائمة أو انترو، أو شاشة تحميل فوق الشاشة، أو الكريديت يعمل.
+    /// كل عدّادٍ ومؤثّرٍ فوق اللعب يسأل هذا قبل أن يظهر.
+    /// </summary>
+    public static bool Quiet => !GameplayScene || LoadingOverlay.IsBusy || GameCredits.Rolling;
+
+    private const string MenuScene = "Hub-Menu";
+
+    private static bool IsGameplay(Scene scene) =>
+        scene.IsValid() && scene.name != MenuScene && scene.name != NewGameScene;
+
     /// <summary>أقلّ مدة بين حدثين من النوع نفسه — لحظة واحدة يُبلغ عنها نظامان.</summary>
     private const float Dedupe = 0.5f;
 
@@ -48,6 +64,7 @@ public static class ChromaEvents
     private static void ResetStatics()
     {
         CheckpointReached = FlagPickedUp = FlagPlanted = PuzzleSolved = GateOpened = PlayerDied = null;
+        GameplayScene = false;
         lastCheckpoint = lastPicked = lastPlanted = lastSolved = lastGate = lastDied = -10f;
         lastCarried = FlagId.None;
         lastPlantedCount = 0;
@@ -73,6 +90,8 @@ public static class ChromaEvents
         SceneManager.sceneLoaded += OnSceneLoaded;
         Application.quitting -= ChromaBank.Flush;
         Application.quitting += ChromaBank.Flush;
+
+        GameplayScene = IsGameplay(SceneManager.GetActiveScene());
     }
 
     // ---------- من يُبلغ ----------
@@ -156,6 +175,7 @@ public static class ChromaEvents
     private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         ChromaBank.Flush();
+        if (mode == LoadSceneMode.Single) GameplayScene = IsGameplay(scene);
 
         // الرجوع للقائمة من الإيقاف لا يمسح التقدّم، فكان اللاعب التالي يبدأ بأعلام من
         // قبله ويظهر في ستيم عند مدخلٍ غير البداية. اللعبة الجديدة تبدأ من الانترو دائمًا
