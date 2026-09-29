@@ -78,7 +78,6 @@ public class HoldToSkip : MonoBehaviour
     private Image fill;
     private Image black;
     private Text label;
-    private float volume = 1f;
 
     private float held;
     private float shown;
@@ -229,11 +228,14 @@ public class HoldToSkip : MonoBehaviour
     ///
     /// و<c>load</c> يكون false حين تكون نهاية الفيديو الطبيعية هي التي ستنقل: نعتّم
     /// لها ولا ننقل نحن، فالنقل يبقى نقلها.
+    ///
+    /// صوت السين يخفته <see cref="ChromaAudioFade"/> — المالك الوحيد لـ<c>AudioListener</c>،
+    /// فلا يتصارع كاتبان عليه — ويُدخله وحده في السين التالي. وصوت الفيديو نخفته هنا بيدنا.
     /// </summary>
     private IEnumerator Leave(bool load)
     {
-        volume = AudioListener.volume;
         RememberTracks();
+        ChromaAudioFade.FadeOut(LeaveSeconds);
 
         for (float t = 0f; t < LeaveSeconds; t += Time.unscaledDeltaTime)
         {
@@ -242,13 +244,11 @@ public class HoldToSkip : MonoBehaviour
 
             black.color = Fade(Color.black, k);
             group.alpha *= 1f - k;               // التلميح ينطفئ مع اللقطة
-            AudioListener.volume = volume * (1f - k);
             Tracks(1f - k);
             yield return null;
         }
 
         black.color = Color.black;
-        AudioListener.volume = 0f;
         Tracks(0f);
 
         // ووقفٌ تامّ بعد الخفوت: شاشة التحميل تبقى ثوانٍ والانترو ما زال حيًّا تحتها،
@@ -260,7 +260,7 @@ public class HoldToSkip : MonoBehaviour
 
     /// <summary>
     /// والانكشاف في السين الجديد: لو لم نفعل بقي السواد على شاشته، ولو أطفأناه دفعةً
-    /// عادت الومضة التي عتّمنا من أجلها.
+    /// عادت الومضة التي عتّمنا من أجلها. (والصوت يعلو وحده مع دخول كل سين.)
     /// </summary>
     private IEnumerator Arrive()
     {
@@ -268,11 +268,9 @@ public class HoldToSkip : MonoBehaviour
         {
             float k = Mathf.Clamp01(t / ArriveSeconds);
             black.color = Fade(Color.black, 1f - k * k * (3f - 2f * k));
-            AudioListener.volume = Mathf.Lerp(0f, volume, k);
             yield return null;
         }
 
-        AudioListener.volume = volume;
         black.color = Fade(Color.black, 0f);
         skipping = false;
         canvas.gameObject.SetActive(false);
