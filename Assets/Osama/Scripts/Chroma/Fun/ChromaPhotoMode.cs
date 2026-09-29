@@ -288,7 +288,7 @@ public class ChromaPhotoMode : MonoBehaviour
         capturing = true;
         hints.SetActive(false);
         saved.gameObject.SetActive(false);
-        caption.text = LevelName() + "   ·   " + DateTime.Now.ToString("dd.MM.yyyy");
+        caption.text = LevelName() + "   -   " + DateTime.Now.ToString("dd.MM.yyyy");
         frame.SetActive(true);
         flash.color = new Color(1f, 1f, 1f, 0f);
 

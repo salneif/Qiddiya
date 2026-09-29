@@ -37,6 +37,12 @@ public class ChromaSkinToast : MonoBehaviour
 
     private readonly Queue<int> pending = new Queue<int>();
 
+    /// <summary>لافتات الأوسمة والميداليات والصور (<see cref="ChromaFunEvents.Announce"/>) — طابورها
+    /// منفصل: فتح الخزانة يمسح لافتات الأزياء (رآها) لا هذه.</summary>
+    private readonly Queue<ChromaFunEvents.Banner> funPending = new Queue<ChromaFunEvents.Banner>();
+    private TextMeshProUGUI headerText, detailText;
+    private RectTransform hintRow;
+
     private Canvas canvas;
     private RectTransform root;
     private bool built, failed;
@@ -62,7 +68,11 @@ public class ChromaSkinToast : MonoBehaviour
         ChromaBank.RunReset += OnRunReset;
         InputScheme.Changed += OnSchemeChanged;
         SceneManager.sceneLoaded += OnSceneLoaded;
+        ChromaFunEvents.Announced += OnAnnounced;
+        while (ChromaFunEvents.TakeBacklog(out ChromaFunEvents.Banner b)) funPending.Enqueue(b);
     }
+
+    private void OnAnnounced(ChromaFunEvents.Banner banner) => funPending.Enqueue(banner);
 
     private void OnDisable()
     {
@@ -70,6 +80,7 @@ public class ChromaSkinToast : MonoBehaviour
         ChromaBank.RunReset -= OnRunReset;
         InputScheme.Changed -= OnSchemeChanged;
         SceneManager.sceneLoaded -= OnSceneLoaded;
+        ChromaFunEvents.Announced -= OnAnnounced;
     }
 
     /// <summary>كل حدٍّ تجاوزه المجموع بهذه القطرات زيٌّ فُتح الآن.</summary>
@@ -111,6 +122,7 @@ public class ChromaSkinToast : MonoBehaviour
         }
 
         if (bannerAt < 0f && pending.Count > 0 && Build()) StartBanner(pending.Dequeue());
+        else if (bannerAt < 0f && funPending.Count > 0 && Build()) StartFun(funPending.Dequeue());
         if (chipPending && Build())
         {
             chipPending = false;
@@ -159,6 +171,9 @@ public class ChromaSkinToast : MonoBehaviour
     {
         bannerSkin = ChromaSkins.Get(skin);
         Color accent = bannerSkin.AccentAt(Time.unscaledTime);
+        headerText.text = "NEW SKIN UNLOCKED";
+        hintRow.gameObject.SetActive(true);
+        detailText.gameObject.SetActive(false);
 
         nameText.text = bannerSkin.Name;
         nameShadow.text = bannerSkin.Name;
@@ -175,6 +190,27 @@ public class ChromaSkinToast : MonoBehaviour
         ChromaSfx.Play("Skin_Unlock", 0.9f);
         PadRumble.Tick();
         StartChip();
+    }
+
+    /// <summary>لافتةٌ عامّة: وسام، ميدالية، صورة — بنفس الشكل، بلا دعوةٍ للخزانة.</summary>
+    private void StartFun(ChromaFunEvents.Banner b)
+    {
+        bannerSkin = null;
+        headerText.text = b.header;
+        nameText.text = nameShadow.text = b.title;
+        nameText.color = b.accent;
+        medalFill.color = b.accent;
+        medalLetter.text = string.IsNullOrEmpty(b.letter) ? "!" : b.letter;
+        hintRow.gameObject.SetActive(false);
+        detailText.text = b.line ?? "";
+        detailText.gameObject.SetActive(!string.IsNullOrEmpty(b.line));
+
+        banner.anchoredPosition = new Vector2(0f, BannerHidden);
+        medal.localScale = Vector3.zero;
+        banner.gameObject.SetActive(true);
+        bannerAt = 0f;
+        ChromaSfx.Play(string.IsNullOrEmpty(b.sfx) ? "Skin_Unlock" : b.sfx, 0.85f);
+        PadRumble.Tick();
     }
 
     private void AnimateBanner(float dt)
@@ -204,7 +240,7 @@ public class ChromaSkinToast : MonoBehaviour
         medal.localScale = Vector3.one * ChromaWardrobeArt.BackOut((t - 0.12f) / 0.35f);
         if (sparkle != null) sparkle.localRotation = Quaternion.Euler(0f, 0f, -t * 40f);
 
-        if (bannerSkin.Rainbow)
+        if (bannerSkin != null && bannerSkin.Rainbow)
         {
             Color accent = bannerSkin.AccentAt(Time.unscaledTime);
             nameText.color = accent;
@@ -307,7 +343,7 @@ public class ChromaSkinToast : MonoBehaviour
         medalLetter = ChromaWardrobeArt.NewText(medal, "Letter", true, 80f, Color.white, TextAlignmentOptions.Center);
         ChromaWardrobeArt.Stretch(medalLetter);
 
-        TextMeshProUGUI header = ChromaWardrobeArt.NewText(banner, "Header", false, 28f,
+        TextMeshProUGUI header = headerText = ChromaWardrobeArt.NewText(banner, "Header", false, 28f,
                                                            new Color(ink.r, ink.g, ink.b, 0.7f),
                                                            TextAlignmentOptions.Left);
         header.text = "NEW SKIN UNLOCKED";
@@ -321,7 +357,18 @@ public class ChromaSkinToast : MonoBehaviour
         ChromaWardrobeArt.Place(nameText, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(188f, -54f),
                                 new Vector2(560f, 74f));
 
-        RectTransform hint = ChromaWardrobeArt.NewRow(banner, "Hint", 12f);
+        // عناوين الأوسمة أطول من أسماء الأزياء: يصغر الخطّ ليتّسع
+        nameText.enableAutoSizing = nameShadow.enableAutoSizing = true;
+        nameText.fontSizeMin = nameShadow.fontSizeMin = 36f;
+        nameText.fontSizeMax = nameShadow.fontSizeMax = 72f;
+
+        detailText = ChromaWardrobeArt.NewText(banner, "Detail", false, 26f, new Color(ink.r, ink.g, ink.b, 0.8f),
+                                               TextAlignmentOptions.Left);
+        ChromaWardrobeArt.Place(detailText, new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(188f, -148f),
+                                new Vector2(560f, 36f));
+        detailText.gameObject.SetActive(false);
+
+        RectTransform hint = hintRow = ChromaWardrobeArt.NewRow(banner, "Hint", 12f);
         ChromaWardrobeArt.Place(hint, new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(188f, -148f),
                                 new Vector2(10f, 36f));
         bannerKey = new ChromaWardrobePrompt(hint, 34f, ChromaWardrobePrompt.Pad.Select, "TAB");

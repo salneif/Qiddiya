@@ -185,6 +185,7 @@ public class ChromaWardrobe : MonoBehaviour
         {
             if (!StayOpen(out bool restoreTime, out bool instant)) Close(restoreTime, instant, false);
             else if (PausePressed()) Close(true, true, false);
+            else if (ChromaAchievementsPage.Shown) { }   // صفحة الأوسمة فوقها تأخذ الأزرار
             else if (ClosePressed()) Close(true, false, true);
             else
             {
