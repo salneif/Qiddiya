@@ -33,8 +33,8 @@ public class FootstepSounds : MonoBehaviour
     /// <summary>أقلّ سرعة تُعدّ مشيًا — دون ذلك انزلاقٌ أو دفعُ جدار.</summary>
     private const float MoveThreshold = 0.6f;
 
-    private const float StepVolume = 0.45f;
-    private const float LandVolume = 0.6f;
+    private const float StepVolume = 0.24f;   // خطوةٌ تُحسّ ولا تطغى على الموسيقى
+    private const float LandVolume = 0.45f;
 
     /// <summary>شدّة أوّل خطوة بعد الوقوف، ثم يعلو إلى الكامل خلال <see cref="WarmUp"/>.</summary>
     private const float FirstStepVolume = 0.55f;
@@ -44,7 +44,10 @@ public class FootstepSounds : MonoBehaviour
     private const float RestBeforeFirstStep = 0.4f;
 
     /// <summary>أقرب مسافةٍ زمنية بين خطوتين — تمنع خطوتين من قدمٍ واحدة ترتجف.</summary>
-    private const float MinStepGap = 0.16f;
+    private const float MinStepGap = 0.2f;
+
+    /// <summary>القدم نفسها لا تنزل مرّتين في أقلّ من هذا — ارتجاف المنحنى ليس خطوة.</summary>
+    private const float FootRefractory = 0.28f;
 
     /// <summary>بعد صوت الهبوط لا خطوة فورًا — وإلا سُمع الهبوط مرّتين.</summary>
     private const float QuietAfterLanding = 0.2f;
@@ -96,6 +99,7 @@ public class FootstepSounds : MonoBehaviour
         public float lastHeight;
         public float low;
         public bool falling;
+        public float lastPlant = -10f;
     }
 
     private readonly List<AudioClip> steps = new List<AudioClip>();
@@ -219,8 +223,8 @@ public class FootstepSounds : MonoBehaviour
     {
         if (!useFeet || left == null || left.bone == null || right.bone == null) return false;
 
-        bool l = Landed(left, dt);
-        bool r = Landed(right, dt);
+        bool l = Landed(left, right, dt);
+        bool r = Landed(right, left, dt);
         return l || r;
     }
 
@@ -228,7 +232,7 @@ public class FootstepSounds : MonoBehaviour
     /// القدم كانت تهبط، والآن ثبتت قرب أدنى نقطةٍ لها = لامست الأرض. الارتفاع نسبةً
     /// لجسم اللاعب فالصعود على الدرج لا يُحسب هبوطًا، والحدود بأطوال الساق فتصلح لأي حجم.
     /// </summary>
-    private bool Landed(Foot foot, float dt)
+    private bool Landed(Foot foot, Foot other, float dt)
     {
         float h = foot.bone.position.y - body.position.y;
         if (dt <= 0f) { foot.lastHeight = h; return false; }
@@ -243,9 +247,12 @@ public class FootstepSounds : MonoBehaviour
             return false;
         }
 
-        if (foot.falling && rate > -SettleRate && h < foot.low + ContactMargin * legLength)
+        // القدم النازلة فعلًا هي السفلى من الاثنتين؛ والأخرى في الهواء أو تغادر
+        if (foot.falling && rate > -SettleRate && h < foot.low + ContactMargin * legLength &&
+            h <= other.lastHeight + 0.02f * legLength && Time.time - foot.lastPlant >= FootRefractory)
         {
             foot.falling = false;
+            foot.lastPlant = Time.time;
             return true;
         }
         return false;
