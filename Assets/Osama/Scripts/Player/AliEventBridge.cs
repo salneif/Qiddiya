@@ -157,9 +157,14 @@ public class AliEventBridge : MonoBehaviour
     {
         CheckpointFace.Announce();
         PadRumble.Tick();
+        ChromaEvents.RaiseCheckpoint(ChromaEvents.PlayerPosition());
     }
 
-    private void OnAliDeath() => PadRumble.Hit();
+    private void OnAliDeath()
+    {
+        PadRumble.Hit();
+        ChromaEvents.RaisePlayerDied(ChromaEvents.PlayerPosition());
+    }
 
     /// <summary>السقوط في الماء ليس موتًا تامًّا عنده، فضربته أخفّ.</summary>
     private void OnAliFall() => PadRumble.Play(0.5f, 0.3f, 0.22f);

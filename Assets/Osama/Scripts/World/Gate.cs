@@ -331,6 +331,7 @@ public class Gate : MonoBehaviour
         isOpen = true;
         Play(openSound);
         PadRumble.At(transform.position, 0.5f, 0.22f, 0.6f, 18f);
+        ChromaEvents.RaiseGateOpened(transform.position);
     }
 
     public void Close()

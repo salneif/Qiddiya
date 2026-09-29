@@ -111,6 +111,7 @@ public class RotaryPuzzle : MonoBehaviour
     private void Solve()
     {
         IsSolved = true;
+        ChromaEvents.RaisePuzzleSolved(transform.position);
         if (debugLog) Debug.Log($"[RotaryPuzzle] {name}: انحلّ — On Solved ينطلق الآن.", this);
 
         if (solvedSound != null && audioSource != null)

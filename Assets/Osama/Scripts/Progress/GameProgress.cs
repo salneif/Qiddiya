@@ -60,6 +60,9 @@ public class GameProgress : MonoBehaviour
     /// <summary>يُطلق عند أي تغيّر في التقدّم (حمل/زرع/إعادة ضبط).</summary>
     public static event Action Changed;
 
+    /// <summary>يُطلق عند مسح التقدّم كله — لعبة جديدة.</summary>
+    public static event Action ProgressReset;
+
     /// <summary>العلم المحمول الآن (None = لا شيء).</summary>
     public FlagId CarriedFlag => carriedFlag;
 
@@ -85,6 +88,7 @@ public class GameProgress : MonoBehaviour
     {
         instance = null;
         Changed = null;
+        ProgressReset = null;
     }
 
     private void Awake()
@@ -151,6 +155,7 @@ public class GameProgress : MonoBehaviour
         PlayerPrefs.Save();
 
         Changed?.Invoke();
+        ProgressReset?.Invoke();
     }
 
     private void Commit()

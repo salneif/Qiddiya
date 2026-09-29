@@ -127,7 +127,12 @@ public class ClockPuzzleHint : MonoBehaviour
                     / 360f * 720f;   // الفرق بالدقائق، بأقصر الطريقين حول القرص
 
         bool hit = off <= tolerance;
-        if (hit && !solved) solved = true;
+        if (hit && !solved)
+        {
+            solved = true;
+            // ساعةٌ محلولةٌ أصلًا لحظة دخول السين ليست حلًّا يُحتفل به
+            if (Time.timeSinceLevelLoad > 1.5f) ChromaEvents.RaisePuzzleSolved(transform.position);
+        }
 
         if (tintByDistance) Tint(off, hit);
         if (ghostRenderers != null) Ghosts(hit);

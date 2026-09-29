@@ -74,6 +74,18 @@ public class FlagItem : MonoBehaviour
     public event Action PickedUp;
     public event Action Placed;
 
+    /// <summary>أيّ علمٍ التُقط / غُرس في مقبسه — لمن يستمع لكل الأعلام دون ربطٍ بكلّ واحد.
+    /// (العودة للبيت بعد الموت لا تُعدّ غرسًا.)</summary>
+    public static event Action<FlagItem> AnyPickedUp;
+    public static event Action<FlagItem> AnyPlanted;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStaticEvents()
+    {
+        AnyPickedUp = null;
+        AnyPlanted = null;
+    }
+
     /// <summary>هل العلم محمول الآن؟</summary>
     public bool IsHeld { get; private set; }
 
@@ -236,6 +248,7 @@ public class FlagItem : MonoBehaviour
         PadRumble.Pickup();
         onPickedUp?.Invoke();
         PickedUp?.Invoke();
+        AnyPickedUp?.Invoke(this);
     }
 
     /// <summary>
@@ -395,5 +408,6 @@ public class FlagItem : MonoBehaviour
         Play(placeSound);
         onPlaced?.Invoke();
         Placed?.Invoke();
+        AnyPlanted?.Invoke(this);
     }
 }
