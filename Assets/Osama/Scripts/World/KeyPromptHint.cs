@@ -99,7 +99,8 @@ public class KeyPromptHint : MonoBehaviour
 
         // الحجم بفضاء العالم مهما كان تكبير الكائن الأب
         Vector3 s = transform.lossyScale;
-        icon3d.transform.localScale = new Vector3(Div(size, s.x), Div(size, s.y), Div(size, s.z));
+        float k = size * PromptIcons.Scale;
+        icon3d.transform.localScale = new Vector3(Div(k, s.x), Div(k, s.y), Div(k, s.z));
         icon3d.color = new Color(1f, 1f, 1f, alpha);
         icon3d.enabled = true;
 

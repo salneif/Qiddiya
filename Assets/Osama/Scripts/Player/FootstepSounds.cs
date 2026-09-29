@@ -63,6 +63,9 @@ public class FootstepSounds : MonoBehaviour
     /// </summary>
     private const float MinDropForLanding = 0.45f;
 
+    /// <summary>صوت الهبوط مُطفأ (أسامة: "شيل صوت لما يطيح"). الغبار يبقى صامتًا معه.</summary>
+    private static readonly bool LandingSound = false;
+
     /// <summary>للشخصيات بلا هيكلٍ بشري: خطوةٌ كل هذه المسافة (م).</summary>
     private const float StrideFallback = 0.85f;
 
@@ -192,7 +195,7 @@ public class FootstepSounds : MonoBehaviour
         bool realLanding = airTime >= MinAirForLanding && peakY - y >= MinDropForLanding;
         if (grounded) airTime = 0f;
 
-        if (grounded && !wasGrounded && realLanding && land != null)
+        if (LandingSound && grounded && !wasGrounded && realLanding && land != null)
         {
             source.pitch = Random.Range(0.92f, 1.06f);
             source.PlayOneShot(land, LandVolume * Random.Range(0.85f, 1f));

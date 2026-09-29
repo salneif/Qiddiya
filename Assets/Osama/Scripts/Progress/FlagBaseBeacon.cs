@@ -336,7 +336,7 @@ public class FlagBaseBeacon : MonoBehaviour
         Vector3 pos = anchor.position + Vector3.up * promptHeight;
         text.position = pos;
         // الحجم بفضاء العالم: القاعدة نفسها مكبّرة ×20، فبدون القسمة تطلع العلامة عملاقة
-        text.localScale = WorldScale(promptSize);
+        text.localScale = WorldScale(promptSize * (spritePrompt != null ? PromptIcons.Scale : 1f));
 
         // يواجه الكاميرا دائمًا فيُقرأ من أي زاوية
         if (cam != null)

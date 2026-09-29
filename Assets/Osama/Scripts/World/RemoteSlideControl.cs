@@ -413,7 +413,8 @@ public class RemoteSlideControl : MonoBehaviour
         r.transform.SetPositionAndRotation(pos, rot);
         // الحجم بفضاء العالم مهما كان تكبير الكائن الأب
         Vector3 s = transform.lossyScale;
-        r.transform.localScale = new Vector3(Div(keysSize, s.x), Div(keysSize, s.y), Div(keysSize, s.z));
+        float k = keysSize * PromptIcons.Scale;
+        r.transform.localScale = new Vector3(Div(k, s.x), Div(k, s.y), Div(k, s.z));
         r.color = new Color(1f, 1f, 1f, alpha);
         r.enabled = true;
     }

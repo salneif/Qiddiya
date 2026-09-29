@@ -29,7 +29,7 @@ public class ChromaSkinWearer : MonoBehaviour
 {
     private const float AuraRadius = 1f;
     private const float AuraReach = 1.3f;
-    private const bool AuraEnabled = false;
+    private static readonly bool AuraEnabled = false;
     /// <summary>في سين الأمان (السيرك) الهالة تلوّن الجسد وحده، بلا حلقةٍ على الأرض توهم بالحماية.</summary>
     private const float SafeAuraRadius = 0.35f, SafeAuraReach = 1f;
     private const float AuraRetry = 1f;

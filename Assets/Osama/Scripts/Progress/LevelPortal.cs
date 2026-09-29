@@ -217,12 +217,14 @@ public class LevelPortal : MonoBehaviour
     /// </summary>
     private void UpdateRumble(bool near, float dist)
     {
-        if (!near || leaving || rumbleStrength <= 0f) return;
+        // أسامة: المغلقة لا تهزّ أبدًا (كانت تهزّ واللغز لم يُحلّ بعد)، والمفتوحة من قربٍ فقط وبخفّة
+        const float RumbleRadius = 3.5f;
+        if (!near || leaving || rumbleStrength <= 0f || !IsUnlocked || dist > RumbleRadius) return;
 
-        float closeness = 1f - Mathf.Clamp01(dist / approachDistance);
+        float closeness = 1f - Mathf.Clamp01(dist / RumbleRadius);
         closeness *= closeness;                       // تشتدّ في المتر الأخير لا في الطريق كله
 
-        float strength = rumbleStrength * closeness * (IsUnlocked ? 1f : 0.45f);
+        float strength = rumbleStrength * 0.5f * closeness;
         PadRumble.Hold(strength, strength * 0.35f);
     }
 

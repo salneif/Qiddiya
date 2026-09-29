@@ -26,6 +26,15 @@ public static class PromptIcons
     public static Sprite For(Key key) => For(key, InputScheme.UsingGamepad);
 
     /// <summary>
+    /// تكبير علامات اليد: رسمة زرّ اليد فيها فراغٌ حوله أكثر من رسمة الكيبورد، فكانت تبدو
+    /// أصغر بكثير بنفس الحجم (أسامة: "الهنت صغير حق المربع").
+    /// </summary>
+    public const float PadBoost = 1.7f;
+
+    /// <summary>ما يُضرب فيه حجم العلامة الآن حسب الجهاز.</summary>
+    public static float Scale => InputScheme.UsingGamepad ? PadBoost : 1f;
+
+    /// <summary>
     /// ومثلها لجهازٍ بعينه.
     ///
     /// وإن لم توجد صورة اليد رجعنا لصورة الكيبورد: تلميحٌ بزرٍّ غير الذي في يده خيرٌ
