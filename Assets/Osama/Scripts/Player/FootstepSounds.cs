@@ -57,7 +57,11 @@ public class FootstepSounds : MonoBehaviour
     /// <c>isGrounded</c> يرتجف إطارًا على المنحدر والدرج، وكل رجفةٍ كانت "هبوطًا" له صوت.
     /// </summary>
     private const float MinAirForLanding = 0.25f;
-    private const float HardLandingSpeed = -4f;
+    /// <summary>
+    /// ونزولٌ حقيقي من أعلى نقطةٍ بلغها: القارب يحمل اللاعب ويهبط به مع الموج، و"السرعة"
+    /// وحدها كانت تُسمع هبوطًا كل موجة — أزعج صوتٍ في التوايلايت.
+    /// </summary>
+    private const float MinDropForLanding = 0.45f;
 
     /// <summary>للشخصيات بلا هيكلٍ بشري: خطوةٌ كل هذه المسافة (م).</summary>
     private const float StrideFallback = 0.85f;
@@ -122,7 +126,7 @@ public class FootstepSounds : MonoBehaviour
         instance != null && instance.scanned && !instance.silenced && instance.land != null;
 
     private Vector3 previous;
-    private float lastY, airTime, fallSpeed;
+    private float airTime, peakY;
     private bool wasGrounded = true;
     private bool silenced;
     private bool stepsSilenced;   // خطوات غيرنا تعمل هنا (ستيم) — نُسمع الهبوط وحده
@@ -162,7 +166,6 @@ public class FootstepSounds : MonoBehaviour
         if (dt <= 0f || dt > 0.1f)   // توقّف أو تهنيقة تحميل: لا نقيس سرعةً منها
         {
             previous = body.position;
-            lastY = previous.y;
             SampleFeet(0f);
             return;
         }
@@ -171,16 +174,15 @@ public class FootstepSounds : MonoBehaviour
         bool grounded = JumpPolish.Active ? JumpPolish.Grounded : controller == null || controller.isGrounded;
 
         float y = body.position.y;
-        float vy = (y - lastY) / dt;
-        lastY = y;
         if (!grounded)
         {
+            if (airTime <= 0f) peakY = y;
             airTime += dt;
-            fallSpeed = Mathf.Min(fallSpeed, vy);
+            peakY = Mathf.Max(peakY, y);
         }
 
-        bool realLanding = airTime >= MinAirForLanding || fallSpeed <= HardLandingSpeed;
-        if (grounded) { airTime = 0f; fallSpeed = 0f; }
+        bool realLanding = airTime >= MinAirForLanding && peakY - y >= MinDropForLanding;
+        if (grounded) airTime = 0f;
 
         if (grounded && !wasGrounded && realLanding && land != null)
         {
@@ -349,8 +351,7 @@ public class FootstepSounds : MonoBehaviour
         FindFeet();
 
         previous = body.position;
-        lastY = previous.y;
-        airTime = fallSpeed = 0f;
+        airTime = 0f;
         wasGrounded = true;
         walkingSince = -1f;
         stillSince = -10f;

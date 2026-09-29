@@ -29,6 +29,7 @@ public class ChromaSkinWearer : MonoBehaviour
 {
     private const float AuraRadius = 1f;
     private const float AuraReach = 1.3f;
+    private const bool AuraEnabled = false;
     /// <summary>في سين الأمان (السيرك) الهالة تلوّن الجسد وحده، بلا حلقةٍ على الأرض توهم بالحماية.</summary>
     private const float SafeAuraRadius = 0.35f, SafeAuraReach = 1f;
     private const float AuraRetry = 1f;
@@ -216,7 +217,9 @@ public class ChromaSkinWearer : MonoBehaviour
         Paint(look, dt);
 
         float since = Time.unscaledTime - celebratedAt;
-        Aura(skin != 0, since < BreathSeconds ? Mathf.Sin(since / BreathSeconds * Mathf.PI) : 0f);
+        // أسامة: اللون للأعلام وحدها — هي النور، وهي ما يُبعد الفئران. اللاعب بلا هالة لون؛
+        // لون زيّه يُرى حين يدخل نور علم. (AuraEnabled لإعادتها يومًا)
+        Aura(AuraEnabled && skin != 0, since < BreathSeconds ? Mathf.Sin(since / BreathSeconds * Mathf.PI) : 0f);
         Effects(skin, !ChromaEvents.Quiet && !dead && !altered, wasDead && !dead);
     }
 

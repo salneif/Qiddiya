@@ -29,22 +29,22 @@ using Object = UnityEngine.Object;
 public sealed class ChromaDropPlanner
 {
     /// <summary>بين قطرتين على المسار.</summary>
-    public const float Spacing = 1.6f;
+    public const float Spacing = 2.6f;   // أسامة: التوزيع كان مزدحمًا — خيطٌ هادئ لا سجّادة
 
     /// <summary>أقلّ بُعد بين أيّ قطرتين.</summary>
-    private const float MinGap = 1.2f;
+    private const float MinGap = 2f;
 
     /// <summary>سقف قطرات المسار في السين (الحلقات والذهبية فوقه).</summary>
-    public const int RouteCap = 70;
+    public const int RouteCap = 36;
 
     /// <summary>أبعد تفريقٍ للمسار حين يفوق السقف: قطرةٌ من كل هذا العدد.</summary>
     private const int MaxStride = 4;
 
-    public const int RingSize = 6;
+    public const int RingSize = 0;   // حلقات نقاط الحفظ كانت تكتّلًا غريبًا حول كل نقطة — أُلغيت
     private const float RingRadius = 2.4f;
 
-    public const int GoldenCount = 3;
-    private const float GoldenNear = 2.6f, GoldenFar = 4.6f;
+    public const int GoldenCount = 2;
+    private const float GoldenNear = 1.4f, GoldenFar = 2.4f;   // قرب المسار: جائزةٌ تُرى، لا تضيع
 
     /// <summary>الذهبية بعيدةٌ عن غيرها: جائزةٌ تُقصد، لا حبّةٌ في الصفّ.</summary>
     private const float GoldenGap = 2.2f;
@@ -300,7 +300,7 @@ public sealed class ChromaDropPlanner
         Cap(trail);
 
         // ٢) حلقات نقاط الحفظ
-        for (int c = 0; c < layout.checkpoints.Count; c++)
+        for (int c = 0; RingSize > 0 && c < layout.checkpoints.Count; c++)
         {
             IEnumerator ring = Ring(seed, c, slot + c * RingSize, layout.checkpoints[c]);
             while (ring.MoveNext()) yield return null;

@@ -69,8 +69,12 @@ public class ChromaDropField : MonoBehaviour
 
     private const int BurstLimit = 60;
     private const float BurstCollectable = 0.35f, BurstStagger = 0.045f;
-    private const float BurstAuto = 4f, BurstReach = 12f;
-    private const int CheckpointBurst = 6, GateBurst = 5, PuzzleBurst = 12, PickupBurst = 15;
+    private const float BurstAuto = 1.5f, BurstReach = 25f;   // لا تضيع: من جُمِّد (بوابة النهاية) تأتيه وحدها
+    // أقلّ عددًا وأثقل قيمة: دفعةٌ تُرى وتُجمع، لا مطرٌ يتقطّع له الإطار
+    private const int CheckpointBurst = 3, GateBurst = 3, PuzzleBurst = 5, PickupBurst = 6;
+    private const int SmallValue = 2;
+    /// <summary>أجسادٌ جاهزة في المخزون قبل أوّل دفعة — لا بناء كائناتٍ لحظة الحدث.</summary>
+    private const int Prewarm = 12;
     private const int PlantBurst = 5, PlantValue = 5;
     private const int GoldenValue = 10;
 
@@ -279,6 +283,7 @@ public class ChromaDropField : MonoBehaviour
             zones = new ChromaDropZones();
             zones.Build(stage);
             pool.Clear();
+            for (int i = 0; i < Prewarm; i++) pool.Push(ChromaDropView.Create(stage));
             hushed = false;
         }
 
@@ -612,8 +617,8 @@ public class ChromaDropField : MonoBehaviour
         for (int i = 0; i < drops.Count; i++)
         {
             ChromaDrop d = drops[i];
-            bool owed = d.state == ChromaDrop.Phase.Flying ||
-                        (d.id == null && hadChest && (d.position - lastChest).sqrMagnitude <= BurstReach * BurstReach);
+            // قطرات الدفعات كُسبت بحدثٍ فهي له أينما كانت — بوابة النهاية تنقله قبل أن يجمعها
+            bool owed = d.state == ChromaDrop.Phase.Flying || d.id == null;
             if (!owed) continue;
             if (d.id != null) ChromaBank.MarkCollected(d.id);
             Bank(d.value, d.position);
@@ -647,22 +652,22 @@ public class ChromaDropField : MonoBehaviour
 
     private void OnCheckpoint(Vector3 at)
     {
-        if (Listening() && FirstTime("checkpoint", Nearest(at))) Spill(at, CheckpointBurst, 1, false);
+        if (Listening() && FirstTime("checkpoint", Nearest(at))) Spill(at, CheckpointBurst, SmallValue, false);
     }
 
     private void OnGate(Vector3 at)
     {
-        if (Listening() && FirstTime("gate", at)) Spill(at, GateBurst, 1, false);
+        if (Listening() && FirstTime("gate", at)) Spill(at, GateBurst, SmallValue, false);
     }
 
     private void OnPuzzle(Vector3 at)
     {
-        if (Listening() && FirstTime("puzzle", at)) Spill(at, PuzzleBurst, 1, false);
+        if (Listening() && FirstTime("puzzle", at)) Spill(at, PuzzleBurst, SmallValue, false);
     }
 
     private void OnFlagPicked(Vector3 at)
     {
-        if (Listening() && FirstTime("flag", at)) Spill(at, PickupBurst, 1, false);
+        if (Listening() && FirstTime("flag", at)) Spill(at, PickupBurst, SmallValue, false);
     }
 
     /// <summary>
