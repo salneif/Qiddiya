@@ -8,8 +8,9 @@ using UnityEngine.UI;
 /// اسم المرحلة حين يدخلها اللاعب: <b>STEAM TOWN</b>، <b>THE HUB</b>، <b>TWILIGHT</b>،
 /// <b>THE CIRCUS</b> — وتحته جملةٌ قصيرة.
 ///
-/// بطاقة ورقٍ بإطار حبرٍ وظلّ (هويّة واجهات اللون نفسها)، الاسم يُكتب حرفًا حرفًا بخطّ
-/// السيرك، ثم الجملة، ثم يذوب كل شيء صاعدًا قليلًا ومتّسعًا. <b>أقلّ من خمس ثوانٍ</b>
+/// <b>كلامٌ وحده بلا خلفية</b> (طلب أسامة): حروفٌ بلون الورق وخلفها ظلّ حبرٍ مزاح، فتُقرأ
+/// فوق أيّ مشهد. الاسم يُكتب حرفًا حرفًا بخطّ السيرك، ثم الجملة بين خطّين، ثم يذوب كل شيء
+/// صاعدًا قليلًا ومتّسعًا. <b>أقلّ من خمس ثوانٍ</b>
 /// (٠٫٤٥ ظهور + كتابة + ٢٫٢ بقاء + ٠٫٨ ذوبان) — عنوانٌ لا ستارة.
 ///
 /// ينتظر حتى تختفي شاشة التحميل وتنتهي ستارة السين، ويختفي تحت قائمة الإيقاف ويكمل
@@ -62,7 +63,7 @@ public class LevelTitleCard : MonoBehaviour
     private Canvas canvas;
     private CanvasGroup group;
     private RectTransform card;
-    private TextMeshProUGUI title, line;
+    private TextMeshProUGUI title, line, titleShade, lineShade;
     private RectTransform ruleLeft, ruleRight;
     private Coroutine running;
 
@@ -90,11 +91,11 @@ public class LevelTitleCard : MonoBehaviour
         yield return new WaitForSecondsRealtime(AfterLoad);
         if (ChromaEvents.Quiet || !Build()) yield break;
 
-        title.text = t.name;
-        title.maxVisibleCharacters = 0;
-        title.characterSpacing = 0f;
-        line.text = t.line;
-        line.alpha = 0f;
+        title.text = titleShade.text = t.name;
+        title.maxVisibleCharacters = titleShade.maxVisibleCharacters = 0;
+        title.characterSpacing = titleShade.characterSpacing = 0f;
+        line.text = lineShade.text = t.line;
+        line.alpha = lineShade.alpha = 0f;
         group.alpha = 0f;
         canvas.enabled = true;
         ChromaSfx.Play("Pulse_Whoosh", 0.25f, 1.15f);
@@ -120,11 +121,12 @@ public class LevelTitleCard : MonoBehaviour
             card.localScale = new Vector3(scale, scale, 1f);
 
             float typed = Mathf.Clamp01((time - FadeIn * 0.5f) / Mathf.Max(0.01f, typing));
-            title.maxVisibleCharacters = Mathf.CeilToInt(typed * t.name.Length);
-            title.characterSpacing = 10f * leave;
+            title.maxVisibleCharacters = titleShade.maxVisibleCharacters = Mathf.CeilToInt(typed * t.name.Length);
+            title.characterSpacing = titleShade.characterSpacing = 10f * leave;
 
             float lineK = Mathf.Clamp01((time - FadeIn * 0.5f - typing) / LineIn);
             line.alpha = Smooth(lineK);
+            lineShade.alpha = Smooth(lineK) * ShadeAlpha;
             float rule = Smooth(lineK) * 120f;
             ruleLeft.sizeDelta = new Vector2(rule, 4f);
             ruleRight.sizeDelta = new Vector2(rule, 4f);
@@ -138,6 +140,17 @@ public class LevelTitleCard : MonoBehaviour
 
     private static float Smooth(float k) => k * k * (3f - 2f * k);
 
+    private const float Shadow = 5f, ShadeAlpha = 0.8f;
+
+    private TextMeshProUGUI Text(string name, bool isTitle, float size, Color color, Vector2 at, float height)
+    {
+        TextMeshProUGUI text = ChromaWardrobeArt.NewText(card, name, isTitle, size, color, TextAlignmentOptions.Center);
+        if (text.font == null && TMP_Settings.defaultFontAsset != null) text.font = TMP_Settings.defaultFontAsset;
+        ChromaWardrobeArt.Place(text, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), at,
+                                new Vector2(CardWidth - (isTitle ? 60f : 320f), height));
+        return text;
+    }
+
     /// <summary>البطاقة تُبنى مرّةً وتعيش بين المشاهد. false إن تعذّر (بلا خطّ مثلًا).</summary>
     private bool Build()
     {
@@ -148,28 +161,24 @@ public class LevelTitleCard : MonoBehaviour
         card = ChromaWardrobeArt.NewRect(canvas.transform, "Card");
         ChromaWardrobeArt.Place(card, new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f),
                                 new Vector2(0f, -CardTop), new Vector2(CardWidth, CardHeight));
-        ChromaWardrobeArt.Card(card, 3f);
-
         Color ink = ChromaWardrobeArt.Ink;
-        title = ChromaWardrobeArt.NewText(card, "Name", true, 92f, ink, TextAlignmentOptions.Center);
-        ChromaWardrobeArt.Place(title, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                                new Vector2(0f, 26f), new Vector2(CardWidth - 60f, 110f));
+        Color paper = ChromaWardrobeArt.Paper;
+        Color shade = new Color(ink.r, ink.g, ink.b, ShadeAlpha);
 
-        line = ChromaWardrobeArt.NewText(card, "Line", false, 32f, new Color(ink.r, ink.g, ink.b, 0.85f),
-                                         TextAlignmentOptions.Center);
-        ChromaWardrobeArt.Place(line, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                                new Vector2(0f, -52f), new Vector2(CardWidth - 320f, 44f));
+        // الظلّ أوّلًا فيُرسم خلف الحروف
+        titleShade = Text("NameShade", true, 96f, shade, new Vector2(Shadow, 26f - Shadow), 120f);
+        title = Text("Name", true, 96f, paper, new Vector2(0f, 26f), 120f);
+        lineShade = Text("LineShade", false, 36f, shade, new Vector2(Shadow * 0.6f, -52f - Shadow * 0.6f), 48f);
+        line = Text("Line", false, 36f, paper, new Vector2(0f, -52f), 48f);
 
-        // خطّان من الحبر يمتدّان على جانبي الجملة
-        ruleLeft = ChromaWardrobeArt.Place(ChromaWardrobeArt.NewImage(card, "RuleL", ChromaWardrobeArt.Round, ink),
+        // خطّان على جانبي الجملة بلون الحروف
+        ruleLeft = ChromaWardrobeArt.Place(ChromaWardrobeArt.NewImage(card, "RuleL", ChromaWardrobeArt.Round, paper),
                                            new Vector2(0.5f, 0.5f), new Vector2(1f, 0.5f),
                                            new Vector2(-(CardWidth - 320f) * 0.5f - 12f, -52f), new Vector2(0f, 4f));
-        ruleRight = ChromaWardrobeArt.Place(ChromaWardrobeArt.NewImage(card, "RuleR", ChromaWardrobeArt.Round, ink),
+        ruleRight = ChromaWardrobeArt.Place(ChromaWardrobeArt.NewImage(card, "RuleR", ChromaWardrobeArt.Round, paper),
                                             new Vector2(0.5f, 0.5f), new Vector2(0f, 0.5f),
                                             new Vector2((CardWidth - 320f) * 0.5f + 12f, -52f), new Vector2(0f, 4f));
 
-        if (title.font == null && TMP_Settings.defaultFontAsset != null) title.font = TMP_Settings.defaultFontAsset;
-        if (line.font == null && TMP_Settings.defaultFontAsset != null) line.font = TMP_Settings.defaultFontAsset;
         if (title.font == null)
         {
             Debug.LogWarning("[LevelTitleCard] لا خطّ — بلا عنوان.", this);
