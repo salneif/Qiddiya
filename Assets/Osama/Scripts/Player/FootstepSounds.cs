@@ -117,6 +117,14 @@ public class FootstepSounds : MonoBehaviour
     private bool useFeet, hasFeet;
     private Animator blendAnimator;
     private static readonly int MovementBlend = Animator.StringToHash("MovementBlend");
+    private static readonly int IsCrouch = Animator.StringToHash("IsCrouch");
+    private bool hasCrouch;
+
+    /// <summary>
+    /// منحنيًا (كراوتش): خطواتٌ أهدأ وأعمق وأبطأ — كانت بإيقاع المشي نفسه وشدّته، فلا يُحسّ
+    /// أنه يتسلّل.
+    /// </summary>
+    private const float CrouchVolume = 0.45f, CrouchPitch = 0.9f, CrouchGap = 0.5f;
 
     /// <summary>
     /// هل هذا السكربت يُسمِع الهبوط الآن؟ مؤثّر الغبار عند السقوط الكبير يسكت له كي لا
@@ -279,7 +287,8 @@ public class FootstepSounds : MonoBehaviour
     private void Step()
     {
         if (steps.Count == 0) return;
-        if (Time.time < quietUntil || Time.time - lastStepAt < MinStepGap) return;
+        bool crouched = hasCrouch && blendAnimator != null && blendAnimator.GetBool(IsCrouch);
+        if (Time.time < quietUntil || Time.time - lastStepAt < (crouched ? CrouchGap : MinStepGap)) return;
 
         // أوّل خطوةٍ بعد وقفة أخفض، ثم يعلو الصوت تدريجيًّا
         float volume = StepVolume;
@@ -294,7 +303,8 @@ public class FootstepSounds : MonoBehaviour
         if (steps.Count > 1 && pick == lastClip) pick = (pick + 1 + Random.Range(0, steps.Count - 1)) % steps.Count;
         lastClip = pick;
 
-        source.pitch = Random.Range(0.94f, 1.06f);
+        if (crouched) volume *= CrouchVolume;
+        source.pitch = Random.Range(0.94f, 1.06f) * (crouched ? CrouchPitch : 1f);
         source.PlayOneShot(steps[pick], volume * Random.Range(0.85f, 1f));
         lastStepAt = Time.time;
     }
@@ -367,12 +377,16 @@ public class FootstepSounds : MonoBehaviour
         left = right = null;
         useFeet = hasFeet = false;
         blendAnimator = null;
+        hasCrouch = false;
 
         Animator animator = body.GetComponentInChildren<Animator>();
         if (animator == null) return;
 
         foreach (AnimatorControllerParameter p in animator.parameters)
+        {
             if (p.nameHash == MovementBlend && p.type == AnimatorControllerParameterType.Float) blendAnimator = animator;
+            if (p.nameHash == IsCrouch && p.type == AnimatorControllerParameterType.Bool) hasCrouch = true;
+        }
 
         if (!animator.isHuman) return;
 

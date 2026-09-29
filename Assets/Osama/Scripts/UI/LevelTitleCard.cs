@@ -1,0 +1,182 @@
+using System.Collections;
+using TMPro;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+
+/// <summary>
+/// اسم المرحلة حين يدخلها اللاعب: <b>STEAM TOWN</b>، <b>THE HUB</b>، <b>TWILIGHT</b>،
+/// <b>THE CIRCUS</b> — وتحته جملةٌ قصيرة.
+///
+/// بطاقة ورقٍ بإطار حبرٍ وظلّ (هويّة واجهات اللون نفسها)، الاسم يُكتب حرفًا حرفًا بخطّ
+/// السيرك، ثم الجملة، ثم يذوب كل شيء صاعدًا قليلًا ومتّسعًا. <b>أقلّ من خمس ثوانٍ</b>
+/// (٠٫٤٥ ظهور + كتابة + ٢٫٢ بقاء + ٠٫٨ ذوبان) — عنوانٌ لا ستارة.
+///
+/// ينتظر حتى تختفي شاشة التحميل وتنتهي ستارة السين، ويختفي تحت قائمة الإيقاف ويكمل
+/// بعدها، ويسكت في الكريديت. يُركّب نفسه، بلا كائن في أي مشهد.
+/// </summary>
+[DisallowMultipleComponent]
+public class LevelTitleCard : MonoBehaviour
+{
+    private struct Title
+    {
+        public string scene, name, line;
+    }
+
+    private static readonly Title[] Titles =
+    {
+        new Title { scene = "Steam_Final",           name = "STEAM TOWN", line = "Every gear remembers its colour" },
+        new Title { scene = "Hub",                   name = "THE HUB",    line = "Three islands wait for their light" },
+        new Title { scene = "AliLvl2_SultanVersion", name = "TWILIGHT",   line = "Where the light hides between the trees" },
+        new Title { scene = "Main_Circus",           name = "THE CIRCUS", line = "The show never stopped. The colour did." },
+    };
+
+    /// <summary>فوق واجهات السين، تحت رأس نقطة الحفظ (3500) والكريديت والتحميل.</summary>
+    private const int SortingOrder = 3400;
+
+    private const float AfterLoad = 1.1f;      // ستارة السين تنفتح أوّلًا
+    private const float FadeIn = 0.45f;
+    private const float PerLetter = 0.07f;
+    private const float LineIn = 0.4f;
+    private const float Hold = 2.2f;
+    private const float FadeOut = 0.8f;
+
+    private const float CardWidth = 940f, CardHeight = 200f, CardTop = 250f;
+
+    private static LevelTitleCard instance;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void Install()
+    {
+        if (instance != null) return;
+
+        var host = new GameObject("LevelTitleCard") { hideFlags = HideFlags.HideInHierarchy };
+        instance = host.AddComponent<LevelTitleCard>();
+        DontDestroyOnLoad(host);
+        instance.Begin(SceneManager.GetActiveScene());   // السين الأوّل حُمّل قبل أن نشترك
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics() => instance = null;
+
+    private Canvas canvas;
+    private CanvasGroup group;
+    private RectTransform card;
+    private TextMeshProUGUI title, line;
+    private RectTransform ruleLeft, ruleRight;
+    private Coroutine running;
+
+    private void OnEnable() => SceneManager.sceneLoaded += OnSceneLoaded;
+    private void OnDisable() => SceneManager.sceneLoaded -= OnSceneLoaded;
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (mode == LoadSceneMode.Single) Begin(scene);
+    }
+
+    private void Begin(Scene scene)
+    {
+        if (running != null) StopCoroutine(running);
+        running = null;
+        if (canvas != null) canvas.enabled = false;
+
+        foreach (Title t in Titles)
+            if (t.scene == scene.name) { running = StartCoroutine(Show(t)); return; }
+    }
+
+    private IEnumerator Show(Title t)
+    {
+        while (LoadingOverlay.IsBusy) yield return null;
+        yield return new WaitForSecondsRealtime(AfterLoad);
+        if (ChromaEvents.Quiet || !Build()) yield break;
+
+        title.text = t.name;
+        title.maxVisibleCharacters = 0;
+        title.characterSpacing = 0f;
+        line.text = t.line;
+        line.alpha = 0f;
+        group.alpha = 0f;
+        canvas.enabled = true;
+        ChromaSfx.Play("Pulse_Whoosh", 0.25f, 1.15f);
+
+        float typing = t.name.Length * PerLetter;
+        float total = FadeIn + typing + LineIn + Hold + FadeOut;
+        float time = 0f;
+
+        while (time < total)
+        {
+            // تحت قائمة الإيقاف: لا يُرى ولا يمضي وقته
+            if (Time.timeScale <= 0f) { group.alpha = 0f; yield return null; continue; }
+            time += Time.unscaledDeltaTime;
+
+            float appear = Mathf.Clamp01(time / FadeIn);
+            float leave = Mathf.Clamp01((time - (total - FadeOut)) / FadeOut);
+            group.alpha = Smooth(appear) * (1f - leave * leave);
+
+            // يدخل من أسفل قليلًا بقفزةٍ مرنة، ويخرج صاعدًا متّسعًا
+            float pop = ChromaWardrobeArt.BackOut(appear);
+            card.anchoredPosition = new Vector2(0f, -CardTop - 18f * (1f - appear) + 16f * leave);
+            float scale = Mathf.Lerp(0.92f, 1f, pop) + 0.03f * leave;
+            card.localScale = new Vector3(scale, scale, 1f);
+
+            float typed = Mathf.Clamp01((time - FadeIn * 0.5f) / Mathf.Max(0.01f, typing));
+            title.maxVisibleCharacters = Mathf.CeilToInt(typed * t.name.Length);
+            title.characterSpacing = 10f * leave;
+
+            float lineK = Mathf.Clamp01((time - FadeIn * 0.5f - typing) / LineIn);
+            line.alpha = Smooth(lineK);
+            float rule = Smooth(lineK) * 120f;
+            ruleLeft.sizeDelta = new Vector2(rule, 4f);
+            ruleRight.sizeDelta = new Vector2(rule, 4f);
+
+            yield return null;
+        }
+
+        canvas.enabled = false;
+        running = null;
+    }
+
+    private static float Smooth(float k) => k * k * (3f - 2f * k);
+
+    /// <summary>البطاقة تُبنى مرّةً وتعيش بين المشاهد. false إن تعذّر (بلا خطّ مثلًا).</summary>
+    private bool Build()
+    {
+        if (canvas != null) return true;
+
+        canvas = ChromaWardrobeArt.NewCanvas(transform, "Title", SortingOrder, out group);
+
+        card = ChromaWardrobeArt.NewRect(canvas.transform, "Card");
+        ChromaWardrobeArt.Place(card, new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f),
+                                new Vector2(0f, -CardTop), new Vector2(CardWidth, CardHeight));
+        ChromaWardrobeArt.Card(card, 3f);
+
+        Color ink = ChromaWardrobeArt.Ink;
+        title = ChromaWardrobeArt.NewText(card, "Name", true, 92f, ink, TextAlignmentOptions.Center);
+        ChromaWardrobeArt.Place(title, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                                new Vector2(0f, 26f), new Vector2(CardWidth - 60f, 110f));
+
+        line = ChromaWardrobeArt.NewText(card, "Line", false, 32f, new Color(ink.r, ink.g, ink.b, 0.85f),
+                                         TextAlignmentOptions.Center);
+        ChromaWardrobeArt.Place(line, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                                new Vector2(0f, -52f), new Vector2(CardWidth - 320f, 44f));
+
+        // خطّان من الحبر يمتدّان على جانبي الجملة
+        ruleLeft = ChromaWardrobeArt.Place(ChromaWardrobeArt.NewImage(card, "RuleL", ChromaWardrobeArt.Round, ink),
+                                           new Vector2(0.5f, 0.5f), new Vector2(1f, 0.5f),
+                                           new Vector2(-(CardWidth - 320f) * 0.5f - 12f, -52f), new Vector2(0f, 4f));
+        ruleRight = ChromaWardrobeArt.Place(ChromaWardrobeArt.NewImage(card, "RuleR", ChromaWardrobeArt.Round, ink),
+                                            new Vector2(0.5f, 0.5f), new Vector2(0f, 0.5f),
+                                            new Vector2((CardWidth - 320f) * 0.5f + 12f, -52f), new Vector2(0f, 4f));
+
+        if (title.font == null && TMP_Settings.defaultFontAsset != null) title.font = TMP_Settings.defaultFontAsset;
+        if (line.font == null && TMP_Settings.defaultFontAsset != null) line.font = TMP_Settings.defaultFontAsset;
+        if (title.font == null)
+        {
+            Debug.LogWarning("[LevelTitleCard] لا خطّ — بلا عنوان.", this);
+            Destroy(canvas.gameObject);
+            canvas = null;
+            return false;
+        }
+        return true;
+    }
+}

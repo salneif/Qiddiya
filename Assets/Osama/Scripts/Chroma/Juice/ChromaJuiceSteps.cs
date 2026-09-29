@@ -360,7 +360,6 @@ public class ChromaJuiceSteps : MonoBehaviour
         // الخطوات تُسمع الهبوط بنفسها — صوتان لهبوطٍ واحد ضجيج
         if (!FootstepSounds.HandlesLandings)
             ChromaSfx.Play("Land_Puff", Mathf.Lerp(0.3f, 0.55f, k), Random.Range(0.94f, 1.06f));
-        PadRumble.Play(Mathf.Lerp(0.3f, 0.6f, k), 0.12f, 0.12f);
         juice.Lens.Dip(Mathf.Lerp(0.08f, 0.18f, k));
     }
 

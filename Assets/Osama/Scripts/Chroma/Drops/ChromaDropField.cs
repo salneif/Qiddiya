@@ -39,7 +39,7 @@ public class ChromaDropField : MonoBehaviour
     private const float EventsAfter = 1.5f;
 
     /// <summary>مدى الجذب من صدر اللاعب.</summary>
-    private const float MagnetRadius = 2.2f;
+    private const float MagnetRadius = 2.8f;
 
     /// <summary>طيران القطرة إلى الصدر (يطول قليلًا للبعيدة).</summary>
     private const float FlySeconds = 0.25f;
@@ -361,6 +361,8 @@ public class ChromaDropField : MonoBehaviour
 
         // قفزةٌ في إطار واحد نقلٌ لا مشي (بعثٌ أو بوابة): ما يطير يُحسب فورًا
         bool jumped = hadChest && present && (chest - lastChest).sqrMagnitude > 25f;
+        // صعوده أو نزوله الآن (م/ث) — المصعد يترك قطراته خلفه، فتُشفط إليه
+        float climb = hadChest && present && !jumped ? (chest.y - lastChest.y) / dt : 0f;
         lastChest = chest;
         hadChest = present;
 
@@ -405,7 +407,18 @@ public class ChromaDropField : MonoBehaviour
                         if (d.view != null && ((i + Time.frameCount) & 7) == 0) d.view.Face(facing, Spin(d, now));
                         continue;
                     }
-                    if (!d.Follow()) { Vanish(i); continue; }
+                    Vector3 before = d.rest;
+                    // أرضها ذهبت: تأتيه بدل أن تختفي أمامه (أسامة: لا قلتش "ما يقدر ياخذها")
+                    if (!d.Follow())
+                    {
+                        if (alive) Pull(d, chest, now); else Vanish(i);
+                        continue;
+                    }
+                    if (alive && d.Collectible(now) && (Sinking(d, before, dt) || LeftBehind(d, chest, climb)))
+                    {
+                        Pull(d, chest, now);
+                        continue;
+                    }
                     Hover(d, now);
                     if (alive) Attract(d, chest, now);
                     if (now >= d.nextSpark && away < SparkRange * SparkRange) Twinkle(d, now);
@@ -479,12 +492,34 @@ public class ChromaDropField : MonoBehaviour
         d.nextLook = now + 0.15f;
         if (!rescue && probe != null && !probe.Sight(chest, d.position)) return;
 
-        float distance = Mathf.Sqrt(r2);
+        Pull(d, chest, now);
+    }
+
+    /// <summary>تطير إلى صدره الآن، بلا شرط مدًى ولا نظر.</summary>
+    private void Pull(ChromaDrop d, Vector3 chest, float now)
+    {
+        float distance = Vector3.Distance(d.position, chest);
         d.state = ChromaDrop.Phase.Flying;
         d.since = now;
         d.from = d.position;
         d.duration = FlySeconds * Mathf.Clamp(distance / MagnetRadius, 1f, 2.4f);
         d.height = 0.3f + 0.06f * distance;
+    }
+
+    /// <summary>أرضها تهبط أسرع من ٢ م/ث — مصعدٌ نازل أو أرضٌ تسقط: لا تسقط معها.</summary>
+    private static bool Sinking(ChromaDrop d, Vector3 before, float dt) => before.y - d.rest.y > 2f * dt;
+
+    /// <summary>
+    /// هو يصعد أو ينزل بسرعة (مصعد) وهي قريبةٌ أفقيًّا وفارقها الرأسي يكبر — ستبقى خلفه
+    /// حيث لا يعود. تُشفط إليه وهو يمرّ بها.
+    /// </summary>
+    private static bool LeftBehind(ChromaDrop d, Vector3 chest, float climb)
+    {
+        if (Mathf.Abs(climb) < 1.2f) return false;
+        Vector3 flat = d.rest - chest;
+        float dy = flat.y;
+        flat.y = 0f;
+        return flat.sqrMagnitude < 3.5f * 3.5f && Mathf.Abs(dy) > 1.2f;
     }
 
     private void Draw(ChromaDrop d, float now, Quaternion facing, bool colourWorld)
