@@ -12,8 +12,9 @@ using UnityEngine.SceneManagement;
 /// مكانه وتختفي شاشة التحميل، وتظهر موجةً تمشي من اللاعب للخارج. ما جُمع منها في
 /// هذه اللعبة لا يعود (<see cref="ChromaBank.IsCollected"/>).</item>
 /// <item><b>دفعات الأحداث</b>: نقطة حفظ، بوابة، لغز، علم — قطراتٌ تنفجر من مكان الحدث
-/// وتسقط حوله، ثم تنجذب وحدها بعد ٤ ث إن كان اللاعب قريبًا، فلا يضيع منها شيء.
-/// ولا تنتقل مع اللاعب لسينٍ آخر.</item>
+/// (أو من اللاعب إن كان الحدث أبعد من مداه) وتسقط حوله، ثم تنجذب وحدها بعد ٤ ث إن كان
+/// اللاعب قريبًا. كل مكانٍ يدفع مرّةً في اللعبة. ولا تنتقل مع اللاعب لسينٍ آخر: ما بقي
+/// منها حوله حين يغادر يُحسب له، فلا يضيع منها شيء.</item>
 /// </list>
 ///
 /// <b>في العالم الرمادي</b> تُرى القطرة البعيدة ضوءًا أبيض، وأقرب ستٍّ منها تتفتّح
@@ -60,12 +61,24 @@ public class ChromaDropField : MonoBehaviour
     /// <summary>أقلّ فاصلٍ بين نبضتي لون الالتقاط — دفعةٌ كاملة لا تستهلك مخزون المناطق.</summary>
     private const float PulseGap = 0.2f;
 
+    /// <summary>
+    /// أجسادٌ تُبنى في الإطار الواحد: كل ما بعد ٧٥ م ينتظر أطول الموجة نفسه فيولد معًا —
+    /// مئات الكائنات في إطارٍ واحد تهنيقةٌ أوّل كل مرحلةٍ طويلة.
+    /// </summary>
+    private const int PopsPerFrame = 8;
+
     private const int BurstLimit = 60;
     private const float BurstCollectable = 0.35f, BurstStagger = 0.045f;
     private const float BurstAuto = 4f, BurstReach = 12f;
     private const int CheckpointBurst = 6, GateBurst = 5, PuzzleBurst = 12, PickupBurst = 15;
     private const int PlantBurst = 5, PlantValue = 5;
     private const int GoldenValue = 10;
+
+    /// <summary>
+    /// حدثان من النوع نفسه أقرب من هذا مكانٌ واحد — بابان ينفتحان معًا، وعلمٌ يُلتقط
+    /// ثانيةً في بيته بعد موتة.
+    /// </summary>
+    private const float SamePlace = 6f;
 
     // ---------- للواجهة ----------
 
@@ -83,8 +96,12 @@ public class ChromaDropField : MonoBehaviour
 
     private static ChromaDropField instance;
 
-    /// <summary>نقاط الحفظ التي أعطت دفعتها في هذه اللعبة — مرّةً لكل نقطة.</summary>
-    private static readonly HashSet<string> rewarded = new HashSet<string>();
+    /// <summary>
+    /// أماكن الدفعات المدفوعة في هذه اللعبة، لكل سينٍ ونوع. البوابة تُفتح كلّما اقترب
+    /// اللاعب منها، والعلم يُلتقط ثانيةً بعد كل موتة، واللغز يُعاد مع البعث — والمكافأة
+    /// التي تتكرّر تُحلب وتُملّ. فكل مكانٍ يدفع مرّة.
+    /// </summary>
+    private static readonly Dictionary<string, List<Vector3>> paid = new Dictionary<string, List<Vector3>>();
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Install()
@@ -103,7 +120,7 @@ public class ChromaDropField : MonoBehaviour
         instance = null;
         PlacedTotal = PlacedCollected = 0;
         LastColor = Color.white;
-        rewarded.Clear();
+        paid.Clear();
     }
 
     private readonly List<ChromaDrop> drops = new List<ChromaDrop>();
@@ -160,12 +177,12 @@ public class ChromaDropField : MonoBehaviour
     // ---------- السين ----------
 
     /// <summary>
-    /// سينٌ جديد يبدأ نظيفًا: ما كان يطير إلى اللاعب يُحسب له، وما سواه يذهب مع سينه
-    /// (الحاوية كانت فيه). والمعالم تُلتقط الآن — قبل أوّل <c>Start</c> في السين.
+    /// سينٌ جديد يبدأ نظيفًا: ما كان اللاعب سيأخذه يُحسب له (<see cref="CreditOwed"/>)، وما
+    /// سواه يذهب مع سينه (الحاوية كانت فيه). والمعالم تُلتقط الآن — قبل أوّل <c>Start</c> في السين.
     /// </summary>
     private void Begin(Scene scene)
     {
-        CreditFlying();
+        CreditOwed();
         StopAllCoroutines();
 
         if (zones != null) zones.ReleaseAll();
@@ -216,6 +233,7 @@ public class ChromaDropField : MonoBehaviour
         yield return planner.Plan(scene, layout, body.position, spots);
         if (scene != sceneName || stage == null) yield break;
         Debug.Log(planner.Summary(scene));
+        song.Spread(planner.Stride);
 
         ChromaStyle style = ChromaStyle.Get();
         Vector3 from = body != null ? body.position : Vector3.zero;
@@ -239,7 +257,7 @@ public class ChromaDropField : MonoBehaviour
                 scale = 0f,
                 nextSpark = now + Random.Range(0.5f, 4f),
             };
-            d.Anchor(s.ground, s.floor);
+            d.Anchor(s.ground, s.floor, s.local);
             d.position = d.rest;
             d.delay = Mathf.Min(WaveMax, Vector3.Distance(from, d.rest) / WaveSpeed);
             drops.Add(d);
@@ -346,6 +364,7 @@ public class ChromaDropField : MonoBehaviour
         Quaternion facing = cam != null ? cam.transform.rotation : Quaternion.identity;
         Vector3 player = present ? body.position : chest;
         bool colourWorld = ColorZones.Available;
+        int popped = 0;
 
         for (int i = drops.Count - 1; i >= 0; i--)
         {
@@ -356,9 +375,10 @@ public class ChromaDropField : MonoBehaviour
             switch (d.state)
             {
                 case ChromaDrop.Phase.Waiting:
-                    if (now - d.since < d.delay) continue;
+                    if (now - d.since < d.delay || popped >= PopsPerFrame) continue;
                     d.view = Take();
                     if (d.view == null) continue;
+                    popped++;
                     d.view.Show(d.Ringed);
                     d.painted = -1f;
                     d.state = ChromaDrop.Phase.Popping;
@@ -375,7 +395,12 @@ public class ChromaDropField : MonoBehaviour
                 }
 
                 case ChromaDrop.Phase.Resting:
-                    if (!near) continue;
+                    if (!near)
+                    {
+                        // لا تمايل ولا جذب من بعيد، لكن الهالة تتبع الكاميرا — ثُمن البعيدة كل إطار
+                        if (d.view != null && ((i + Time.frameCount) & 7) == 0) d.view.Face(facing, Spin(d, now));
+                        continue;
+                    }
                     if (!d.Follow()) { Vanish(i); continue; }
                     Hover(d, now);
                     if (alive) Attract(d, chest, now);
@@ -431,6 +456,9 @@ public class ChromaDropField : MonoBehaviour
         d.position = d.rest + Vector3.up * lift;
     }
 
+    /// <summary>دوران الكرة والحلقة: بطيء، وطوره يختلف من قطرةٍ لأخرى.</summary>
+    private static float Spin(ChromaDrop d, float now) => now * 35f + d.phase * 57f;
+
     /// <summary>
     /// الجذب: داخل المدى وبلا جدارٍ بين الصدر والقطرة — قطرةٌ على الطابق الأعلى لا
     /// تُشفط عبر السقف. وقطرات الأحداث بعد ٤ ث تُشفط من ١٢ م ولو خلف شيء: لا تضيع.
@@ -462,7 +490,7 @@ public class ChromaDropField : MonoBehaviour
         float breathe = 1f + 0.07f * Mathf.Sin(now * 2.3f + d.phase);
         float glow = (d.golden ? 1.75f : d.big ? 1.4f : 1.05f) * d.scale * breathe;
         float ring = (d.golden ? 1.25f : 1f) * d.scale * (1f + 0.06f * Mathf.Sin(now * 3.1f + d.phase));
-        d.view.Place(d.position, d.Size * d.scale, glow, ring, facing, now * 35f + d.phase * 57f);
+        d.view.Place(d.position, d.Size * d.scale, glow, ring, facing, Spin(d, now));
 
         // الرمادي: بعيدةٌ فضوءٌ أبيض، قريبةٌ فلونها كاملًا مع فقاعتها. والملوّن: لونها دائمًا
         float mix = colourWorld ? d.bloom : 1f;
@@ -572,12 +600,20 @@ public class ChromaDropField : MonoBehaviour
         drops.RemoveAt(last);
     }
 
-    /// <summary>ما كان يطير إلى اللاعب لحظة تغيّر السين وصله — لا يضيع بسبب التوقيت.</summary>
-    private void CreditFlying()
+    /// <summary>
+    /// السين ينتهي: ما كان يطير إلى اللاعب وصله، وقطرات الأحداث حوله تُحسب له — كانت
+    /// ستنجذب إليه بعد لحظات لولا الانتقال أو الكريديت. آخر علمٍ يُغرس يبدأ الكريديت في
+    /// النداء نفسه، فتختفي قطراته قبل أن تُلتقط وتُحسب هنا حين تُحمَّل القائمة.
+    /// </summary>
+    private void CreditOwed()
     {
-        foreach (ChromaDrop d in drops)
+        // بالرقم لا بـ foreach: مستمعٌ لـ Gained يضيف إلى القائمة لا يكسر الحلقة
+        for (int i = 0; i < drops.Count; i++)
         {
-            if (d.state != ChromaDrop.Phase.Flying) continue;
+            ChromaDrop d = drops[i];
+            bool owed = d.state == ChromaDrop.Phase.Flying ||
+                        (d.id == null && hadChest && (d.position - lastChest).sqrMagnitude <= BurstReach * BurstReach);
+            if (!owed) continue;
             if (d.id != null) ChromaBank.MarkCollected(d.id);
             Bank(d.value, d.position);
         }
@@ -610,48 +646,64 @@ public class ChromaDropField : MonoBehaviour
 
     private void OnCheckpoint(Vector3 at)
     {
-        if (!Listening() || !rewarded.Add(CheckpointKey(at))) return;
-        Spill(at, CheckpointBurst, 1, false);
+        if (Listening() && FirstTime("checkpoint", Nearest(at))) Spill(at, CheckpointBurst, 1, false);
     }
 
     private void OnGate(Vector3 at)
     {
-        if (Listening()) Spill(at, GateBurst, 1, false);
+        if (Listening() && FirstTime("gate", at)) Spill(at, GateBurst, 1, false);
     }
 
     private void OnPuzzle(Vector3 at)
     {
-        if (Listening()) Spill(at, PuzzleBurst, 1, false);
+        if (Listening() && FirstTime("puzzle", at)) Spill(at, PuzzleBurst, 1, false);
     }
 
     private void OnFlagPicked(Vector3 at)
     {
-        if (Listening()) Spill(at, PickupBurst, 1, false);
+        if (Listening() && FirstTime("flag", at)) Spill(at, PickupBurst, 1, false);
     }
 
-    /// <summary>٢٥ قطرة في خمسٍ كبيرة — الغرس أكبر لحظةٍ في المرحلة، وخمسٌ تُرى خيرٌ من ٢٥ تتزاحم.</summary>
+    /// <summary>
+    /// ٢٥ قطرة في خمسٍ كبيرة — الغرس أكبر لحظةٍ في المرحلة، وخمسٌ تُرى خيرٌ من ٢٥ تتزاحم.
+    /// ولا يتكرّر: العلم المزروع يُقفل في قاعدته.
+    /// </summary>
     private void OnFlagPlanted(Vector3 at)
     {
         if (Listening()) Spill(at, PlantBurst, PlantValue, true);
     }
 
     /// <summary>
-    /// النقطة نفسها في كل مرّة: أقرب نقطة حفظٍ معروفة لموضع الحدث — نقاط علي تُبلغ
-    /// بموضع اللاعب لا بموضعها، ولا يدخلها مرّتين من المكان نفسه.
+    /// أقرب نقطة حفظٍ معروفة لموضع الحدث: نقاط علي تُبلغ بموضع اللاعب لا بموضعها،
+    /// فالدخول إليها من طرفها الآخر يبقى النقطة نفسها.
     /// </summary>
-    private string CheckpointKey(Vector3 at)
+    private Vector3 Nearest(Vector3 at)
     {
-        Vector3 key = new Vector3(Mathf.Round(at.x / 2f) * 2f, Mathf.Round(at.y / 2f) * 2f, Mathf.Round(at.z / 2f) * 2f);
+        Vector3 point = at;
         float best = 8f * 8f;
         if (layout != null)
         {
             foreach (Vector3 c in layout.checkpoints)
             {
                 float d = (c - at).sqrMagnitude;
-                if (d < best) { best = d; key = c; }
+                if (d < best) { best = d; point = c; }
             }
         }
-        return sceneName + ":" + Mathf.RoundToInt(key.x) + "," + Mathf.RoundToInt(key.y) + "," + Mathf.RoundToInt(key.z);
+        return point;
+    }
+
+    /// <summary>
+    /// أوّل مرّةٍ في هذه اللعبة يحدث هذا هنا؟ المطابقة بالمسافة لا بمفتاحٍ مقرّب: الباب
+    /// المنزلق يُبلغ بموضعه وهو يتحرّك، فيختلف بين فتحةٍ وأخرى.
+    /// </summary>
+    private bool FirstTime(string kind, Vector3 at)
+    {
+        string key = sceneName + ":" + kind;
+        if (!paid.TryGetValue(key, out List<Vector3> places)) paid[key] = places = new List<Vector3>();
+        foreach (Vector3 p in places)
+            if ((p - at).sqrMagnitude < SamePlace * SamePlace) return false;
+        places.Add(at);
+        return true;
     }
 
     /// <summary>
@@ -664,6 +716,10 @@ public class ChromaDropField : MonoBehaviour
         if (!ChromaDropArt.Ready) return;
         Stage();
         if (stage == null || probe == null) return;
+
+        // حدثٌ أبعد من مدى الجذب يحتفل عند اللاعب: ساعة ستيم تُبلغ من أصل العالم خلف
+        // الجدران، وبوابات الهب تُفتح بعيدًا عن القاعدة — قطراتٌ هناك لا تُرى ولا تُجذب
+        if (body != null && (at - body.position).sqrMagnitude > BurstReach * BurstReach) at = Chest();
 
         int flying = 0;
         foreach (ChromaDrop d in drops) if (d.id == null) flying++;
@@ -732,7 +788,7 @@ public class ChromaDropField : MonoBehaviour
 
     private void OnRunReset()
     {
-        rewarded.Clear();
+        paid.Clear();
         PlacedCollected = 0;
     }
 

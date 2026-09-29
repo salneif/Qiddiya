@@ -12,12 +12,14 @@ using Object = UnityEngine.Object;
 /// لافا تُعلّم اللاعب أن يثق بها ثم تقتله. لذا كل سؤالٍ هنا يُجاب بالتشدّد: الشكّ يُسقط
 /// القطرة، ولا يُسقط اللاعب.
 ///
-/// والخطر يُعرف بثلاث طرق لأن المراحل من أيدٍ مختلفة:
+/// والخطر يُعرف بأربع طرق لأن المراحل من أيدٍ مختلفة:
 /// <list type="bullet">
-/// <item>بالنوع: <c>LavaKill</c> و<c>DangerZone</c> و<c>RiseKill</c> والفاس والفئران وموت الماء
-/// عند علي — <b>والمطفأ منها أيضًا</b>: قتلة اللافا في ستيم تُشعَل وتُطفأ مع كل صبّة.</item>
+/// <item>بالنوع: <c>LavaKill</c> و<c>DangerZone</c> و<c>RiseKill</c> والفاس والفئران
+/// — <b>والمطفأ منها أيضًا</b>: قتلة اللافا في ستيم تُشعَل وتُطفأ مع كل صبّة.</item>
 /// <item>بالاسم: Lava / Death / Kill / Water / Void — تريغرات السقوط عند غيرنا بلا سكربتٍ نعرفه.</item>
 /// <item>بطبقة <c>Water</c>.</item>
+/// <item>بالارتفاع: صفائح الغرق في التوايلايت (<c>A_WaterDeathZone</c>) — اسمها «Plane»
+/// وطبقتها Default، ممدودةٌ تحت الجسور بنصف متر.</item>
 /// </list>
 /// </summary>
 public sealed class ChromaDropProbe
@@ -31,6 +33,12 @@ public sealed class ChromaDropProbe
     /// <summary>قربٌ من الخطر يُسقط القطرة — حول القطرة وحول أرضها.</summary>
     private const float HazardReach = 1.2f;
 
+    /// <summary>
+    /// أرضٌ لا تعلو صفيحة الغرق بهذا ليست أرضًا: قاع البحيرة تحتها، أو ما يطفو على الماء.
+    /// وألواح الجسور فوقها بـ٠٫٤٨–٠٫٨ م (من مجسّم <c>Bridg_Main</c> نفسه)، فتبقى آثارها كلها.
+    /// </summary>
+    private const float AboveWater = 0.25f;
+
     /// <summary>متّسع الرأس: كبسولةٌ من فوق الأرض بقليل إلى فوق رأس اللاعب.</summary>
     private const float ClearFrom = 0.55f, ClearTo = 1.65f, ClearRadius = 0.28f;
 
@@ -43,6 +51,7 @@ public sealed class ChromaDropProbe
     private readonly Dictionary<Collider, bool> verdicts = new Dictionary<Collider, bool>();
     private readonly List<Bounds> boxes = new List<Bounds>();
     private readonly List<Vector4> spheres = new List<Vector4>();   // xyz = المركز، w = نصف القطر
+    private readonly List<Bounds> sheets = new List<Bounds>();
     private readonly List<Type> hazardTypes = new List<Type>();
     private readonly Transform body;
     private readonly int solid;
@@ -67,14 +76,13 @@ public sealed class ChromaDropProbe
         AddType(typeof(RiseKill));
         AddType(typeof(SwingingAxeTrap));
         AddType(typeof(RatSwarm));
-        AddType(typeof(FallDeath));
-        AddType(typeof(ChromaDropProbe).Assembly.GetType("A_PlayerDeath_WaterSection"));
 
         MapVolumes(typeof(LavaKill));
         MapVolumes(typeof(DangerZone));
         MapVolumes(typeof(RiseKill));
         MapAxes();
         MapRats();
+        MapSheets(typeof(ChromaDropProbe).Assembly.GetType("A_WaterDeathZone"));
 
         // السقوط تحت حدٍّ موت (FallDeath على اللاعب): لا قطرة قريبًا من ذلك الحدّ
         FallDeath fall = body != null ? body.GetComponentInChildren<FallDeath>(true) : null;
@@ -146,6 +154,14 @@ public sealed class ChromaDropProbe
     public bool Hazard(Vector3 drop, Vector3 ground)
     {
         if (ground.y < floorY) return true;
+
+        for (int i = 0; i < sheets.Count; i++)
+        {
+            Bounds s = sheets[i];
+            if (ground.y < s.max.y + AboveWater &&
+                ground.x > s.min.x - HazardReach && ground.x < s.max.x + HazardReach &&
+                ground.z > s.min.z - HazardReach && ground.z < s.max.z + HazardReach) return true;
+        }
 
         Vector3 foot = ground + Vector3.up * 0.3f;
         for (int i = 0; i < boxes.Count; i++)
@@ -272,6 +288,22 @@ public sealed class ChromaDropProbe
             float radius = Read(swarm, "territoryRadius", out float r) ? Mathf.Clamp(r, 3f, 12f) : 8f;
             Vector3 p = swarm.transform.position;
             spheres.Add(new Vector4(p.x, p.y, p.z, radius));
+        }
+    }
+
+    /// <summary>
+    /// صفائح الغرق تُسأل بالارتفاع لا بالقرب: الجسر فوقها بنصف متر، فهامش الأخطار الأخرى
+    /// (١٫٢ م) كان سيقطع كل أثرٍ فوق الماء. والارتفاع يرى أيضًا قاع البحيرة البعيد تحتها —
+    /// وهو ما لا يبلغه أيّ هامش، والقطرة فوقه تُغري بالنزول إلى الماء.
+    /// </summary>
+    private void MapSheets(Type type)
+    {
+        if (type == null) return;
+        foreach (Object o in Object.FindObjectsByType(type, FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (!(o is Component owner) || owner == null) continue;
+            foreach (Collider c in owner.GetComponentsInChildren<Collider>(true))
+                if (Box(c, out Bounds b)) sheets.Add(b);
         }
     }
 

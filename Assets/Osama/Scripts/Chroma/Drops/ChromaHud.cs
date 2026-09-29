@@ -13,7 +13,9 @@ using UnityEngine.UI;
 ///
 /// <b>يختفي</b> حين <see cref="ChromaEvents.Quiet"/> (القائمة، الانترو، التحميل، الكريديت)،
 /// وبلا لاعب، وحين تتوقّف اللعبة (<c>timeScale = 0</c>) — إلا إن طلبته خزانة الأزياء
-/// بـ<see cref="ForceVisible"/> لترى رصيدك وأنت تختار.
+/// بـ<see cref="ForceVisible"/> لترى رصيدك وأنت تختار. <b>ويُرسم تحت كانفسات المشاهد</b>
+/// (كلها على ٠): تعتيم البداية وخيام النقل وموت علي وقائمة الإيقاف تغطّيه، بدل أن يبقى
+/// وحده حادًّا على الأسود. والخزانة ترفعه فوقها إلى ٦٠.
 ///
 /// الركن محجوز: ٣٨٠×١٥٠ في مرجع ١٩٢٠×١٠٨٠، بهامش ٤٠ يمينًا و٣٠ أعلى — شريحة الأزياء
 /// تحت ١٩٠ من الأعلى، والإعلانات في الوسط. كل الحركة بالزمن الحقيقي: يعمل والزمن موقوف.
@@ -24,11 +26,16 @@ public class ChromaHud : MonoBehaviour
     /// <summary>يُظهر العدّاد واللعبة موقوفة — تضبطه خزانة الأزياء وهي مفتوحة وتعيده عند إغلاقها.</summary>
     public static bool ForceVisible { get; set; }
 
+    /// <summary>فوق واجهات السين، وتحت الإعلانات وشاشة التحميل — والخزانة مفتوحة فقط.</summary>
     private const int SortingOrder = 60;
+
+    /// <summary>وفي غير ذلك تحت كانفسات المشاهد (كلها على ٠)، فيغطّيه تعتيمها.</summary>
+    private const int UnderScene = -1;
+
     private const float Right = 40f, Top = 30f;
     private const float Width = 380f, Height = 150f;
     private const float IdleAfter = 4f, IdleAlpha = 0.35f;
-    private const float PopSeconds = 0.9f, PopRise = 46f, PopMerge = 0.3f;
+    private const float PopSeconds = 0.9f, PopRise = 46f, PopMerge = 0.3f, PopPeak = 0.12f;
     private const int ComboBadgeAt = 3;
 
     // التخطيط داخل الركن (بكسلات المرجع، من الزاوية العليا اليمنى)
@@ -82,7 +89,8 @@ public class ChromaHud : MonoBehaviour
     private sealed class Pop
     {
         public Inked label;
-        public float at = -10f;
+        public float at = -10f;       // ساعة حركته: منها يكبر ويصعد ويخبو
+        public float gainAt = -10f;   // آخر كسبٍ أُضيف إليه
         public int amount;
         public float x;
     }
@@ -158,12 +166,16 @@ public class ChromaHud : MonoBehaviour
 
     private void LateUpdate()
     {
-        bool show = !ChromaEvents.Quiet && (Time.timeScale > 0f || ForceVisible) && HasPlayer();
+        bool paused = Time.timeScale <= 0f && !ForceVisible;
+        bool show = !ChromaEvents.Quiet && !paused && HasPlayer();
         if (!built)
         {
             if (!show || broken) return;
             if (!TryBuild()) { broken = true; return; }
         }
+
+        int order = ForceVisible ? SortingOrder : UnderScene;
+        if (canvas.sortingOrder != order) canvas.sortingOrder = order;
 
         float now = Time.unscaledTime, dt = Time.unscaledDeltaTime;
 
@@ -171,8 +183,9 @@ public class ChromaHud : MonoBehaviour
         if (show && !wasShown) lastGainAt = now;
         wasShown = show;
 
+        // الإيقاف يُخفيه في الحال: خفوته البطيء كان يُرى نصف ثانية فوق لوحة الإيقاف
         float target = !show ? 0f : ForceVisible || now - lastGainAt < IdleAfter ? 1f : IdleAlpha;
-        alpha = Mathf.MoveTowards(alpha, target, dt * (target > alpha ? 5f : 2.5f));
+        alpha = paused ? 0f : Mathf.MoveTowards(alpha, target, dt * (target > alpha ? 5f : 2.5f));
         group.alpha = alpha;
 
         bool on = alpha > 0.001f;
@@ -282,10 +295,12 @@ public class ChromaHud : MonoBehaviour
     private void Float(int amount, float now)
     {
         Pop last = pops[(nextPop + pops.Length - 1) % pops.Length];
-        if (last.label.rect.gameObject.activeSelf && now - last.at < PopMerge)
+        if (last.label.rect.gameObject.activeSelf && now - last.gainAt < PopMerge)
         {
             last.amount += amount;
-            last.at = now;
+            last.gainAt = now;
+            // ينتفض من ذروته في مكانه: الرجوع لأوّل الحركة كان يُصغّره ويُنزله مع كل قطرة
+            last.at = Mathf.Max(last.at, now - PopPeak);
             last.label.Set("+{0}", last.amount);
             Paint(last);
             return;
@@ -294,7 +309,7 @@ public class ChromaHud : MonoBehaviour
         Pop p = pops[nextPop];
         nextPop = (nextPop + 1) % pops.Length;
         p.amount = amount;
-        p.at = now;
+        p.at = p.gainAt = now;
         p.x = -(CountRight + countWidth + 12f);
         p.label.Set("+{0}", amount);
         Paint(p);
@@ -314,7 +329,7 @@ public class ChromaHud : MonoBehaviour
 
             float k = t / PopSeconds;
             float rise = 1f - (1f - k) * (1f - k);
-            float size = t < 0.12f ? Mathf.Lerp(0.6f, 1.15f, t / 0.12f) : Mathf.Lerp(1.15f, 1f, Mathf.Clamp01((t - 0.12f) / 0.15f));
+            float size = t < PopPeak ? Mathf.Lerp(0.6f, 1.15f, t / PopPeak) : Mathf.Lerp(1.15f, 1f, Mathf.Clamp01((t - PopPeak) / 0.15f));
             float fade = k < 0.6f ? 1f : 1f - (k - 0.6f) / 0.4f;
 
             p.label.rect.anchoredPosition = new Vector2(p.x, PopY + PopRise * rise);
@@ -377,7 +392,7 @@ public class ChromaHud : MonoBehaviour
 
         canvas = root.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = SortingOrder;     // فوق واجهات السين، وتحت الإعلانات وشاشة التحميل
+        canvas.sortingOrder = UnderScene;
 
         var scaler = root.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;

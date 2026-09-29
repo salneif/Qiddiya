@@ -87,15 +87,20 @@ internal sealed class ChromaDropView
         float s = isFace ? size * FaceScale : size;
         orb.localScale = new Vector3(s, s, s);
         orb.localRotation = Quaternion.Euler(0f, spin, 0f);
-
-        glow.rotation = facing;
         glow.localScale = new Vector3(glowSize, glowSize, glowSize);
+        if (ring.gameObject.activeSelf) ring.localScale = new Vector3(ringSize, ringSize, ringSize);
+        Face(facing, spin);
+    }
 
-        if (ring.gameObject.activeSelf)
-        {
-            ring.rotation = facing * Quaternion.Euler(0f, 0f, spin);
-            ring.localScale = new Vector3(ringSize, ringSize, ringSize);
-        }
+    /// <summary>
+    /// الهالة والحلقة نحو الكاميرا وحدهما — للبعيدة التي لا تُحرَّك. بطاقةٌ تدور الكاميرا
+    /// حولها تُرى من حافّتها فتختفي، وهالتها هي ما يُرى منها في العالم الرمادي.
+    /// </summary>
+    public void Face(Quaternion facing, float spin)
+    {
+        if (root == null) return;
+        glow.rotation = facing;
+        if (ring.gameObject.activeSelf) ring.rotation = facing * Quaternion.Euler(0f, 0f, spin);
     }
 
     public void Paint(Color orbColor, Color glowColor, Color ringColor)
