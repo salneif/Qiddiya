@@ -65,6 +65,14 @@ public class JumpPolish : MonoBehaviour
     /// <summary>يعمل الآن على لاعب هذا السين — <see cref="DoubleJumpGuard"/> يسكت له.</summary>
     public static bool Active { get; private set; }
 
+    /// <summary>
+    /// هل اللاعب على الأرض — <b>كما يراه سكربت الحركة</b> لحظة تحريكه، لا
+    /// <c>CharacterController.isGrounded</c>. قوارب التوايلايت (سبعة <c>A_MovingPlatform</c>)
+    /// تحرّك متحكّم اللاعب نفسه كل إطار بصفرٍ إن لم يكن عليها، فتمسح "لامس الأرض" بترتيبٍ لا
+    /// يُضمن. فمن يقرأ isGrounded بعدها يرى لاعبًا طائرًا وهو واقف. هذا للجميع: الخطوات والأزياء.
+    /// </summary>
+    public static bool Grounded { get; private set; } = true;
+
     private static JumpPolish instance;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -82,6 +90,7 @@ public class JumpPolish : MonoBehaviour
     {
         instance = null;
         Active = false;
+        Grounded = true;
     }
 
     // ما رُبط في هذا السين
@@ -90,6 +99,7 @@ public class JumpPolish : MonoBehaviour
     private Animator animator;
     private Component movement;
     private FieldInfo canMove;
+    private Func<bool> moverGrounded;
     private Component jumper;
     private FieldInfo canJump, window;
     private EventInfo jumpEvent;
@@ -134,7 +144,8 @@ public class JumpPolish : MonoBehaviour
         float dt = Time.deltaTime;
         if (dt <= 0f) return;   // موقوف: لا شيء يتحرّك، ولا نلمس الأنميتر
 
-        bool grounded = controller.isGrounded;
+        bool grounded = moverGrounded != null ? moverGrounded() : controller.isGrounded;
+        Grounded = grounded;
         float y = body.position.y;
         float vy = (y - lastY) / dt;
         lastY = y;
@@ -153,6 +164,9 @@ public class JumpPolish : MonoBehaviour
     private void KeepWindowClosed(bool grounded)
     {
         if (!jumpedThisAir) return;
+
+        // صمّام أمان: هبوطٌ فاتنا لا يقفل القفز أبدًا
+        if (Time.time - jumpedAt > 3f) { jumpedThisAir = false; return; }
 
         if (!grounded)
         {
@@ -224,6 +238,12 @@ public class JumpPolish : MonoBehaviour
         if (movement == null || jumper == null) { giveUp = true; return false; }   // لاعبٌ آخر (مقطع 2.5D)
 
         canMove = Field(movement, "CanMove", typeof(bool));
+        moverGrounded = null;
+        PropertyInfo groundedProperty = movement.GetType().GetProperty("IsGrounded", Any);
+        MethodInfo groundedGetter = groundedProperty != null && groundedProperty.PropertyType == typeof(bool)
+            ? groundedProperty.GetGetMethod(true) : null;
+        if (groundedGetter != null)   // مندوبٌ مرّة واحدة: قراءةٌ كل إطار بلا تخصيص ذاكرة
+            moverGrounded = (Func<bool>)Delegate.CreateDelegate(typeof(Func<bool>), movement, groundedGetter);
         canJump = Field(jumper, "canJump", typeof(bool));
         window = Field(jumper, "_currentWidow", typeof(float));
         jumpEvent = jumper.GetType().GetEvent("OnJump", Any);
@@ -285,6 +305,7 @@ public class JumpPolish : MonoBehaviour
         body = null;
         animator = null;
         movement = jumper = null;
+        moverGrounded = null;
         jumpEvent = null;
         jumpHandler = null;
         bound = false;

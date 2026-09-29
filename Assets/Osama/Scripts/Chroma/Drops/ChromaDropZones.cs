@@ -122,7 +122,7 @@ internal sealed class ChromaDropZones
                 s.target.bloom = s.radius / Radius;
                 s.idleSince = -1f;
 
-                if ((s.handle == null || !s.handle.Alive) && now >= s.retryAt)
+                if ((s.handle == null || !s.handle.Alive) && now >= s.retryAt && !ColorZones.SafetyScene)
                 {
                     s.retryAt = now + Retry;
                     s.handle = ColorZones.Follow(s.anchor, Vector3.zero, 0.01f, Reach);

@@ -67,6 +67,7 @@ public class LadderAssist : MonoBehaviour
     private FieldInfo onLadder, gettingOut, input, audioField, canMove;
     private Animator animator;
     private bool bound, giveUp, hasMoveState;
+    private int groundMask = Physics.DefaultRaycastLayers;
     private float nextBindAt;
 
     private Vector3 lastPosition;
@@ -97,13 +98,15 @@ public class LadderAssist : MonoBehaviour
         bool teleported = (position - lastPosition).sqrMagnitude > TeleportDistance * TeleportDistance;
         lastPosition = position;
 
-        if ((bool)onLadder.GetValue(ladder))
+        // معامل الأنميتر بوّابةٌ بلا تخصيص ذاكرة؛ الانعكاس لا يُقرأ إلا والسلّم محتمل
+        bool maybeOnLadder = animator == null || animator.GetBool(OnLadderParam);
+        if (maybeOnLadder && (bool)onLadder.GetValue(ladder))
         {
             stuckPose = 0f;
             if (teleported) { Release(); return; }
 
             bool pressingDown = (float)input.GetValue(ladder) < DownInput;
-            downOnGround = pressingDown && controller.isGrounded ? downOnGround + dt : 0f;
+            downOnGround = pressingDown && FeetOnGround() ? downOnGround + dt : 0f;
             if (downOnGround >= StepOffAfter) Release();
             return;
         }
@@ -120,16 +123,30 @@ public class LadderAssist : MonoBehaviour
             stuckPose = 0f;
             return;
         }
-        if (gettingOut != null && (bool)gettingOut.GetValue(ladder)) { stuckPose = 0f; return; }
-
         int state = animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
         if (state != StartState && state != PlayState) { stuckPose = 0f; return; }
+        if (gettingOut != null && (bool)gettingOut.GetValue(ladder)) { stuckPose = 0f; return; }
 
         stuckPose += dt;
         if (stuckPose < StuckPose) return;
 
         animator.CrossFadeInFixedTime(MoveState, 0.2f, 0);
         stuckPose = 0f;
+    }
+
+    /// <summary>
+    /// قدماه على أرض؟ فحصٌ فيزيائي تحت الكبسولة لا <c>isGrounded</c>: على السلّم لا يُحرَّك
+    /// الكونترولر للأسفل إلا بسكربت علي، وقوارب التوايلايت تمسح isGrounded كل إطار.
+    /// </summary>
+    private bool FeetOnGround()
+    {
+        if (controller.isGrounded) return true;
+
+        Vector3 scale = body.lossyScale;
+        float radius = controller.radius * Mathf.Max(scale.x, scale.z) * 0.9f;
+        Vector3 center = body.TransformPoint(controller.center);
+        Vector3 low = center - Vector3.up * (controller.height * 0.5f * scale.y - radius - 0.05f);
+        return Physics.SphereCast(low, radius, Vector3.down, out _, 0.2f, groundMask, QueryTriggerInteraction.Ignore);
     }
 
     /// <summary>يترك السلّم كما يفعل الخروج من أعلاه تمامًا، بلا دفعة الخروج.</summary>
@@ -186,6 +203,9 @@ public class LadderAssist : MonoBehaviour
         if (animator == null) animator = controller.GetComponentInChildren<Animator>();
         hasMoveState = animator != null && animator.runtimeAnimatorController != null &&
                        animator.HasState(0, MoveState);
+
+        int playerLayer = LayerMask.NameToLayer("Player");
+        groundMask = Physics.DefaultRaycastLayers & ~(playerLayer >= 0 ? 1 << playerLayer : 0) & ~(1 << controller.gameObject.layer);
 
         lastPosition = body.position;
         downOnGround = stuckPose = 0f;

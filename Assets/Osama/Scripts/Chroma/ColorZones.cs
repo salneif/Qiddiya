@@ -63,6 +63,13 @@ public class ColorZones : MonoBehaviour
     public static bool Available => current != null && current.zones.Count > 0;
 
     /// <summary>
+    /// <b>سينٌ اللونُ فيه يعني الأمان</b> (فيه <see cref="SafeZone"/> — السيرك): دوائر المصابيح
+    /// تحمي من الفئران، فدائرة لونٍ لا تحمي تكذب على اللاعب. هنا لا نبضات ولا هالات تلوّن
+    /// الأرض — ما يُلوَّن الجسد وحده.
+    /// </summary>
+    public static bool SafetyScene { get; private set; }
+
+    /// <summary>
     /// نبضة لون: تكبر إلى <paramref name="radius"/> خلال <paramref name="grow"/> بقفزةٍ
     /// مرنة، تبقى <paramref name="hold"/>، ثم تذوب خلال <paramref name="fade"/>.
     /// <paramref name="reach"/> = الحدّ الرأسي (م)؛ السالب = تلقائي من نصف القطر.
@@ -115,7 +122,11 @@ public class ColorZones : MonoBehaviour
     // ---------- التركيب ----------
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void ResetStatics() => current = null;
+    private static void ResetStatics()
+    {
+        current = null;
+        SafetyScene = false;
+    }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Install()
@@ -134,6 +145,7 @@ public class ColorZones : MonoBehaviour
     private static void Build()
     {
         if (current != null) return;   // سين إضافيّ فوق سينٍ له مخزون
+        SafetyScene = FindAnyObjectByType<SafeZone>(FindObjectsInactive.Include) != null;
 
         var manager = FindAnyObjectByType<InteractorManager>();
         if (manager == null) return;

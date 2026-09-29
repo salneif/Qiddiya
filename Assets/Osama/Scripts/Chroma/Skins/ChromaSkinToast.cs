@@ -25,7 +25,7 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public class ChromaSkinToast : MonoBehaviour
 {
-    private const int SortingOrder = 60;
+    private const int SortingOrder = -1;   // تحت ستائر السينات (0): لا يطفو حادًّا فوق شاشة سوداء
 
     private const float BannerIn = 0.45f, BannerHold = 3.4f, BannerOut = 0.32f;
     private const float BannerShown = -26f, BannerHidden = 220f;
@@ -59,6 +59,7 @@ public class ChromaSkinToast : MonoBehaviour
     private void OnEnable()
     {
         ChromaBank.Gained += OnGained;
+        ChromaBank.RunReset += OnRunReset;
         InputScheme.Changed += OnSchemeChanged;
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
@@ -66,6 +67,7 @@ public class ChromaSkinToast : MonoBehaviour
     private void OnDisable()
     {
         ChromaBank.Gained -= OnGained;
+        ChromaBank.RunReset -= OnRunReset;
         InputScheme.Changed -= OnSchemeChanged;
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
@@ -86,6 +88,9 @@ public class ChromaSkinToast : MonoBehaviour
     {
         if (mode == LoadSceneMode.Single) chipPending = true;
     }
+
+    /// <summary>لعبةٌ جديدة (زائرٌ جديد): لافتةٌ كسبها من قبله لا تُهنّئه هو.</summary>
+    private void OnRunReset() => pending.Clear();
 
     private void OnSchemeChanged()
     {

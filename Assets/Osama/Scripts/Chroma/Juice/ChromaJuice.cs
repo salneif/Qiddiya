@@ -232,7 +232,8 @@ public class ChromaJuice : MonoBehaviour
     /// </summary>
     private void OnFlagPicked(Vector3 at)
     {
-        if (!Ready()) return;
+        // من مات بالعلم يعود لالتقاطه: الاحتفال مرّةً للمكان، كنقاط الحفظ والبوابات
+        if (!FirstTime(at) || !Ready()) return;
 
         bool grounded = Floor(at, out Vector3 floor);
         Vector3 from = grounded ? Source(at, floor) : at;
@@ -245,7 +246,7 @@ public class ChromaJuice : MonoBehaviour
                                      Bright(style.Palette(hue + 3))));
         }
         StartCoroutine(Fountain(from, 24, 10, 0.45f, 1f));
-        ChromaSfx.Play("Pulse_Whoosh", 0.65f, Random.Range(0.98f, 1.03f));
+        ChromaSfx.Play("Pulse_Whoosh", 0.35f, Random.Range(0.98f, 1.03f));   // صوت العلم الأصلي يقود
         PadRumble.Pickup();
         Remember(at);
     }

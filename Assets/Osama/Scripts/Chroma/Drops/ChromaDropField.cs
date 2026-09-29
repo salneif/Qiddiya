@@ -547,7 +547,8 @@ public class ChromaDropField : MonoBehaviour
         if (d.golden) PadRumble.Pickup();
         else if (++ticks % 3 == 0) PadRumble.Tick();
 
-        if (d.golden) ColorZones.Pulse(at, 4.5f, 0.22f, 0.5f, 1.2f);
+        if (ColorZones.SafetyScene) { }   // اللون هناك يعني الأمان — الالتقاط بلا دائرة
+        else if (d.golden) ColorZones.Pulse(at, 4.5f, 0.22f, 0.5f, 1.2f);
         else if (now >= nextPulse && ColorZones.Pulse(at, 2.2f, 0.12f, 0.1f, 0.55f)) nextPulse = now + PulseGap;
 
         Bank(d.value, at);

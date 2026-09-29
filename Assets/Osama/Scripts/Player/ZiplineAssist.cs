@@ -95,6 +95,8 @@ public class ZiplineAssist : MonoBehaviour
 
         ReturnGrip();
 
+        // الانعكاس يخصّص ذاكرة: نسأل كل إطارٍ ونحن نركب، وإلا كل خمسة إطارات (التعليق يلحق بعدها)
+        if (!following && Time.frameCount % 5 != 0) return;
         bool ridingNow = (bool)riding.GetValue(ride);
         if (!ridingNow)
         {

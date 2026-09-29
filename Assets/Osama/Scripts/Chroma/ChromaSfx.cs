@@ -17,6 +17,12 @@ public static class ChromaSfx
     private const int Voices = 10;
     private const string SfxVolumeKey = "vol_sfx";   // نفس مفتاح AudioManager
 
+    /// <summary>
+    /// ميزان الطبقة كلها: أصواتنا صُنعت بذروة −٣ ديسيبل، وموسيقى المراحل وخطواتها وصوت
+    /// العلم أخفض منها بكثير. بلا هذا تعلو نغمة القطرة على كل ما في المرحلة.
+    /// </summary>
+    private const float Mix = 0.45f;
+
     private static readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>();
     private static readonly HashSet<string> missing = new HashSet<string>();
     private static AudioSource[] voices;
@@ -64,7 +70,7 @@ public static class ChromaSfx
         source.Stop();
         source.clip = clip;
         source.pitch = Mathf.Clamp(pitch, 0.25f, 3f);
-        source.volume = Mathf.Clamp01(volume * SfxVolume);
+        source.volume = Mathf.Clamp01(volume * SfxVolume * Mix);
         source.Play();
         return source;
     }

@@ -29,6 +29,8 @@ public class ChromaSkinWearer : MonoBehaviour
 {
     private const float AuraRadius = 1f;
     private const float AuraReach = 1.3f;
+    /// <summary>في سين الأمان (السيرك) الهالة تلوّن الجسد وحده، بلا حلقةٍ على الأرض توهم بالحماية.</summary>
+    private const float SafeAuraRadius = 0.35f, SafeAuraReach = 1f;
     private const float AuraRetry = 1f;
 
     /// <summary>البحث عن اللاعب حين يغيب — نصف ثانية تكفي، وفي القائمة والانترو لا لاعب أصلًا.</summary>
@@ -226,6 +228,7 @@ public class ChromaSkinWearer : MonoBehaviour
 
         player = candidate;
         controller = candidate.GetComponentInParent<CharacterController>();
+        hopY = float.NaN;
         body = controller != null ? controller.transform : candidate.transform;
         killable = candidate.GetComponentInParent<PlayerKillable>();
 
@@ -283,6 +286,7 @@ public class ChromaSkinWearer : MonoBehaviour
         player = null;
         body = null;
         controller = null;
+        hopY = float.NaN;
         killable = null;
         dressed = dead = altered = false;
     }
@@ -399,11 +403,14 @@ public class ChromaSkinWearer : MonoBehaviour
 
         if ((aura == null || !aura.Alive) && Time.unscaledTime >= nextAuraAt)
         {
-            aura = ColorZones.Follow(body, new Vector3(0f, feet + height * 0.5f, 0f), AuraRadius, AuraReach);
+            aura = ColorZones.Follow(body, new Vector3(0f, feet + height * 0.5f, 0f),
+                                     ColorZones.SafetyScene ? SafeAuraRadius : AuraRadius,
+                                     ColorZones.SafetyScene ? SafeAuraReach : AuraReach);
             if (aura == null) nextAuraAt = Time.unscaledTime + AuraRetry;
         }
 
-        if (aura != null && aura.Alive) aura.Radius = AuraRadius * (1f + 0.9f * breath);
+        if (aura != null && aura.Alive)
+            aura.Radius = ColorZones.SafetyScene ? SafeAuraRadius : AuraRadius * (1f + 0.9f * breath);
     }
 
     private void ReleaseAura()
@@ -476,12 +483,18 @@ public class ChromaSkinWearer : MonoBehaviour
     /// القفز والهبوط من الكونترولر نفسه: يعمل مع أي سكربت حركة، ومع منصّات القفز.
     /// لا يُقرأ والزمن موقوف: الكونترولر لا يتحرّك فيظنّ نفسه في الهواء.
     /// </summary>
+    private float hopY = float.NaN;
+
     private void Hops(ChromaSkinRig rig)
     {
         if (controller == null || !controller.enabled || Time.deltaTime <= 0f) return;
 
-        bool onGround = controller.isGrounded;
-        float fall = controller.velocity.y;
+        // الأرض كما يراها سكربت الحركة، والسرعة من الموضع: قوارب التوايلايت تحرّك الكونترولر
+        // بصفرٍ كل إطار فتمسح isGrounded وvelocity معًا
+        bool onGround = JumpPolish.Active ? JumpPolish.Grounded : controller.isGrounded;
+        float y = controller.transform.position.y;
+        float fall = float.IsNaN(hopY) ? 0f : (y - hopY) / Time.deltaTime;
+        hopY = y;
 
         if (grounded && !onGround)
         {

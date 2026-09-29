@@ -110,12 +110,22 @@ public class FootstepSounds : MonoBehaviour
     private Transform body;
     private Foot left, right;
     private float legLength = 1f;
-    private bool useFeet;
+    private bool useFeet, hasFeet;
+    private Animator blendAnimator;
+    private static readonly int MovementBlend = Animator.StringToHash("MovementBlend");
+
+    /// <summary>
+    /// هل هذا السكربت يُسمِع الهبوط الآن؟ مؤثّر الغبار عند السقوط الكبير يسكت له كي لا
+    /// يُسمع الهبوط الواحد صوتين.
+    /// </summary>
+    public static bool HandlesLandings =>
+        instance != null && instance.scanned && !instance.silenced && instance.land != null;
 
     private Vector3 previous;
     private float lastY, airTime, fallSpeed;
     private bool wasGrounded = true;
     private bool silenced;
+    private bool stepsSilenced;   // خطوات غيرنا تعمل هنا (ستيم) — نُسمع الهبوط وحده
     private bool scanned;
     private float nextScanAt;
 
@@ -137,6 +147,7 @@ public class FootstepSounds : MonoBehaviour
         left = right = null;
         scanned = false;
         silenced = false;
+        stepsSilenced = false;
         nextScanAt = 0f;
         if (source != null) source.Stop();
     }
@@ -156,7 +167,8 @@ public class FootstepSounds : MonoBehaviour
             return;
         }
 
-        bool grounded = controller == null || controller.isGrounded;
+        // الأرض كما يراها سكربت الحركة: قوارب التوايلايت تمسح isGrounded كل إطار
+        bool grounded = JumpPolish.Active ? JumpPolish.Grounded : controller == null || controller.isGrounded;
 
         float y = body.position.y;
         float vy = (y - lastY) / dt;
@@ -186,7 +198,10 @@ public class FootstepSounds : MonoBehaviour
         // السرعة من المسافة المقطوعة لا من الإدخال: تعمل مع أي سكربت حركة، ومع
         // اليد والكيبورد، ومع من يُدفع أو يُسحب
         float speed = moved.magnitude / dt;
-        bool walking = grounded && speed >= MoveThreshold;
+        // ويمشي فعلًا: القارب يحمل الواقف فتتغيّر مسافته وقدماه ساكنتان
+        bool striding = blendAnimator == null || blendAnimator.GetFloat(MovementBlend) > 0.3f;
+        bool walking = grounded && speed >= MoveThreshold && striding;
+        if (stepsSilenced) return;
 
         if (walking)
         {
@@ -198,6 +213,7 @@ public class FootstepSounds : MonoBehaviour
             stillSince = Time.time;
             strideLeft = StrideFallback * 0.5f;   // الخطوة الأولى بعد نصف خطوة، لا فورًا
             movingWithoutFeet = 0f;
+            useFeet = hasFeet;   // يُعاد تفعيل القدمين: التخلّي عنهما لحظةٌ لا للسين كله
         }
 
         bool footDown = SampleFeet(dt);
@@ -294,8 +310,8 @@ public class FootstepSounds : MonoBehaviour
         {
             if (script == null || script.GetType().Name != OtherFootsteps) continue;
 
-            silenced = true;
-            return false;
+            stepsSilenced = true;   // صوتان لخطوةٍ واحدة أسوأ من لا صوت — والهبوط لا صوت له عندهم
+            break;
         }
 
         GameObject player = PlayerLocator.Find("Player");
@@ -348,10 +364,16 @@ public class FootstepSounds : MonoBehaviour
     private void FindFeet()
     {
         left = right = null;
-        useFeet = false;
+        useFeet = hasFeet = false;
+        blendAnimator = null;
 
         Animator animator = body.GetComponentInChildren<Animator>();
-        if (animator == null || !animator.isHuman) return;
+        if (animator == null) return;
+
+        foreach (AnimatorControllerParameter p in animator.parameters)
+            if (p.nameHash == MovementBlend && p.type == AnimatorControllerParameterType.Float) blendAnimator = animator;
+
+        if (!animator.isHuman) return;
 
         Transform l = animator.GetBoneTransform(HumanBodyBones.LeftFoot);
         Transform r = animator.GetBoneTransform(HumanBodyBones.RightFoot);
@@ -363,6 +385,6 @@ public class FootstepSounds : MonoBehaviour
         float bodyY = body.position.y;
         left = new Foot { bone = l, lastHeight = l.position.y - bodyY, low = l.position.y - bodyY };
         right = new Foot { bone = r, lastHeight = r.position.y - bodyY, low = r.position.y - bodyY };
-        useFeet = true;
+        useFeet = hasFeet = true;
     }
 }

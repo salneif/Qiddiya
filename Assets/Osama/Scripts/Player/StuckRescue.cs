@@ -23,6 +23,7 @@ using UnityEngine.InputSystem;
 ///
 /// يُركّب نفسه، بلا كائن في أي مشهد.
 /// </summary>
+[DefaultExecutionOrder(-200)]   // يضبط SuppressPause قبل أن يقرأه PauseMenuFix في الإطار نفسه
 [DisallowMultipleComponent]
 public class StuckRescue : MonoBehaviour
 {

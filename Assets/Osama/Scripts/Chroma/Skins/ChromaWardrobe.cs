@@ -34,7 +34,7 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public class ChromaWardrobe : MonoBehaviour
 {
-    private const int SortingOrder = 70;
+    private const int SortingOrder = 3600;   // فوق رأس نقطة الحفظ (3500)، تحت الكريديت والتحذير والتحميل
     private const string PauseMenuName = "PauseMenuManager";
 
     private const float PanelWidth = 640f, PanelHeight = 900f, PanelLeft = 56f;
@@ -249,7 +249,6 @@ public class ChromaWardrobe : MonoBehaviour
         previousTimeScale = Time.timeScale;
         Time.timeScale = 0f;
         IsOpen = true;
-        ChromaHud.ForceVisible = true;    // رصيدك ظاهرٌ وأنت تختار، واللعبة موقوفة
         Mute();
 
         cursor = ChromaSkins.Equipped;
@@ -273,7 +272,6 @@ public class ChromaWardrobe : MonoBehaviour
     {
         if (!IsOpen) return;
         IsOpen = false;
-        ChromaHud.ForceVisible = false;
 
         if (restoreTime && Time.timeScale == 0f) Time.timeScale = previousTimeScale;
         Unmute();
@@ -778,8 +776,10 @@ public class ChromaWardrobe : MonoBehaviour
         ChromaWardrobeArt.Place(counter, new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(-36f, -62f),
                                 new Vector2(10f, 48f));
 
-        var fill = Resources.Load<Sprite>("Chroma/Fx/DropFill");
-        var outline = Resources.Load<Sprite>("Chroma/Fx/DropInk");
+        // وجه الولد — نفس عملة النقاط ونفس العدّاد (الإجمالي الذي يفتح الأزياء)
+        var face = Resources.Load<Sprite>("Chroma/Face/FaceIcon");
+        var fill = face != null ? face : Resources.Load<Sprite>("Chroma/Fx/DropFill");
+        var outline = face != null ? null : Resources.Load<Sprite>("Chroma/Fx/DropInk");
         if (fill != null)
         {
             RectTransform icon = ChromaWardrobeArt.NewRect(counter, "Drop");
@@ -787,7 +787,7 @@ public class ChromaWardrobe : MonoBehaviour
             var size = icon.gameObject.AddComponent<LayoutElement>();
             size.preferredWidth = 44f;
             size.preferredHeight = 44f;
-            ChromaWardrobeArt.Stretch(ChromaWardrobeArt.NewImage(icon, "Fill", fill, ChromaStyle.Get().gold));
+            ChromaWardrobeArt.Stretch(ChromaWardrobeArt.NewImage(icon, "Fill", fill, face != null ? Color.white : ChromaStyle.Get().gold));
             if (outline != null) ChromaWardrobeArt.Stretch(ChromaWardrobeArt.NewImage(icon, "Ink", outline, Color.white));
         }
 
