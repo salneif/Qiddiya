@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Reflection;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -7,8 +8,9 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// <b>خزانة الأزياء</b>: لوحةٌ على اليسار، واللاعب نفسه على اليمين يلبس ما تتصفّحه حيًّا
-/// — ولو كان مقفلًا، بعلامة «معاينة». الإغلاق يُرجع الملبوس، إلا إن لُبس المعروض.
+/// <b>خزانة الأزياء</b>: لوحةٌ على جانب، واللاعب نفسه في الجانب الآخر يلبس ما تتصفّحه حيًّا
+/// — ولو كان مقفلًا، بعلامة «معاينة». الإغلاق يُرجع الملبوس، إلا إن لُبس المعروض. اللوحة
+/// على اليسار، إلا إن كان اللاعب في يسار الشاشة (لقطة ثابتة، حافّة غرفة) فتنتقل لليمين.
 ///
 /// تُفتح بـTab أو زرّ الاختيار في اليد (Share/View): لا يستعملهما شيءٌ أثناء اللعب — لا
 /// خريطتا الإدخال ولا سكربت (Tab في القائمة الرئيسية وحدها). وتوقف الزمن ما دامت مفتوحة
@@ -21,10 +23,11 @@ using UnityEngine.UI;
 /// إلا عبر <see cref="PlayerInput"/>، وهذا يُسكَت ما دامت الخزانة مفتوحة ويعود كما كان —
 /// فلا يقفز اللاعب ولا ينحني لحظة تُغلق.
 ///
-/// <b>وتُغلق وحدها</b> — وترجع الزمن — إن حُمّل سين، أو مات اللاعب، أو صمتت اللعبة (شاشة
-/// تحميل، كريديت). وإن فتح اللاعب لوحة الإيقاف (ESC، لعلي) تختفي في الحال <b>ولا تمسّ
-/// الزمن</b>: اللوحة تملكه الآن وترجعه هي حين تُغلق. والكشف كما في
-/// <see cref="PauseMenuFix"/>: كانفس <c>PauseMenuManager</c> مفعّل.
+/// <b>وتُغلق وحدها</b> — وترجع الزمن — إن حُمّل سين، أو مات اللاعب، أو قاده مشهد، أو صمتت
+/// اللعبة (شاشة تحميل، كريديت)، أو بدأت لوحة تحذير (<see cref="WarningCard"/>). وإن فتح
+/// اللاعب لوحة الإيقاف (ESC، لعلي) تختفي في الحال <b>ولا تمسّ الزمن</b>: اللوحة تملكه الآن
+/// وترجعه هي حين تُغلق. والكشف كما في <see cref="PauseMenuFix"/>: كانفس
+/// <c>PauseMenuManager</c> مفعّل. وOptions في اليد كـESC: تختفي، وتُفتح اللوحة بالضغطة نفسها.
 ///
 /// كل الحركة بالوقت الحقيقي، والكانفس لا يبتلع نقرة.
 /// </summary>
@@ -36,6 +39,16 @@ public class ChromaWardrobe : MonoBehaviour
 
     private const float PanelWidth = 640f, PanelHeight = 900f, PanelLeft = 56f;
     private const float OpenSeconds = 0.34f, CloseSeconds = 0.2f;
+    private const float ShadeWidth = 0.62f;
+
+    /// <summary>
+    /// اللاعب يسار هذا من عرض الشاشة: اللوحة لليمين. على اليسار تمتدّ إلى ٣٦٪ من العرض في
+    /// ١٦:٩ (٤٢٪ في ٤:٣) وتعتيمها أبعد، فتغطّيه أو تعتمه.
+    /// </summary>
+    private const float DockRightBelow = 0.45f;
+
+    /// <summary>ركن عدّاد القطرات أعلى اليمين (فوق ١٩٠ من الأعلى): اللوحة على اليمين تنزل تحته.</summary>
+    private const float HudCorner = 190f;
 
     private const float RepeatDelay = 0.38f, RepeatEvery = 0.13f;
     private const float StickOn = 0.55f, StickOff = 0.35f;
@@ -51,6 +64,14 @@ public class ChromaWardrobe : MonoBehaviour
     private static readonly float[] Notes = { 0f, 2f, 4f, 7f, 9f, 12f };
 
     private static readonly Color LockedGrey = new Color(0.72f, 0.71f, 0.69f);
+
+    /// <summary>
+    /// دور لوحة التحذير (<see cref="WarningCard"/>): تمسكه لحظة تبدأ، ثم تنتظر تأخيرها ولقطة
+    /// تغبيشها، وبعدها فقط تحفظ الزمن وتوقفه. حقلٌ خاصّ بها يُقرأ بالانعكاس — ملفها ليس من
+    /// هذه الميزة — وإن تغيّر اسمه قالها <see cref="Build"/> مرّة وبقيت الخزانة بلا هذا الحرس.
+    /// </summary>
+    private static readonly FieldInfo WarningCardTurn =
+        typeof(WarningCard).GetField("active", BindingFlags.NonPublic | BindingFlags.Static);
 
     /// <summary>الخزانة مفتوحة الآن (والزمن موقوفٌ لها).</summary>
     public static bool IsOpen { get; private set; }
@@ -81,6 +102,7 @@ public class ChromaWardrobe : MonoBehaviour
 
     private Image shade;
     private RectTransform panel;
+    private bool onRight;
     private Image accentBar;
     private TextMeshProUGUI drops;
 
@@ -112,6 +134,7 @@ public class ChromaWardrobe : MonoBehaviour
     private RectTransform watermark;
     private CanvasGroup watermarkGroup;
     private TextMeshProUGUI watermarkNote;
+    private TextMeshProUGUI[] watermarkTexts;
 
     private ChromaWardrobeConfetti confetti;
 
@@ -161,6 +184,7 @@ public class ChromaWardrobe : MonoBehaviour
         if (IsOpen)
         {
             if (!StayOpen(out bool restoreTime, out bool instant)) Close(restoreTime, instant, false);
+            else if (PausePressed()) Close(true, true, false);
             else if (ClosePressed()) Close(true, false, true);
             else
             {
@@ -179,18 +203,21 @@ public class ChromaWardrobe : MonoBehaviour
     // ---------- الفتح والإغلاق ----------
 
     /// <summary>
-    /// لا تُفتح فوق غيرها: لا في صمت اللعبة، ولا بلا لاعبٍ حيّ، ولا والزمن موقوفٌ بغيرها
-    /// (إيقاف، لوحة تحذير)، ولا في ضغطة إنقاذ اللاعب العالق.
+    /// لا تُفتح فوق غيرها: لا في صمت اللعبة، ولا بلا لاعبٍ حيّ في يده، ولا والزمن موقوفٌ
+    /// بغيرها (إيقاف، لوحة تحذير)، ولا في ضغطة إنقاذ اللاعب العالق — ولا ولوحة تحذيرٍ بدأت
+    /// ولم توقف الزمن بعد: لو فُتحت في مهلتها لحفظت اللوحةُ صفرنا ورجّعته بعد أن تُغلق،
+    /// فتبقى اللعبة واقفة بلا شيء على الشاشة.
     /// </summary>
     private bool CanOpen() =>
         !ChromaEvents.Quiet && !LoadingOverlay.IsBusy && ChromaSkinWearer.PlayerReady &&
-        Time.timeScale > 0f && !StuckRescue.SuppressPause && !PauseMenuOpen();
+        Time.timeScale > 0f && !StuckRescue.SuppressPause && !PauseMenuOpen() && !WarningCardUp();
 
     /// <summary>
     /// هل تبقى مفتوحة؟ وإن لا: هل ترجع الزمن، وهل تختفي فورًا.
     ///
     /// لوحة الإيقاف ترسم تحت هذا الكانفس، فتختفي الخزانة في الحال لا بانزلاق فوقها.
-    /// ومن غيّر الزمن ونحن مفتوحون صار يملكه: لا نكتب فوقه قيمةً قديمة.
+    /// ومن غيّر الزمن ونحن مفتوحون صار يملكه: لا نكتب فوقه قيمةً قديمة. ولوحة تحذيرٍ بدأت
+    /// نرجع لها الزمن في الحال — قبل أن تحفظه بعد مهلتها — ونختفي قبل لقطة تغبيشها.
     /// </summary>
     private bool StayOpen(out bool restoreTime, out bool instant)
     {
@@ -206,6 +233,12 @@ public class ChromaWardrobe : MonoBehaviour
         if (Time.timeScale != 0f) return false;
 
         restoreTime = true;
+        if (WarningCardUp())
+        {
+            instant = true;
+            return false;
+        }
+
         return !ChromaEvents.Quiet && ChromaSkinWearer.PlayerReady;
     }
 
@@ -223,6 +256,7 @@ public class ChromaWardrobe : MonoBehaviour
         heldDirection = BrowseDirection();   // مفتاح مشيٍ ما زال مضغوطًا لا يتصفّح
         repeatAt = Time.unscaledTime + RepeatDelay;
 
+        Dock(ChromaSkinWearer.TryViewportX(out float playerX) && playerX < DockRightBelow);
         canvas.enabled = true;
         RefreshPrompts();
         RefreshDrops();
@@ -254,6 +288,30 @@ public class ChromaWardrobe : MonoBehaviour
 
         confetti.Clear();
         canvas.enabled = false;
+    }
+
+    /// <summary>
+    /// اللوحة في الجهة البعيدة عن اللاعب، وتعتيمها يذوب من حافّتها نحوه، و«معاينة» في الركن
+    /// السفلي من جهته. تُختار مرّة عند الفتح: الزمن موقوف والكاميرا واقفة.
+    /// </summary>
+    private void Dock(bool right)
+    {
+        if (right != onRight) openK = 0f;   // أُغلقت من جهةٍ وتُفتح من الأخرى: تنزلق من جديد لا تقفز
+        onRight = right;
+
+        float side = right ? 1f : 0f;
+        panel.anchorMin = panel.anchorMax = panel.pivot = new Vector2(side, 0.5f);
+
+        // صورة التعتيم تذوب نحو اليمين: على اليمين تُقلب
+        RectTransform dim = shade.rectTransform;
+        dim.anchorMin = new Vector2(right ? 1f - ShadeWidth : 0f, 0f);
+        dim.anchorMax = new Vector2(right ? 1f : ShadeWidth, 1f);
+        dim.localScale = new Vector3(right ? -1f : 1f, 1f, 1f);
+
+        watermark.anchorMin = watermark.anchorMax = watermark.pivot = new Vector2(1f - side, 0f);
+        watermark.anchoredPosition = new Vector2(right ? 70f : -70f, 60f);
+        TextAlignmentOptions align = right ? TextAlignmentOptions.Left : TextAlignmentOptions.Right;
+        foreach (TextMeshProUGUI text in watermarkTexts) text.alignment = align;
     }
 
     /// <summary>
@@ -319,6 +377,18 @@ public class ChromaWardrobe : MonoBehaviour
         return pauseMenu != null && pauseCanvas != null && pauseCanvas.enabled && pauseMenu.isActiveAndEnabled;
     }
 
+    /// <summary>
+    /// لوحة تحذير ماسكةٌ دورها: من بدئها حتى تختفي، لا من ظهورها فقط. وكائنها المطفأ أوقف
+    /// روتينها معه، فدورها عالقٌ لا لوحة — لا يمنع الخزانة بقيّة السين.
+    /// </summary>
+    private static bool WarningCardUp()
+    {
+        if (WarningCardTurn == null) return false;
+
+        var card = WarningCardTurn.GetValue(null) as WarningCard;
+        return card != null && card.gameObject.activeInHierarchy;
+    }
+
     // ---------- الإدخال ----------
 
     private static bool TabPressed()
@@ -339,6 +409,17 @@ public class ChromaWardrobe : MonoBehaviour
         Gamepad pad = Gamepad.current;
         return TabPressed() ||
                (pad != null && (pad.selectButton.wasPressedThisFrame || pad.buttonEast.wasPressedThisFrame));
+    }
+
+    /// <summary>
+    /// Options في اليد كـESC في الكيبورد: تختفي الخزانة وترجع الزمن، فيفتح
+    /// <see cref="PauseMenuFix"/> لوحة الإيقاف بالضغطة نفسها — يقرؤها في LateUpdate، بعدنا.
+    /// ومع المثلث مضغوطًا هي تركيبة الإنقاذ (<see cref="StuckRescue"/>) لا إيقاف.
+    /// </summary>
+    private static bool PausePressed()
+    {
+        Gamepad pad = Gamepad.current;
+        return pad != null && pad.startButton.wasPressedThisFrame && !pad.buttonNorth.isPressed;
     }
 
     private static bool EquipPressed()
@@ -541,7 +622,7 @@ public class ChromaWardrobe : MonoBehaviour
     {
         float now = Time.unscaledTime;
 
-        // تنزلق من اليسار بنطّة، وتخرج أسرع ممّا دخلت
+        // تنزلق من جهتها بنطّة، وتخرج أسرع ممّا دخلت
         openK = Mathf.MoveTowards(openK, IsOpen ? 1f : 0f, dt / (IsOpen ? OpenSeconds : CloseSeconds));
         if (!IsOpen && openK <= 0f)
         {
@@ -550,11 +631,14 @@ public class ChromaWardrobe : MonoBehaviour
         }
 
         float slide = IsOpen ? ChromaWardrobeArt.BackOut(openK) : openK * (2f - openK);
-        // ٢١:٩ أقصر من اللوحة فتصغر لتسعها. وقبل أوّل تخطيطٍ للكانفس ارتفاعه صفر: لا نقلبها
+        // ٢١:٩ أقصر من اللوحة فتصغر لتسعها. وقبل أوّل تخطيطٍ للكانفس ارتفاعه صفر: لا نقلبها.
+        // وعلى اليمين تنزل تحت ركن عدّاد القطرات فلا تغطّيه
+        float reserve = onRight ? HudCorner : 0f;
         float tall = root.rect.height;
-        float fit = tall > 200f ? Mathf.Clamp((tall - 40f) / PanelHeight, 0.5f, 1f) : 1f;
+        float fit = tall > 200f ? Mathf.Clamp((tall - 40f - reserve) / PanelHeight, 0.5f, 1f) : 1f;
         panel.localScale = new Vector3(fit, fit, 1f);
-        panel.anchoredPosition = new Vector2(Mathf.LerpUnclamped(-(PanelWidth * fit + 60f), PanelLeft, slide), 0f);
+        float x = Mathf.LerpUnclamped(-(PanelWidth * fit + 60f), PanelLeft, slide);
+        panel.anchoredPosition = new Vector2(onRight ? -x : x, -reserve * 0.5f);
 
         Color ink = ChromaWardrobeArt.Ink;
         shade.color = new Color(ink.r, ink.g, ink.b, 0.6f * Mathf.Clamp01(openK));
@@ -651,7 +735,7 @@ public class ChromaWardrobe : MonoBehaviour
             Color ink = ChromaWardrobeArt.Ink;
 
             shade = ChromaWardrobeArt.NewImage(root, "Shade", ChromaWardrobeArt.Fade, ink);
-            ChromaWardrobeArt.Stretch(shade).anchorMax = new Vector2(0.62f, 1f);
+            ChromaWardrobeArt.Stretch(shade).anchorMax = new Vector2(ShadeWidth, 1f);
 
             BuildWatermark(ink);
 
@@ -667,6 +751,9 @@ public class ChromaWardrobe : MonoBehaviour
 
             confetti = new ChromaWardrobeConfetti(root, 36);
             built = true;
+
+            if (WarningCardTurn == null)
+                Debug.LogWarning("[ChromaWardrobe] ما لقيت WarningCard.active — لا أرى لوحة التحذير قبل أن توقف الزمن.", this);
         }
         catch (System.Exception e)
         {
@@ -903,7 +990,7 @@ public class ChromaWardrobe : MonoBehaviour
         return prompt;
     }
 
-    /// <summary>«معاينة» في الركن الأيمن السفلي، فوق اللاعب لا فوق اللوحة، حين يُعرض غير الملبوس.</summary>
+    /// <summary>«معاينة» في الركن السفلي من جهة اللاعب (<see cref="Dock"/>)، فوقه لا فوق اللوحة، حين يُعرض غير الملبوس.</summary>
     private void BuildWatermark(Color ink)
     {
         watermark = ChromaWardrobeArt.NewRect(root, "Preview");
@@ -926,8 +1013,11 @@ public class ChromaWardrobe : MonoBehaviour
         word.text = "PREVIEW";
         ChromaWardrobeArt.Place(word, Vector2.one, Vector2.one, Vector2.zero, new Vector2(720f, 140f));
 
+        // بعرض الكلمة إلا هامشين: يلتصق بطرفها أيًّا كانت المحاذاة
         watermarkNote = ChromaWardrobeArt.NewText(watermark, "Note", false, 36f, Color.white, TextAlignmentOptions.Right);
-        ChromaWardrobeArt.Place(watermarkNote, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-8f, 8f),
-                                new Vector2(720f, 50f));
+        ChromaWardrobeArt.Place(watermarkNote, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 8f),
+                                new Vector2(704f, 50f));
+
+        watermarkTexts = new[] { shadow, word, watermarkNote };
     }
 }

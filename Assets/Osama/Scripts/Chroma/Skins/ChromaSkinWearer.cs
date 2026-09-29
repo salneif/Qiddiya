@@ -58,8 +58,13 @@ public class ChromaSkinWearer : MonoBehaviour
     /// <summary>في السين لاعبٌ فعّال نُلبسه.</summary>
     public static bool HasPlayer => instance != null && instance.Present;
 
-    /// <summary>لاعبٌ حيّ بجسمه: لا ميّت، ولا في مادّة موت.</summary>
-    public static bool PlayerReady => HasPlayer && !instance.dead && !instance.altered;
+    /// <summary>
+    /// لاعبٌ حيّ بجسمه وفي يده: لا ميّت، ولا في مادّة موت، ولا كونترولره مطفأ — مشهدٌ يقوده
+    /// (شفط البوابة في السيرك يطفئه ويسحبه بالوقت الحقيقي، وموت علي يطفئه ثانيتين). النقل
+    /// يطفئه ويشعله في النداء نفسه، فلا يُرى مطفأً.
+    /// </summary>
+    public static bool PlayerReady => HasPlayer && !instance.dead && !instance.altered &&
+                                      (instance.controller == null || instance.controller.enabled);
 
     /// <summary>لحظة اللبس: ومضةٌ على الجسم، والهالة تتّسع وتعود، ودفعةٌ من المؤثّر.</summary>
     public static void Celebrate()
@@ -67,6 +72,24 @@ public class ChromaSkinWearer : MonoBehaviour
         if (instance == null) return;
         instance.celebratedAt = Time.unscaledTime;
         instance.showcaseBig = true;
+    }
+
+    /// <summary>
+    /// أين منتصف جسم اللاعب على عرض الشاشة (٠ يسار، ١ يمين) — لتضع الخزانة لوحتها في الجهة
+    /// الأخرى. false = لا لاعب، أو لا كاميرا، أو هو خلفها.
+    /// </summary>
+    public static bool TryViewportX(out float x)
+    {
+        x = 0.5f;
+        Camera view = Camera.main;
+        if (!HasPlayer || view == null) return false;
+
+        Vector3 middle = instance.body.position + Vector3.up * (instance.feet + instance.height * 0.5f);
+        Vector3 point = view.WorldToViewportPoint(middle);
+        if (point.z <= 0f) return false;
+
+        x = point.x;
+        return true;
     }
 
     /// <summary>رندررٌ نصبغه، وما نعرف به مادّته الأصلية.</summary>

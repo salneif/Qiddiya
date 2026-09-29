@@ -18,8 +18,9 @@ using UnityEngine.UI;
 /// <b>لا تحجب شيئًا ولا توقف شيئًا</b>: لا تبتلع نقرة، ولا تمسّ الزمن. وتختفي — وعدّادها
 /// واقف — حين لا يصحّ الكلام: قائمة أو انترو أو شاشة تحميل أو كريديت
 /// (<see cref="ChromaEvents.Quiet"/>)، أو بلا لاعب، أو اللعبة موقوفة بغيرنا (لوحة
-/// الإيقاف ترسم تحت هذا الكانفس)، أو الخزانة مفتوحة. فلا يفوت اللاعبَ إعلانٌ ولا
-/// يظهر فوق ما لا يخصّه.
+/// الإيقاف ترسم تحت هذا الكانفس). فلا يفوت اللاعبَ إعلانٌ ولا يظهر فوق ما لا يخصّه.
+///
+/// <b>أما فتح الخزانة فهو الجواب</b>: الإعلان كله ينتهي، لا يعود بعد إغلاقها.
 /// </summary>
 [DisallowMultipleComponent]
 public class ChromaSkinToast : MonoBehaviour
@@ -99,6 +100,7 @@ public class ChromaSkinToast : MonoBehaviour
                        !ChromaWardrobe.IsOpen;
         if (!mayTalk)
         {
+            if (ChromaWardrobe.IsOpen) Acknowledge();
             if (canvas != null && canvas.enabled) canvas.enabled = false;
             return;
         }
@@ -121,6 +123,29 @@ public class ChromaSkinToast : MonoBehaviour
         AnimateBanner(dt);
         AnimateChip(dt);
         confetti.Tick(dt);
+    }
+
+    /// <summary>
+    /// من فتح الخزانة رأى ألسنتها — كل زيٍّ فُتح ملوّنٌ فيها — وعرف زرّها: فلا تعود اللافتة
+    /// بعد أن يُغلقها لتدعوه إليها، ولا تتبعها لافتاتٌ لما رآه، ولا شارةُ أوّل السين.
+    /// </summary>
+    private void Acknowledge()
+    {
+        pending.Clear();
+        chipPending = false;
+        if (!built) return;
+
+        if (bannerAt >= 0f)
+        {
+            bannerAt = -1f;
+            banner.gameObject.SetActive(false);
+        }
+        if (chipAt >= 0f)
+        {
+            chipAt = -1f;
+            chip.gameObject.SetActive(false);
+        }
+        if (confetti.Busy) confetti.Clear();
     }
 
     // ---------- اللافتة ----------
