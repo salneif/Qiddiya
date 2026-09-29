@@ -247,7 +247,6 @@ public class ChromaJuice : MonoBehaviour
         }
         StartCoroutine(Fountain(from, 24, 10, 0.45f, 1f));
         ChromaSfx.Play("Pulse_Whoosh", 0.35f, Random.Range(0.98f, 1.03f));   // صوت العلم الأصلي يقود
-        PadRumble.Pickup();
         Remember(at);
     }
 
@@ -272,7 +271,7 @@ public class ChromaJuice : MonoBehaviour
         StartCoroutine(Fountain(from, 32, 16, 0.7f, 1.12f));
         StartCoroutine(Confetti(from, floor, 24, 60, 1.6f));
         ChromaSfx.Play("Pulse_Whoosh", 0.8f, 0.86f);
-        PadRumble.Open(1f);
+        PadRumble.Open(0.5f);
         Remember(at);
     }
 

@@ -149,7 +149,6 @@ public class ChromaDropField : MonoBehaviour
 
     private Camera eye;
     private float nextCamera, nextZones, nextPulse;
-    private int ticks;
 
     private void OnEnable()
     {
@@ -549,8 +548,8 @@ public class ChromaDropField : MonoBehaviour
 
         Burst(d, at);
         song.Pickup(d.golden, now);
-        if (d.golden) PadRumble.Pickup();
-        else if (++ticks % 3 == 0) PadRumble.Tick();
+        // الوجوه العادية بلا اهتزاز — جمعها سريعٌ متتابع، ونقرةٌ لكل ثلاثة كانت طنينًا دائمًا
+        if (d.golden) PadRumble.Tick();
 
         if (ColorZones.SafetyScene) { }   // اللون هناك يعني الأمان — الالتقاط بلا دائرة
         else if (d.golden) ColorZones.Pulse(at, 4.5f, 0.22f, 0.5f, 1.2f);

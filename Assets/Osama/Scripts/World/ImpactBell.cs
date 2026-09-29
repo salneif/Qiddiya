@@ -51,6 +51,12 @@ public class ImpactBell : MonoBehaviour
     [Tooltip("أبعد مسافة تُحسّ فيها الضربة في اليد. صفر = بلا اهتزاز")]
     [SerializeField] private float rumbleRange = 14f;
 
+    private const float BellRumbleGap = 1.5f, BellRumbleRange = 5f;
+    private static float lastBellRumble = -10f;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetBellRumble() => lastBellRumble = -10f;
+
     /// <summary>كم مرة ضُرب الجرس؟</summary>
     public int StrikeCount { get; private set; }
 
@@ -98,7 +104,13 @@ public class ImpactBell : MonoBehaviour
 
         // ضربةٌ في اليد لمن كان قريبًا. بالمسافة لا دائمًا: فأسٌ في الطرف الآخر من
         // المرحلة تهزّ اليد كأنها فوق الرأس
-        PadRumble.At(transform.position, 0.55f, 0.3f, 0.14f, rumbleRange);
+        // المطارق تضرب الأجراس بلا توقّف: بلا فاصلٍ مشترك ولا مدًى قريب كانت اليد تهتزّ
+        // طوال الوقوف قربها. ضربةٌ واحدة كل ١٫٥ ث لكل الأجراس، ولمن كان على بعد ٥ م فقط
+        if (Time.time - lastBellRumble >= BellRumbleGap)
+        {
+            lastBellRumble = Time.time;
+            PadRumble.At(transform.position, 0.3f, 0.12f, 0.1f, Mathf.Min(rumbleRange, BellRumbleRange));
+        }
 
         onStruck?.Invoke();
     }

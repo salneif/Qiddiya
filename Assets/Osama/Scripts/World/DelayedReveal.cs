@@ -302,7 +302,7 @@ public class DelayedReveal : MonoBehaviour
 
                 body.localScale = fromScale * Mathf.Lerp(1f, suctionShrink, k);
 
-                if (rumbleWhilePulled) PadRumble.Hold(0.25f + 0.55f * k, 0.15f + 0.3f * k);
+                if (rumbleWhilePulled) PadRumble.Hold(0.1f + 0.25f * k, 0.05f + 0.12f * k);   // سحبٌ يُحسّ ولا يهزّ الكفّين
                 yield return null;
             }
         }
