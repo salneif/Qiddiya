@@ -17,7 +17,7 @@ using UnityEngine.SceneManagement;
 /// كأنه يقفز في أوّله ويتباطأ في آخره، والمربّع يُسمع صعودًا متّصلًا.
 ///
 /// فيديو الانترو مخرجه Direct لا يمرّ بالسامع، فلا يمسّه شيء هنا — <see cref="HoldToSkip"/>
-/// يخفته بيده.
+/// يُدخله ويخفته بيده، على الرئيسي نفسه.
 ///
 /// يُركّب نفسه، بلا كائن في أي مشهد.
 /// </summary>
@@ -143,5 +143,5 @@ public class ChromaAudioFade : MonoBehaviour
         AudioListener.volume = level >= 1f ? Master : Master * level * level;
 
     /// <summary>الرئيسي كما حفظه السلايدر — بنفس مفتاح <see cref="AudioManager"/> وافتراضه.</summary>
-    private static float Master => Mathf.Clamp01(PlayerPrefs.GetFloat(AudioManager.MasterKey, 1f));
+    public static float Master => Mathf.Clamp01(PlayerPrefs.GetFloat(AudioManager.MasterKey, 1f));
 }

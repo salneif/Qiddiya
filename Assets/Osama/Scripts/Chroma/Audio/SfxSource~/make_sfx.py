@@ -123,8 +123,9 @@ def skin_close():
 
 
 def skin_move():
-    """A soft glass-bead tick for moving between items."""
-    x = bell(note('E6'), 0.1, tau=0.016, amp=1.0, bright=1.0, chorus_amp=0.0, attack=0.002,
+    """A soft glass-bead tick for moving between items. On C6 like Drop_Note: the wardrobe steps it
+    0 2 4 7 9 12 semitones up, so from C the ticks stay in C major pentatonic with the rest."""
+    x = bell(note('C6'), 0.1, tau=0.016, amp=1.0, bright=1.0, chorus_amp=0.0, attack=0.002,
              partials=[(1.0, 1.0, 1.0), (2.756, 0.16, 0.4), (3.9, 0.06, 0.25)])
     x = room(x, wet=0.08, fb=0.45, damp=0.5, tail=0.05)
     return finish(x, 0.08, fade_out=0.03, fade_in=0.002, lp=7000.0)
@@ -147,15 +148,17 @@ def skin_equip():
 
 
 def skin_locked():
-    """Muted wooden thunk: a short falling low tone and a dull knock, no ring."""
+    """Muted wooden thunk: a short falling tone and a dull knock, no ring. Its weight sits at
+    400-600 Hz, not under 300 Hz, so laptop and TV speakers still play it."""
     x = S.silence(0.3)
-    x = place(x, sine_blip(220.0, 165.0, 0.25, tau=0.045, glide=0.03, amp=1.0, attack=0.003), 0.0)
-    x = place(x, sine_blip(470.0, 360.0, 0.12, tau=0.022, glide=0.02, amp=0.45, attack=0.003), 0.0)
-    knock = lowpass(noise(int(0.05 * SR)), 900.0, 4) * np.exp(-np.arange(int(0.05 * SR)) / (0.009 * SR))
+    x = place(x, sine_blip(220.0, 165.0, 0.25, tau=0.045, glide=0.03, amp=0.35, attack=0.003), 0.0)
+    # 3 ms late so the two tones don't peak together: under the -3 dBFS ceiling that costs ~1.5 dB
+    x = place(x, sine_blip(560.0, 420.0, 0.12, tau=0.03, glide=0.02, amp=0.8, attack=0.003), 0.003)
+    knock = svf(noise(int(0.05 * SR)), 1150.0, 1.1, 'band') * np.exp(-np.arange(int(0.05 * SR)) / (0.009 * SR))
     knock[:int(0.003 * SR)] *= cos_ramp(int(0.003 * SR))
-    x = place(x, knock * 0.8, 0.0)
+    x = place(x, knock * 1.1, 0.0)
     x = room(x, wet=0.06, fb=0.45, damp=0.6, tail=0.08)
-    return finish(x, 0.2, fade_out=0.06, lp=1800.0, hp=45.0)
+    return finish(x, 0.2, fade_out=0.06, lp=3500.0, hp=45.0)
 
 
 def skin_unlock():
@@ -183,15 +186,15 @@ def pulse_whoosh():
     env = bump_env(0.16, 0.78, shape=2.4)
     wave_ = air(0.8, 240.0, 2200.0, 1.1, env, curve=0.55, amp=1.0, track=2.6)
     x = place(x, wave_, 0.0)
-    # a second, thinner band a little higher for air
-    wave2 = air(0.8, 900.0, 5200.0, 1.8, bump_env(0.22, 0.74, shape=2.6), curve=0.6, amp=0.3)
+    # a second, thinner band sweeping up into the 3-7 kHz air - without it the swell is a dull 'whump'
+    wave2 = air(0.8, 1400.0, 7500.0, 1.6, bump_env(0.22, 0.74, shape=2.6), curve=0.6, amp=0.5)
     x = place(x, wave2, 0.0)
     sh = shimmer(0.66, [note('C7'), note('G7'), note('E8')], 0.16, bump_env(0.2, 0.66, shape=1.8))
     x = place(x, sh, 0.1)
     body = sine_blip(95.0, 72.0, 0.5, tau=0.16, glide=0.15, amp=0.16, attack=0.06)
     x = place(x, body, 0.02)
     x = room(x, wet=0.14, fb=0.58, damp=0.4, tail=0.2)
-    return finish(x, 0.8, fade_out=0.12, lp=10000.0)
+    return finish(x, 0.8, fade_out=0.12, lp=12000.0)
 
 
 def land_puff():
