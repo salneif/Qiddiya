@@ -108,8 +108,25 @@ public class LevelPortal : MonoBehaviour
     public UnityEvent onPlayerLeft;
 
     /// <summary>هل شرط الفتح متحقق؟ (لا يشمل شرط حمل العلم — ذاك شرط خروج لا فتح)</summary>
-    public bool IsUnlocked => requirePlantedFlag == FlagId.None ||
-                              GameProgress.Instance.IsPlanted(requirePlantedFlag);
+    public bool IsUnlocked => (requirePlantedFlag == FlagId.None ||
+                               GameProgress.Instance.IsPlanted(requirePlantedFlag)) && !DestinationDone;
+
+    /// <summary>
+    /// المرحلة التي تأخذ إليها أُنهيت: علمها محمول أو مزروع. البوابة تُغلق فلا يعود اللاعب إليها
+    /// (أسامة: "بعد ما أخلص من السيرك أقدر أرجع"). بوابات العودة للهب لا تتأثّر — الهب بلا علم.
+    /// </summary>
+    private bool DestinationDone
+    {
+        get
+        {
+            FlagId flag = sceneName == "Steam_Final" ? FlagId.Steam
+                        : sceneName == "AliLvl2_SultanVersion" ? FlagId.Twilight
+                        : sceneName == "Main_Circus" ? FlagId.Circus : FlagId.None;
+            if (flag == FlagId.None) return false;
+            GameProgress progress = GameProgress.Instance;
+            return progress.IsPlanted(flag) || progress.IsCarrying(flag);
+        }
+    }
 
     private bool playerInside;
     private bool armed = true;

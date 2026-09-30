@@ -69,6 +69,17 @@ public class SwingingAxeTrap : MonoBehaviour
     /// <summary>أقل مدى تأرجح يظل الفاس عنده قاتلًا — تحته يُعتبر ساكنًا وغير مؤذٍ.</summary>
     private const float DeadlyThreshold = 0.2f;
 
+    [Header("القتل بلا ربط")]
+    [Tooltip("إن لم يُربط Kill Component: رأس الفاس يقتل من يلمسه وهو يتأرجح. الرأس يُحسب وقت اللعب " +
+             "من حدود مجسّمه — أبعد ما فيه عن المحور. (مطارق السيرك كانت بلا قاتلٍ مربوط فتمرّ خلال اللاعب.)")]
+    [SerializeField] private bool killOnHit = true;
+
+    private Vector3 headLocal;
+    private float headRadius = -1f;
+    private PlayerKillable victim;
+    private CharacterController victimBody;
+    private float nextVictimLook;
+
     private Quaternion baseRotation;
     private float lastAngle;
     private float amplitudeScale;   // 1 = تأرجح كامل، 0 = ساكن معلّق للأسفل
@@ -155,10 +166,69 @@ public class SwingingAxeTrap : MonoBehaviour
 
         lastAngle = angle;
         SyncKillComponent();
+        if (killComponent == null && killOnHit && visible && amplitudeScale > DeadlyThreshold) HitCheck();
 
         // الصرير يخفت مع فقدان التأرجح حتى يسكت تمامًا عند سكون الفاس أو اختفائه
         if (audioSource != null && creakLoop != null)
             audioSource.volume = visible ? creakVolume * amplitudeScale : 0f;
+    }
+
+    /// <summary>رأس الفاس يلمس اللاعب؟ يموت. بالمسافة لا بالتريغر: الفاس يتحرّك واللاعب واقف، ولا جسم فيزيائي يُطلق حدثًا.</summary>
+    private void HitCheck()
+    {
+        if (headRadius < 0f && !FindHead()) return;
+
+        if (victim == null || victimBody == null)
+        {
+            if (Time.time < nextVictimLook) return;
+            nextVictimLook = Time.time + 1f;
+            GameObject p = PlayerLocator.Find("Player");
+            victim = p != null ? p.GetComponentInParent<PlayerKillable>() : null;
+            victimBody = p != null ? p.GetComponentInParent<CharacterController>() : null;
+            if (victim == null || victimBody == null) return;
+        }
+        if (victim.IsDead || !victimBody.enabled) return;
+
+        // أقرب نقطةٍ على محور كبسولة اللاعب من الرأس
+        Transform b = victimBody.transform;
+        float scale = Mathf.Max(b.lossyScale.x, b.lossyScale.y);
+        float r = victimBody.radius * scale;
+        Vector3 c = b.TransformPoint(victimBody.center);
+        float half = Mathf.Max(0f, victimBody.height * 0.5f * scale - r);
+        Vector3 head = transform.TransformPoint(headLocal);
+        float along = Mathf.Clamp(Vector3.Dot(head - c, Vector3.up), -half, half);
+        if ((head - (c + Vector3.up * along)).sqrMagnitude <= (headRadius + r) * (headRadius + r)) victim.Kill();
+    }
+
+    /// <summary>
+    /// الرأس = الجهة الأبعد عن المحور في حدود المجسّمات (بإحداثيّات المحور)، على ٨٢٪ من أبعد نقطة،
+    /// ونصف قطره خُمس الذراع. من الحدود لا من الرؤوس: المجسّمات غير المقروءة لا تُعطي رؤوسها في البلد.
+    /// </summary>
+    private bool FindHead()
+    {
+        Transform root = axeVisual != null ? axeVisual.transform : transform;
+        float far = 0f;
+        Vector3 sum = Vector3.zero;
+        var corners = new System.Collections.Generic.List<Vector3>();
+        foreach (Renderer rend in root.GetComponentsInChildren<Renderer>())
+        {
+            Bounds lb = rend.localBounds;
+            for (int i = 0; i < 8; i++)
+            {
+                Vector3 corner = lb.center + Vector3.Scale(lb.extents, new Vector3((i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1));
+                Vector3 local = transform.InverseTransformPoint(rend.transform.TransformPoint(corner));
+                corners.Add(local);
+                far = Mathf.Max(far, local.magnitude);
+            }
+        }
+        if (far <= 0.0001f) { killOnHit = false; return false; }
+
+        foreach (Vector3 c in corners) if (c.magnitude >= far * 0.8f) sum += c.normalized;
+        Vector3 dir = sum.sqrMagnitude > 0f ? sum.normalized : Vector3.down;
+        headLocal = dir * far * 0.82f;
+        float arm = (transform.TransformPoint(dir * far) - transform.position).magnitude;
+        headRadius = Mathf.Clamp(arm * 0.2f, 0.3f, 1.2f);
+        return true;
     }
 
     /// <summary>هل مجسم الفاس ظاهر الآن؟ (يتبع تفعيل/تعطيل الكائن في الهيرآركي)</summary>
