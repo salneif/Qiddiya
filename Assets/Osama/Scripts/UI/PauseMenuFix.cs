@@ -135,6 +135,17 @@ public class PauseMenuFix : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// يفتح قائمة الإيقاف إن كانت مغلقة واللعب جارٍ — لانفصال يد التحكّم مثلًا. false إن تعذّر.
+    /// </summary>
+    public static bool RequestPause()
+    {
+        if (instance == null || instance.failed || instance.manager == null || instance.canvas == null) return false;
+        if (instance.canvas.enabled || ChromaWardrobe.IsOpen || ChromaPhotoMode.IsOpen || Time.timeScale <= 0f) return false;
+        instance.Toggle();
+        return true;
+    }
+
     private void Toggle()
     {
         try { toggle.Invoke(manager, null); }

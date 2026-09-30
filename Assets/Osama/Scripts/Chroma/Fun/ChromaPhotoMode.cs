@@ -63,6 +63,10 @@ public class ChromaPhotoMode : MonoBehaviour
 
     // المدار: الهدف (ما تطلبه الأصابع) والحالي (ما تلحقه الكاميرا)
     private float yaw, pitch, distance, goalYaw, goalPitch, goalDistance;
+
+    // حدود المدار حول زاوية الكاميرا الأصلية: المراحل 2.5D وظهرها غير مبنيّ، فلا يُرى إلا من جهتها
+    private const float YawRange = 30f, PitchDown = 12f, PitchUp = 20f, NearFactor = 0.45f, FarFactor = 1.3f;
+    private float baseYaw, basePitch, baseDistance;
     private bool capturing;
 
     // الواجهة
@@ -156,6 +160,10 @@ public class ChromaPhotoMode : MonoBehaviour
         goalYaw = yaw = flat.sqrMagnitude > 0.0001f ? Mathf.Atan2(flat.x, flat.z) * Mathf.Rad2Deg : cam.eulerAngles.y + 180f;
         goalPitch = pitch = Mathf.Clamp(Mathf.Asin(Mathf.Clamp(offset.y / Mathf.Max(0.01f, offset.magnitude), -1f, 1f)) * Mathf.Rad2Deg,
                                         MinPitch, MaxPitch);
+
+        baseYaw = goalYaw;
+        basePitch = goalPitch;
+        baseDistance = goalDistance;
 
         Build();
         hints.SetActive(true);
@@ -256,9 +264,10 @@ public class ChromaPhotoMode : MonoBehaviour
             zoom -= mouse.scroll.y.ReadValue() * 0.004f;
         }
 
-        goalYaw += look.x;
-        goalPitch = Mathf.Clamp(goalPitch + look.y, MinPitch, MaxPitch);
-        goalDistance = Mathf.Clamp(goalDistance + zoom, MinDistance, MaxDistance);
+        goalYaw = baseYaw + Mathf.Clamp(Mathf.DeltaAngle(baseYaw, goalYaw + look.x), -YawRange, YawRange);
+        goalPitch = Mathf.Clamp(goalPitch + look.y, Mathf.Max(MinPitch, basePitch - PitchDown), Mathf.Min(MaxPitch, basePitch + PitchUp));
+        goalDistance = Mathf.Clamp(goalDistance + zoom, Mathf.Max(MinDistance * 0.6f, baseDistance * NearFactor),
+                                   Mathf.Min(MaxDistance, baseDistance * FarFactor));
     }
 
     private void Place()
