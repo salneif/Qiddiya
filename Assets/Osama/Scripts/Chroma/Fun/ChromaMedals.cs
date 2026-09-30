@@ -4,8 +4,8 @@ using UnityEngine.SceneManagement;
 
 /// <summary>
 /// <b>ميداليات الوقت</b> لستيم والتوايلايت والسيرك: مؤقّتٌ صغير في الركن الأعلى الأيسر يبدأ
-/// حين تنتهي شاشة التحميل ويقف مع الإيقاف، وعند الخروج من بوابة المرحلة لافتة: الميدالية،
-/// والزمن، وأفضل زمن (محفوظ). الحدود في <see cref="Levels"/> — تُضبط بعد التجربة.
+/// حين تنتهي شاشة التحميل ويقف مع الإيقاف، وعند الخروج من بوابة المرحلة تُحسب الميدالية
+/// وأفضل زمن (محفوظ) وتعرضها بطاقة الهب (<see cref="ChromaLevelStats"/>). الحدود في <see cref="Levels"/>.
 /// </summary>
 [DisallowMultipleComponent]
 public class ChromaMedals : MonoBehaviour
@@ -23,14 +23,30 @@ public class ChromaMedals : MonoBehaviour
         new Level { scene = "Main_Circus",           name = "THE CIRCUS", gold = 270f, silver = 390f, bronze = 540f },
     };
 
-    private static readonly string[] MedalNames = { "", "BRONZE", "SILVER", "GOLD" };
-    private static readonly Color[] MedalColors =
+    internal static readonly string[] MedalNames = { "", "BRONZE", "SILVER", "GOLD" };
+    internal static readonly Color[] MedalColors =
     {
         new Color(0.75f, 0.75f, 0.75f), new Color(0.80f, 0.52f, 0.28f),
         new Color(0.78f, 0.80f, 0.84f), new Color(1f, 0.80f, 0.25f),
     };
 
     private const string BestKey = "Chroma.Best.";
+
+    /// <summary>اسم المرحلة للعرض (STEAM TOWN…)، أو اسم السين إن لم تكن منها.</summary>
+    internal static string LevelName(string scene)
+    {
+        foreach (Level l in Levels) if (l.scene == scene) return l.name;
+        return scene;
+    }
+
+    /// <summary>أفضل زمن محفوظ لهذه المرحلة، وصفر إن لم تُكمل بعد.</summary>
+    internal static float Best(string scene) => PlayerPrefs.GetFloat(BestKey + scene, 0f);
+
+    internal static string Clock(float seconds)
+    {
+        int s = Mathf.Max(0, Mathf.FloorToInt(seconds));
+        return (s / 60).ToString("00") + ":" + (s % 60).ToString("00");
+    }
 
     private static ChromaMedals instance;
 
@@ -123,22 +139,8 @@ public class ChromaMedals : MonoBehaviour
             PlayerPrefs.Save();
         }
 
+        // البطاقة في الهب (ChromaLevelStats) تعرض الميدالية مع إحصائيات المرحلة
         ChromaFunEvents.RaiseMedal(l.scene, medal, elapsed, newBest);
-        ChromaFunEvents.Announce(new ChromaFunEvents.Banner
-        {
-            header = medal > 0 ? MedalNames[medal] + " MEDAL" : "LEVEL COMPLETE",
-            title = l.name,
-            line = "TIME " + Clock(elapsed) + (newBest ? "   NEW BEST!" : "   BEST " + Clock(best)),
-            letter = medal > 0 ? MedalNames[medal].Substring(0, 1) : "!",
-            accent = MedalColors[medal],
-            sfx = medal == 3 ? "Drop_Gold" : "Skin_Unlock",
-        });
-    }
-
-    private static string Clock(float seconds)
-    {
-        int s = Mathf.Max(0, Mathf.FloorToInt(seconds));
-        return (s / 60).ToString("00") + ":" + (s % 60).ToString("00");
     }
 
     private void Build()

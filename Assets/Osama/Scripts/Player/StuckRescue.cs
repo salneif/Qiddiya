@@ -78,29 +78,37 @@ public class StuckRescue : MonoBehaviour
                keyboard.kKey.wasPressedThisFrame;
     }
 
-    private void Rescue()
+    private void Rescue() => Respawn();
+
+    /// <summary>
+    /// يرجع اللاعب لآخر نقطة حفظ (بموته في مكانه). لزرّ «Respawn» في الإيقاف ولـ<see cref="StuckWatch"/>.
+    /// false إن لم نجد نظام موتٍ نعرفه — فيعيد المنادي المرحلة بدلها.
+    /// </summary>
+    public static bool Respawn()
     {
         GameObject player = PlayerLocator.Find("Player");
         if (player == null)
         {
-            Debug.LogWarning("[StuckRescue] ما لقيت اللاعب — ما صار شيء.", this);
-            return;
+            Debug.LogWarning("[StuckRescue] ما لقيت اللاعب — ما صار شيء.");
+            return false;
         }
 
         var killable = player.GetComponentInParent<PlayerKillable>();
+        if (killable == null) killable = player.GetComponentInChildren<PlayerKillable>();
         if (killable != null)
         {
-            if (killable.IsDead) return;   // ميّتٌ أصلًا: لا نقتله مرّتين
+            if (killable.IsDead) return true;   // ميّتٌ أصلًا: راجعٌ وحده
 
-            Debug.Log("[StuckRescue] أنقذنا اللاعب — يرجع من آخر نقطة حفظ.", this);
+            Debug.Log("[StuckRescue] أنقذنا اللاعب — يرجع من آخر نقطة حفظ.");
             killable.Kill();
-            return;
+            return true;
         }
 
-        if (Reflected(player)) return;
+        if (Reflected(player) || SceneRespawn()) return true;
 
-        Debug.LogWarning("[StuckRescue] هذا السين بلا نظام موت نعرفه — ما صار شيء. " +
-                         "لو تكرّر التعليق هنا، يحتاج نقطة حفظ أو PlayerKillable.", this);
+        Debug.LogWarning("[StuckRescue] هذا السين بلا نظام موت نعرفه. " +
+                         "لو تكرّر التعليق هنا، يحتاج نقطة حفظ أو PlayerKillable.");
+        return false;
     }
 
     /// <summary>
@@ -108,11 +116,40 @@ public class StuckRescue : MonoBehaviour
     ///
     /// بالاسم لا بمرجع، فلا نُترجَم مع سكربت أحد ولا ينكسر بناؤه إن حُذف.
     /// </summary>
-    private bool Reflected(GameObject player)
+    /// <summary>
+    /// التوايلايت (علي): نظام النقاط كائنٌ في المشهد لا على اللاعب. <c>A_CheckPointSystem.OnPlayerDeath</c>
+    /// يُظلم الشاشة وينقل اللاعب لآخر نقطة بعد ثانيتين — نفس ما يحدث حين يموت.
+    /// </summary>
+    private static bool SceneRespawn()
+    {
+        foreach (MonoBehaviour script in Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
+        {
+            if (script == null || !script.isActiveAndEnabled) continue;
+            string type = script.GetType().Name;
+            if (type != "A_CheckPointSystem") continue;
+
+            MethodInfo method = script.GetType().GetMethod("OnPlayerDeath",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, System.Type.EmptyTypes, null);
+            if (method == null) continue;
+            try
+            {
+                method.Invoke(script, null);
+                Debug.Log($"[StuckRescue] أنقذنا اللاعب عبر {type}.OnPlayerDeath().", script);
+                return true;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[StuckRescue] {type}.OnPlayerDeath() رفض: {e.Message}", script);
+            }
+        }
+        return false;
+    }
+
+    private static bool Reflected(GameObject player)
     {
         foreach (MonoBehaviour script in player.GetComponentsInParent<MonoBehaviour>(true))
         {
-            if (script == null || script == this) continue;
+            if (script == null || script is StuckRescue) continue;
 
             foreach (string name in DeathMethods)
             {
@@ -126,13 +163,13 @@ public class StuckRescue : MonoBehaviour
                 {
                     method.Invoke(script, null);
                     Debug.Log($"[StuckRescue] أنقذنا اللاعب عبر " +
-                              $"{script.GetType().Name}.{name}().", this);
+                              $"{script.GetType().Name}.{name}().", script);
                     return true;
                 }
                 catch (System.Exception e)
                 {
                     Debug.LogWarning($"[StuckRescue] {script.GetType().Name}.{name}() رفض: " +
-                                     $"{e.Message}", this);
+                                     $"{e.Message}", script);
                 }
             }
         }

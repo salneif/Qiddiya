@@ -35,6 +35,7 @@ public class ChromaTutorial : MonoBehaviour
     private const string Level = "Steam_Final";
     private const float StartAfter = 6.2f;          // بعد اسم المرحلة (٤٫٦ ث + ستارة)
     private const float FadeIn = 0.35f, DoneHold = 0.55f, FadeOut = 0.35f, Gap = 0.5f;
+    private const int Reward = 10;
 
     private static ChromaTutorial instance;
     private static bool doneThisRun;
@@ -59,7 +60,7 @@ public class ChromaTutorial : MonoBehaviour
     private bool active;
     private int step = -1;
     private float clock, stepAt, doneAt = -1f, waitUntil;
-    private bool emoted;
+    private bool emoted, celebrate;
     private string emote;
     private Vector3 startPos;
     private float startY;
@@ -86,6 +87,15 @@ public class ChromaTutorial : MonoBehaviour
     }
 
     private void OnRunReset() => doneThisRun = false;
+
+    /// <summary>«Continue»: من يكمل لعبته رأى التعليم من قبل.</summary>
+    internal static void Skip()
+    {
+        doneThisRun = true;
+        if (instance == null) return;
+        instance.active = false;
+        if (instance.canvas != null) instance.canvas.enabled = false;
+    }
     private void OnEmote(string e) { emoted = true; emote = e; }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -126,6 +136,7 @@ public class ChromaTutorial : MonoBehaviour
         if (Time.unscaledTime < waitUntil) return;
 
         if (!canvas.enabled) canvas.enabled = true;
+        if (celebrate) Celebrate();
         if (doneAt < 0f && (Achieved() || (Steps[step].timeout > 0f && clock - stepAt > Steps[step].timeout))) Complete();
         Animate();
     }
@@ -158,13 +169,38 @@ public class ChromaTutorial : MonoBehaviour
     {
         if (doneAt >= 0f || step < 0) return;
         doneAt = clock;
+        celebrate = true;   // يُحتفل به حين تظهر اللعبة (الخزانة والتصوير يُتمّان خطوتيهما وهما مفتوحان)
+    }
+
+    private void Celebrate()
+    {
+        celebrate = false;
         ChromaSfx.Play("Drop_Note", 0.5f, ChromaSfx.Semitones(step * 2f));
+        bool last = step == Steps.Length - 1;
+        ChromaFunEvents.RaiseTutorialStep(step, last);   // احتفالٌ صغير عند القدمين (ChromaJuice)
+        if (last) Finish();
+    }
+
+    /// <summary>آخر خطوة: لافتة، وهديّة وجوهٍ تفتح أوّل زيّ أقرب — بدايةٌ تكافئ لا تُلقّن.</summary>
+    private void Finish()
+    {
+        Transform p = Player();
+        ChromaBank.Add(Reward, p != null ? p.position + Vector3.up * 1.2f : Vector3.zero);
+        ChromaFunEvents.Announce(new ChromaFunEvents.Banner
+        {
+            header = "TUTORIAL",
+            title = "YOU'RE READY!",
+            line = "+" + Reward + " faces to start you off. Go bring the colour back!",
+            letter = "!",
+            accent = ChromaStyle.Get().gold,
+            sfx = "Skin_Unlock",
+        });
     }
 
     private void Next()
     {
         step++;
-        emoted = false;
+        emoted = celebrate = false;
         doneAt = -1f;
         stepAt = clock;
         if (step >= Steps.Length)

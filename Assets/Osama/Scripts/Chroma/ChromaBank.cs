@@ -99,6 +99,26 @@ public static class ChromaBank
         return n;
     }
 
+    /// <summary>معرّفات القطرات المجموعة في هذه اللعبة — يحفظها <see cref="ChromaSave"/>.</summary>
+    internal static string[] CollectedIds()
+    {
+        Load();
+        var ids = new string[collected.Count];
+        collected.CopyTo(ids);
+        return ids;
+    }
+
+    /// <summary>«Continue»: يعيد عدّ اللعبة والقطرات المجموعة كما حُفظت. الإجمالي لا يُمسّ.</summary>
+    internal static void Restore(int runCount, IEnumerable<string> ids)
+    {
+        Load();
+        run = Mathf.Max(0, runCount);
+        collected.Clear();
+        if (ids != null)
+            foreach (string id in ids)
+                if (!string.IsNullOrEmpty(id)) collected.Add(id);
+    }
+
     /// <summary>
     /// لعبة جديدة: يصفّر عدّ هذه اللعبة ويعيد القطرات الموضوعة. الإجمالي لا يُمسّ.
     /// يناديه <see cref="ChromaEvents"/> تلقائيًا مع تصفير <see cref="GameProgress"/>.

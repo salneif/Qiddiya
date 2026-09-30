@@ -1,5 +1,7 @@
 using System.Reflection;
+using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -37,6 +39,11 @@ public class PauseMenuFix : MonoBehaviour
     private const string ManagerScriptName = "PauseMenuManager";
     private const string HolderName = "Pause_Holder";
     private const string SettingsName = "Settings_Canvas";
+    private const string ResumeName = "Resume_Button";
+    private const string ExitName = "Exit_Button";
+    private const string AddedTag = " (Chroma)";
+    private const string RestartLabel = "Restart", ConfirmLabel = "Sure?";
+    private const float ConfirmWindow = 3f;
 
     private static PauseMenuFix instance;
 
@@ -63,6 +70,9 @@ public class PauseMenuFix : MonoBehaviour
     private GameObject holder;
     private GameObject settings;
     private MethodInfo toggle;
+
+    private TMP_Text restartText;
+    private float confirmUntil = -1f;
 
     private float nextBindAt;
     private bool wasOpen;
@@ -100,6 +110,8 @@ public class PauseMenuFix : MonoBehaviour
         if (open && !wasOpen) Opened();
         else if (!open && wasOpen) Closed();
         else if (open) KeepSelection();
+
+        if (confirmUntil >= 0f && (!open || Time.unscaledTime > confirmUntil)) Unconfirm();
 
         wasOpen = canvas.enabled;
         settingsWasOpen = settings != null && settings.activeSelf;
@@ -218,6 +230,97 @@ public class PauseMenuFix : MonoBehaviour
         }
     }
 
+    // ---------- الريست: Respawn وRestart ----------
+
+    /// <summary>
+    /// زرّان تحت Settings لمن علق أو أصابه قلتش: <b>Respawn</b> يرجعه لآخر نقطة حفظ، و<b>Restart</b>
+    /// يعيد المرحلة (بضغطتين: الأولى تسأل "Sure?"). نسختان من زرّ Resume وقت التشغيل — بريفاب علي
+    /// لا يُمسّ — وExit ينزل تحتهما بالخطوة نفسها التي بين أزراره.
+    /// </summary>
+    private void AddRescueButtons()
+    {
+        restartText = null;
+        confirmUntil = -1f;
+        if (holder == null) return;
+
+        Transform resume = null, exit = null;
+        foreach (Transform child in holder.transform)
+        {
+            string n = child.name.Trim();
+            if (n.EndsWith(AddedTag)) return;           // أُضيفا من قبل في هذه اللوحة
+            if (n == ResumeName) resume = child;
+            else if (n == ExitName) exit = child;
+        }
+        var resumeRect = resume as RectTransform;
+        var exitRect = exit as RectTransform;
+        if (resumeRect == null || exitRect == null) return;
+
+        // الخطوة بين الأزرار كما رصّها صاحب اللوحة (Resume → Settings → Exit)
+        float step = (resumeRect.anchoredPosition.y - exitRect.anchoredPosition.y) * 0.5f;
+        if (step <= 0f) return;
+
+        Vector2 at = exitRect.anchoredPosition;
+        Clone(resumeRect, "Respawn", at, OnRespawn);
+        int moved = 1;
+        if (LevelRestart.Available)
+        {
+            restartText = Clone(resumeRect, RestartLabel, at + Vector2.down * step, OnRestart);
+            moved = 2;
+        }
+        exitRect.anchoredPosition = at + Vector2.down * step * moved;
+    }
+
+    private static TMP_Text Clone(RectTransform template, string label, Vector2 at, UnityAction click)
+    {
+        GameObject copy = Instantiate(template.gameObject, template.parent);
+        copy.name = label + "_Button" + AddedTag;
+        var rect = (RectTransform)copy.transform;
+        rect.anchoredPosition = new Vector2(template.anchoredPosition.x, at.y);
+
+        var button = copy.GetComponent<Button>();
+        if (button != null)
+        {
+            // صوت النقرة يبقى، وResumeGame يُطفأ — ثم فعلنا نحن
+            for (int i = 0; i < button.onClick.GetPersistentEventCount(); i++)
+                if (button.onClick.GetPersistentMethodName(i) != "PlayOneShot")
+                    button.onClick.SetPersistentListenerState(i, UnityEventCallState.Off);
+            button.onClick.AddListener(click);
+        }
+
+        TMP_Text first = null;
+        foreach (TMP_Text text in copy.GetComponentsInChildren<TMP_Text>(true))
+        {
+            text.text = label;
+            if (first == null) first = text;
+        }
+        return first;
+    }
+
+    private void OnRespawn()
+    {
+        if (canvas != null && canvas.enabled) Toggle();   // تُغلق اللوحة ويرجع الزمن
+        if (!StuckRescue.Respawn()) LevelRestart.Reload();   // مشهدٌ بلا نظام موت (الهب): نعيد تحميله
+    }
+
+    private void OnRestart()
+    {
+        if (confirmUntil < 0f || Time.unscaledTime > confirmUntil)
+        {
+            confirmUntil = Time.unscaledTime + ConfirmWindow;
+            if (restartText != null) restartText.text = ConfirmLabel;
+            return;
+        }
+        Unconfirm();
+        if (canvas != null && canvas.enabled) Toggle();
+        LevelRestart.Go();
+    }
+
+    private void Unconfirm()
+    {
+        confirmUntil = -1f;
+        if (restartText != null) restartText.text = RestartLabel;
+    }
+
     // ---------- الربط ----------
 
     /// <summary>
@@ -263,6 +366,7 @@ public class PauseMenuFix : MonoBehaviour
 
         holder = Child(manager.transform, HolderName);
         settings = Child(manager.transform, SettingsName);
+        AddRescueButtons();
 
         wasOpen = canvas.enabled;
         settingsWasOpen = settings != null && settings.activeSelf;

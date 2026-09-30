@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -107,18 +108,27 @@ public class LoadingOverlay : MonoBehaviour
     };
 
     /// <summary>
-    /// تلاميح تحت البار. لاتينية كالعناوين — الخط المدمج بلا حروف عربية — وكلها
-    /// أشياء حقيقية في اللعبة: من كتب تلميحًا لا يصحّ أضاع لاعبًا.
+    /// تلاميح تحت البار — بخط الكرايون، وأزرارها تتبع الجهاز (يد / كيبورد). لاتينية كالعناوين،
+    /// وكلها أشياء حقيقية في اللعبة: من كتب تلميحًا لا يصحّ أضاع لاعبًا.
     /// </summary>
-    private static readonly string[] Tips =
+    private static readonly string[,] Tips =
     {
-        "SQUARE INTERACTS  -  LEVERS, DOORS, FLAGS",
-        "HOLD SQUARE TO PUSH AND PULL CRATES",
-        "OPTIONS PAUSES  -  CIRCLE GOES BACK",
-        "THE LIGHT GIVES THE WORLD ITS COLOUR BACK",
-        "LAVA BURNS  -  THE SIGNS ARE THERE FOR A REASON",
-        "CARRY EACH FLAG BACK TO THE HUB",
-        "A CHECKPOINT IS WHERE YOU WILL COME BACK",
+        // { يد التحكّم, الكيبورد }
+        { "SQUARE INTERACTS  -  LEVERS, DOORS, FLAGS",       "E INTERACTS  -  LEVERS, DOORS, FLAGS" },
+        { "HOLD SQUARE TO PUSH AND PULL CRATES",             "HOLD E TO PUSH AND PULL CRATES" },
+        { "OPTIONS PAUSES  -  CIRCLE GOES BACK",             "ESC PAUSES THE GAME" },
+        { "THE LIGHT GIVES THE WORLD ITS COLOUR BACK",       "THE LIGHT GIVES THE WORLD ITS COLOUR BACK" },
+        { "LAVA BURNS  -  THE SIGNS ARE THERE FOR A REASON", "LAVA BURNS  -  THE SIGNS ARE THERE FOR A REASON" },
+        { "CARRY EACH FLAG BACK TO THE HUB",                 "CARRY EACH FLAG BACK TO THE HUB" },
+        { "A CHECKPOINT IS WHERE YOU WILL COME BACK",        "A CHECKPOINT IS WHERE YOU WILL COME BACK" },
+        { "D-PAD DOWN WAVES  -  D-PAD UP CLAPS",             "Q WAVES  -  R CLAPS" },
+        { "R3 FREEZES THE MOMENT  -  PHOTO MODE",            "P FREEZES THE MOMENT  -  PHOTO MODE" },
+        { "FACES UNLOCK NEW LOOKS  -  SELECT OPENS THE WARDROBE", "FACES UNLOCK NEW LOOKS  -  TAB OPENS THE WARDROBE" },
+        { "TRIANGLE IN THE WARDROBE SHOWS YOUR ACHIEVEMENTS", "Q IN THE WARDROBE SHOWS YOUR ACHIEVEMENTS" },
+        { "ONE BIG FACE RUNS AWAY  -  CHASE IT DOWN",        "ONE BIG FACE RUNS AWAY  -  CHASE IT DOWN" },
+        { "TWO GOLDEN FACES HIDE OFF THE PATH IN EVERY LEVEL", "TWO GOLDEN FACES HIDE OFF THE PATH IN EVERY LEVEL" },
+        { "BEAT THE CLOCK FOR A GOLD MEDAL",                 "BEAT THE CLOCK FOR A GOLD MEDAL" },
+        { "STUCK?  PAUSE AND PICK RESPAWN",                  "STUCK?  PAUSE AND PICK RESPAWN" },
     };
 
     private const string ArtFolder = "Loading/";
@@ -136,7 +146,7 @@ public class LoadingOverlay : MonoBehaviour
     private RectTransform runner;
     private Image runnerImage;
     private Image runnerGhost;
-    private Text tip;
+    private TextMeshProUGUI tip, tipShade;
     private int tipIndex = -1;
     private float tipTimer;
     private TurningHead head;
@@ -357,28 +367,28 @@ public class LoadingOverlay : MonoBehaviour
     {
         if (!showTips) return;
 
-        Font font = BuiltinFont();
-        if (font == null) return;
-
-        var go = new GameObject("Tip", typeof(RectTransform));
-        go.transform.SetParent(transform, false);
-
-        tip = go.AddComponent<Text>();
-        tip.font = font;
-        tip.fontSize = 19;
-        tip.alignment = TextAnchor.UpperCenter;
-        tip.color = new Color(1f, 1f, 1f, 0f);
-        tip.raycastTarget = false;
-        tip.horizontalOverflow = HorizontalWrapMode.Overflow;
-        tip.verticalOverflow = VerticalWrapMode.Overflow;
-
-        RectTransform rect = tip.rectTransform;
-        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
-        rect.pivot = new Vector2(0.5f, 1f);
-        rect.anchoredPosition = new Vector2(0f, TipBottom);
-        rect.sizeDelta = new Vector2(1400f, 44f);
+        // بخط الكرايون وظلّ حبر كاسم المرحلة، لا بخط يونيتي الرمادي
+        Color ink = ChromaWardrobeArt.Ink;
+        tipShade = ChromaWardrobeArt.NewText(transform, "TipShade", false, 34f, new Color(ink.r, ink.g, ink.b, 0f), TextAlignmentOptions.Top);
+        tip = ChromaWardrobeArt.NewText(transform, "Tip", false, 34f, new Color(1f, 1f, 1f, 0f), TextAlignmentOptions.Top);
+        foreach (TextMeshProUGUI text in new[] { tipShade, tip })
+        {
+            text.raycastTarget = false;
+            RectTransform rect = text.rectTransform;
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.sizeDelta = new Vector2(1500f, 50f);
+        }
+        PlaceTip();
 
         NextTip();
+    }
+
+    private void PlaceTip()
+    {
+        if (tip == null) return;
+        tip.rectTransform.anchoredPosition = new Vector2(0f, TipBottom);
+        tipShade.rectTransform.anchoredPosition = new Vector2(3f, TipBottom - 3f);
     }
 
     /// <summary>تحت اسم الوجهة مباشرة، في الوسط — سطران يقرآن معًا لا شيئان متفرّقان.</summary>
@@ -387,15 +397,16 @@ public class LoadingOverlay : MonoBehaviour
     /// <summary>تلميحٌ غير الذي قبله — التكرار في شاشةٍ قصيرة يُلاحَظ فورًا.</summary>
     private void NextTip()
     {
-        if (tip == null || Tips.Length == 0) return;
+        int count = Tips.GetLength(0);
+        if (tip == null || count == 0) return;
 
         int pick = tipIndex;
         for (int guard = 0; guard < 8 && pick == tipIndex; guard++)
-            pick = Random.Range(0, Tips.Length);
+            pick = Random.Range(0, count);
 
         tipIndex = pick;
         tipTimer = 0f;
-        tip.text = Tips[pick];
+        tip.text = tipShade.text = Tips[pick, InputScheme.UsingGamepad ? 0 : 1];
     }
 
     /// <summary>خط يونيتي المدمج — موجود في كل بناء بلا استيراد.</summary>
@@ -605,8 +616,7 @@ public class LoadingOverlay : MonoBehaviour
         if (label != null)
             label.rectTransform.anchoredPosition = new Vector2(0f, barBottom - 18f);
 
-        if (tip != null)
-            tip.rectTransform.anchoredPosition = new Vector2(0f, TipBottom);
+        PlaceTip();
 
         if (runnerImage != null && runnerImage.enabled)
         {
@@ -622,14 +632,16 @@ public class LoadingOverlay : MonoBehaviour
     /// <summary>يبدّل التلميح، ويُدخله ويُخرجه بتلاشٍ فلا يقفز نصٌّ مكان نصّ.</summary>
     private void Tip(float deltaTime)
     {
-        if (tip == null || Tips.Length == 0) return;
+        if (tip == null) return;
 
         tipTimer += deltaTime;
         if (tipTimer >= tipSeconds) NextTip();
 
         const float Fade = 0.45f;
-        float a = Mathf.Min(tipTimer / Fade, (tipSeconds - tipTimer) / Fade);
-        tip.color = new Color(1f, 1f, 1f, Mathf.Clamp01(a) * 0.62f);
+        float a = Mathf.Clamp01(Mathf.Min(tipTimer / Fade, (tipSeconds - tipTimer) / Fade));
+        Color paper = ChromaWardrobeArt.Paper, ink = ChromaWardrobeArt.Ink;
+        tip.color = new Color(paper.r, paper.g, paper.b, a * 0.92f);
+        tipShade.color = new Color(ink.r, ink.g, ink.b, a * 0.75f);
     }
 
     /// <summary>يكبّر الصورة لتغطّي الشاشة كاملة بلا أشرطة، مع تكبير بطيء أثناء التحميل.</summary>

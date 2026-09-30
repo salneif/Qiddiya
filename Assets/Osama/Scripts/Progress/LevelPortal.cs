@@ -119,14 +119,18 @@ public class LevelPortal : MonoBehaviour
     {
         get
         {
-            FlagId flag = sceneName == "Steam_Final" ? FlagId.Steam
-                        : sceneName == "AliLvl2_SultanVersion" ? FlagId.Twilight
-                        : sceneName == "Main_Circus" ? FlagId.Circus : FlagId.None;
+            FlagId flag = FlagOf(sceneName);
             if (flag == FlagId.None) return false;
             GameProgress progress = GameProgress.Instance;
             return progress.IsPlanted(flag) || progress.IsCarrying(flag);
         }
     }
+
+    /// <summary>علم المرحلة التي هذا اسمها، وNone للهب وما سواه.</summary>
+    internal static FlagId FlagOf(string scene) =>
+        scene == "Steam_Final" ? FlagId.Steam
+        : scene == "AliLvl2_SultanVersion" ? FlagId.Twilight
+        : scene == "Main_Circus" ? FlagId.Circus : FlagId.None;
 
     private bool playerInside;
     private bool armed = true;

@@ -150,7 +150,7 @@ public static class ChromaEvents
         FlagId carried = p.CarriedFlag;
         int planted = p.PlantedCount;
 
-        if (progressKnown)
+        if (progressKnown && !restoring)
         {
             if (carried != FlagId.None && carried != lastCarried) RaiseFlagPickedUp(PlayerPosition());
             if (planted > lastPlantedCount) RaiseFlagPlanted(PlayerPosition());
@@ -159,6 +159,18 @@ public static class ChromaEvents
         lastCarried = carried;
         lastPlantedCount = planted;
         progressKnown = true;
+    }
+
+    private static bool restoring;
+
+    /// <summary>
+    /// تقدّمٌ يُستعاد من الحفظ («Continue») لا يُحسب التقاطًا ولا غرسًا — لا أصوات ولا مؤثّرات في القائمة.
+    /// </summary>
+    internal static void Restoring(Action restore)
+    {
+        restoring = true;
+        try { restore(); }
+        finally { restoring = false; }
     }
 
     private static void OnProgressReset()

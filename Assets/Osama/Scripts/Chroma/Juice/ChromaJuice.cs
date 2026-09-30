@@ -8,6 +8,9 @@ using UnityEngine.SceneManagement;
 /// وبوابةٌ تنفتح، والموت — لكلٍّ نبضة لونٍ وجسيماتٌ وصوت في موضعها من العالم. وغبار القدمين
 /// في <see cref="ChromaJuiceSteps"/>.
 ///
+/// <b>ولمتعة البداية</b>: ترحيبٌ باللون أوّل كل مرحلة، واحتفالٌ صغير مع كل خطوة تعليم وقصاصاتٌ
+/// في آخرها، والتلويح ينفث لونًا وشررًا صاعدًا، والتصفيق يطلق قصاصاتٍ مع كل صفقة.
+///
 /// <b>اللون من النبضة لا من الجسيمات</b>: الشاشة تُرمَّد بعد رسم كل شيء، والجسيمات معه. فكل
 /// احتفالٍ يُطلق <see cref="ColorZones.Pulse"/> في اللحظة نفسها فيتلوّن ما تحتها، وما خرج عنها
 /// يبقى أبيض مضيئًا يُقرأ على الرمادي. وإن رُفضت النبضة (نفد المخزون، أو سينٌ بلا نظام لون)
@@ -37,6 +40,9 @@ public class ChromaJuice : MonoBehaviour
     /// ٥٫٥ م) ويصعد على ما حوله في الخارج.
     /// </summary>
     private const float ZoneLift = 1f;
+    private const float WelcomeDelay = 0.6f;                 // بعد ذوبان شاشة التحميل
+    private const float ClapFirst = 0.3f, ClapEvery = 0.55f; // إيقاع الصفقات في حركة التصفيق
+    private const int ClapPops = 4;
 
     /// <summary>الحلقة فوق الأرض بشعرة، وإلا تقاسمت معها العمق فتقطّعت.</summary>
     internal const float RingLift = 0.04f;
@@ -90,6 +96,8 @@ public class ChromaJuice : MonoBehaviour
     private readonly Moment[] recent = new Moment[6];
     private int recentNext;
     private int hue;
+    private bool welcomed;
+    private float liveSince = -1f;
     private float loadedAt;
 
     private Transform player;
@@ -174,6 +182,8 @@ public class ChromaJuice : MonoBehaviour
         ChromaEvents.PuzzleSolved += OnPuzzleSolved;
         ChromaEvents.GateOpened += OnGateOpened;
         ChromaEvents.PlayerDied += OnPlayerDied;
+        ChromaFunEvents.EmotePerformed += OnEmote;
+        ChromaFunEvents.TutorialStep += OnTutorialStep;
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
@@ -185,6 +195,8 @@ public class ChromaJuice : MonoBehaviour
         ChromaEvents.PuzzleSolved -= OnPuzzleSolved;
         ChromaEvents.GateOpened -= OnGateOpened;
         ChromaEvents.PlayerDied -= OnPlayerDied;
+        ChromaFunEvents.EmotePerformed -= OnEmote;
+        ChromaFunEvents.TutorialStep -= OnTutorialStep;
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
@@ -208,6 +220,8 @@ public class ChromaJuice : MonoBehaviour
         nextSearch = 0f;
         loadedAt = Time.unscaledTime;
         shelters = HasShelters();
+        welcomed = false;
+        liveSince = -1f;
     }
 
     // ---------- اللحظات ----------
@@ -308,6 +322,108 @@ public class ChromaJuice : MonoBehaviour
         Vector3 spot = steps.Vanished(at);
         steps.Suspend(QuietAfterDeath);
         if (Ready()) StartCoroutine(Ink(spot, killable != null ? BurnTime : 0f));
+    }
+
+    // ---------- البداية واللعب ----------
+
+    /// <summary>أوّل لحظة لعبٍ في المرحلة (بعد أن تذوب شاشة التحميل): ترحيبٌ باللون.</summary>
+    private void Update()
+    {
+        if (welcomed) return;
+        if (!Ready()) { liveSince = -1f; return; }
+        if (liveSince < 0f) liveSince = Time.unscaledTime;
+        if (Time.unscaledTime - liveSince < WelcomeDelay) return;
+
+        welcomed = true;
+        if (LevelRestart.IsLevel(SceneManager.GetActiveScene().name)) Welcome();
+    }
+
+    /// <summary>
+    /// الترحيب: اللون يتفتّح حول اللاعب — دائرةٌ تتّسع، وحلقتان ذهبيّة وملوّنة، وعمود شررٍ يصعد.
+    /// يقول «هذا عالمٌ يعود لونه بك» قبل أيّ كلمة.
+    /// </summary>
+    private void Welcome()
+    {
+        Transform body = Player;
+        if (body == null) return;
+        bool grounded = Floor(body.position + Vector3.up * 0.5f, out Vector3 floor);
+        Vector3 center = grounded ? floor + Vector3.up * ZoneLift : body.position;
+
+        Splash(center, 9f, 0.9f, 1.8f, 4f);
+        if (grounded)
+        {
+            fx.Ring(floor + Vector3.up * RingLift, 5.5f, 0.85f, Bright(style.gold));
+            StartCoroutine(RingLater(0.18f, floor + Vector3.up * RingLift, 3.6f, 0.7f, Bright(style.Palette(hue + 2))));
+        }
+        StartCoroutine(Column(grounded ? floor : body.position, 26, 1.2f));
+        ChromaSfx.Play("Pulse_Whoosh", 0.4f, 1.05f);
+    }
+
+    /// <summary>
+    /// التلويح: نفثة لونٍ صغيرة وشررٌ يصعد حوله. التصفيق: قصاصاتٌ تطير من اليدين مع كل صفقة.
+    /// كلاهما بدائرة لونٍ صغيرة — القصاصات لا تتلوّن إلا داخلها.
+    /// </summary>
+    private void OnEmote(string emote)
+    {
+        if (!Ready()) return;
+        Transform body = Player;
+        bool grounded = Floor(body.position + Vector3.up * 0.5f, out Vector3 floor);
+        Vector3 center = grounded ? floor + Vector3.up * ZoneLift : body.position;
+
+        if (emote == "wave")
+        {
+            Splash(center, 3.8f, 1.2f, 1f, 3f);
+            StartCoroutine(Column(grounded ? floor : body.position, 14, 1.6f));
+            return;
+        }
+        Splash(center, 4.2f, 1.9f, 1f, 3.5f);
+        StartCoroutine(Claps(body));
+    }
+
+    private IEnumerator Claps(Transform body)
+    {
+        for (float t = 0f; t < ClapFirst; t += Time.deltaTime) yield return null;
+        for (int i = 0; i < ClapPops && ChromaEmotes.Playing; i++)
+        {
+            if (body == null) yield break;
+            Vector3 hands = body.position + Vector3.up * 1.35f + body.forward * 0.3f;
+            fx.Flash(hands, 0.8f, 0.14f, Warm);
+            for (int k = 0; k < 8; k++)
+                fx.Confetti(hands, Throw(2.4f, 3.8f, 0.4f, 1.3f), Piece(), Random.Range(1.3f, 1.9f), NextHue());
+            for (float t = 0f; t < ClapEvery; t += Time.deltaTime) yield return null;
+        }
+    }
+
+    /// <summary>
+    /// خطوة تعليمٍ أُتمّت: حلقةٌ صغيرة ولون وشرر — «أحسنت» بلا كلمة. وآخرها احتفالٌ كامل:
+    /// دائرةٌ واسعة، وحلقتان، ونافورة، وقصاصاتٌ تمطر.
+    /// </summary>
+    private void OnTutorialStep(int step, bool last)
+    {
+        if (!Ready()) return;
+        Transform body = Player;
+        bool grounded = Floor(body.position + Vector3.up * 0.5f, out Vector3 floor);
+        Vector3 center = grounded ? floor + Vector3.up * ZoneLift : body.position;
+        Vector3 chest = body.position + Vector3.up * 1.1f;
+
+        if (!last)
+        {
+            Splash(center, 4f, 0.35f, 0.8f, 3f);
+            if (grounded) fx.Ring(floor + Vector3.up * RingLift, 2.6f, 0.5f, Bright(style.Palette(hue + step)));
+            Burst(chest, 10, 3);
+            return;
+        }
+
+        Splash(center, 10f, 1.4f, 1.8f, 4f);
+        fx.Flash(chest, 3.5f, 0.35f, Warm);
+        if (grounded)
+        {
+            fx.Ring(floor + Vector3.up * RingLift, 6f, 0.85f, Bright(style.gold));
+            StartCoroutine(RingLater(0.15f, floor + Vector3.up * RingLift, 4f, 0.7f, Bright(style.Palette(hue + 3))));
+        }
+        StartCoroutine(Fountain(chest, 20, 8, 0.5f, 0.9f));
+        StartCoroutine(Confetti(chest + Vector3.up * 0.4f, grounded ? floor : body.position, 16, 36, 1.3f));
+        ChromaSfx.Play("Pulse_Whoosh", 0.5f, 1f);
     }
 
     // ---------- على مهل ----------

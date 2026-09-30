@@ -45,6 +45,9 @@ public static class ChromaFunEvents
     /// <summary>غادر مرحلةً عبر بوابتها فعلًا (بعد كل الشروط): من، إلى.</summary>
     public static event Action<string, string> LevelLeft;
 
+    /// <summary>خطوة تعليمٍ أُتمّت: رقمها، وأهي الأخيرة.</summary>
+    public static event Action<int, bool> TutorialStep;
+
     /// <summary>لافتةٌ مطلوبة.</summary>
     public static event Action<Banner> Announced;
 
@@ -60,6 +63,7 @@ public static class ChromaFunEvents
         PhotoTaken = null;
         MedalEarned = null;
         LevelLeft = null;
+        TutorialStep = null;
         Announced = null;
         backlog.Clear();
     }
@@ -107,6 +111,12 @@ public static class ChromaFunEvents
     {
         if (LevelLeft == null) return;
         foreach (Action<string, string> l in LevelLeft.GetInvocationList()) Safe(() => l(from, to));
+    }
+
+    public static void RaiseTutorialStep(int step, bool last)
+    {
+        if (TutorialStep == null) return;
+        foreach (Action<int, bool> l in TutorialStep.GetInvocationList()) Safe(() => l(step, last));
     }
 
     /// <summary>يطلب لافتة. إن لم يستمع أحدٌ بعد، تنتظر في الطابور.</summary>
