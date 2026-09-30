@@ -69,7 +69,7 @@ public class HoldToSkip : MonoBehaviour
     }
 
     private MonoBehaviour skipper;          // VideoSkipButton الخاص بعلي
-    private VideoPlayer video;              // صوته لا يمرّ بـAudioListener، فنُدخله ونخفته بيدنا
+    private VideoPlayer video;              // صوته نحوّله لـAudioSource (RouteAudio)، وإلا أدخلناه وأخفتناه بيدنا
     private float[] tracks;                 // شدّة كل مسار صوتي، منها ندخل ونخفت
     private Coroutine rising;               // دخول صوت الفيلم، يقف حيث وصل إن غادرنا قبل تمامه
     private MonoBehaviour ender;            // A_AfterIntro — ينقل وحده حين ينتهي العدّ
@@ -175,7 +175,7 @@ public class HoldToSkip : MonoBehaviour
     /// </summary>
     private void RememberTracks()
     {
-        if (video == null) { tracks = null; return; }
+        if (video == null || video.audioOutputMode != VideoAudioOutputMode.Direct) { tracks = null; return; }
 
         // audioTrackCount لا يُعرف إلا بعد تجهيز المقطع، فإن كان صفرًا أخذنا عدد
         // المسارات المضبوط في السين — وإلا خرجنا بمصفوفة فارغة ولم يخفت شيء
@@ -214,6 +214,33 @@ public class HoldToSkip : MonoBehaviour
 
         Tracks(master);
         rising = null;
+    }
+
+    /// <summary>
+    /// <b>صوت الانترو في البلد</b>: مخرج الفيديو في سين علي <c>Direct</c> — يخرج في المحرّر ويصمت في
+    /// بناء ويندوز. نحوّله وقت التشغيل إلى <c>AudioSource</c> على كائن الفيديو نفسه (السين لا يُمسّ)
+    /// ونعيد التشغيل من أوّله، والسين لم يمضِ منه إلا إطار تحت شاشة التحميل. فيمرّ صوته بالسامع:
+    /// يدخل ويخرج مع صوت اللعبة ويسمع الرئيسي. true إن حُوّل.
+    /// </summary>
+    private static bool RouteAudio(VideoPlayer player)
+    {
+        if (player == null || player.audioOutputMode != VideoAudioOutputMode.Direct) return false;
+
+        var source = player.GetComponent<AudioSource>();
+        if (source == null) source = player.gameObject.AddComponent<AudioSource>();
+        source.playOnAwake = false;
+        source.loop = false;
+        source.spatialBlend = 0f;
+        source.volume = 1f;
+
+        bool play = player.isPlaying || player.playOnAwake;
+        player.Stop();
+        player.audioOutputMode = VideoAudioOutputMode.AudioSource;
+        player.controlledAudioTrackCount = 1;
+        player.EnableAudioTrack(0, true);
+        player.SetTargetAudioSource(0, source);
+        if (play) player.Play();
+        return true;
     }
 
     /// <summary>أي زرّ: كيبورد أو يد أو ماوس. العصيّ لا تُحسب إمساكًا.</summary>
@@ -322,11 +349,15 @@ public class HoldToSkip : MonoBehaviour
         tracks = null;
         if (video == null) return;
 
-        // صوت الفيلم لا يمرّ بالسامع، فلا يدخل مع صوت السين ولا يسمع الرئيسي: كان يبدأ
-        // بكامل قوّته بعد صمت شاشة التحميل، ولو خفض اللاعب الرئيسي
-        RememberTracks();
-        if (rising != null) StopCoroutine(rising);
-        rising = StartCoroutine(Rise());
+        // صوت الفيلم: عبر AudioSource إن أمكن، فيدخل ويخرج مع صوت السين (ChromaAudioFade)
+        // ويسمع الرئيسي. وإلا بقي Direct فأدخلناه بيدنا — كان يبدأ بكامل قوّته بعد صمت شاشة
+        // التحميل، ولو خفض اللاعب الرئيسي
+        if (rising != null) { StopCoroutine(rising); rising = null; }
+        if (!RouteAudio(video))
+        {
+            RememberTracks();
+            rising = StartCoroutine(Rise());
+        }
 
         foreach (var component in FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
         {

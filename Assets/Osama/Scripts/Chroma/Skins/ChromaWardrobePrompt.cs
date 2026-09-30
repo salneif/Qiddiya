@@ -14,10 +14,19 @@ using UnityEngine.UI;
 ///
 /// من يملكه ينادي <see cref="Refresh"/> عند <see cref="InputScheme.Changed"/>، والصفّ
 /// الذي هو فيه يأخذ عرضه الجديد وحده.
+///
+/// <b>والأولى صور أسامة</b> (<c>Resources/Prompts</c>): مفتاح الكيبورد الأبيض (<c>KeyE</c>) ولوح اليد
+/// الطباشيري (<c>PadE</c>) بكل رموزهما. الرسم أعلاه احتياطٌ لما لا صورة له (السهمان).
 /// </summary>
 public sealed class ChromaWardrobePrompt
 {
-    public enum Pad { Cross, Circle, DPad, Select }
+    public enum Pad
+    {
+        Cross, Circle, DPad, Select,
+        Square, Triangle, Options, R3, DPadUp, DPadDown, LeftStick, RightStick, Triggers,
+    }
+
+    private const string Icons = "Prompts/";
 
     private static readonly Color CrossBlue = new Color(0.55f, 0.72f, 1f);
     private static readonly Color CircleRed = new Color(1f, 0.46f, 0.46f);
@@ -33,6 +42,7 @@ public sealed class ChromaWardrobePrompt
     private readonly RectTransform selectCap;
     private readonly TextMeshProUGUI selectLabel;
     private string selectName;
+    private readonly int padIcons;   // صورٌ لليد، أو صفرٌ والرسم احتياط
 
     /// <param name="keyLabels">
     /// غطاءٌ لكل عنصر. <c>"&lt;"</c> و<c>"&gt;"</c> سهمان مرسومان — خطّ اللعبة بلا هذين الحرفين.
@@ -53,14 +63,28 @@ public sealed class ChromaWardrobePrompt
         float x = 0f;
         foreach (string label in keyLabels)
         {
-            RectTransform cap = Keycap(keyRoot, label, out TextMeshProUGUI text);
-            float width = text != null ? Fit(cap, text) : height;
+            RectTransform cap = Icon(keyRoot, KeyIcon(label));
+            float width = height;
+            if (cap == null)
+            {
+                cap = Keycap(keyRoot, label, out TextMeshProUGUI text);
+                width = text != null ? Fit(cap, text) : height;
+            }
             cap.anchoredPosition = new Vector2(x, 0f);
             x += width + gap;
         }
         keysWidth = Mathf.Max(height, x - gap);
 
         padArt = Holder("Pad");
+        padIcons = 0;
+        foreach (string name in PadIcons(pad))
+        {
+            RectTransform icon = Icon(padArt, Load("Pad" + name));
+            if (icon == null) { padIcons = 0; break; }
+            icon.anchoredPosition = new Vector2(padIcons * (height + gap), 0f);
+            padIcons++;
+        }
+        if (padIcons == 0)
         switch (pad)
         {
             case Pad.Cross:
@@ -81,6 +105,66 @@ public sealed class ChromaWardrobePrompt
         Refresh();
     }
 
+    /// <summary>زرٌّ بصورته وكلمةٌ بعده — صفٌّ صغير يدخل في صفٍّ أكبر (تلميحات الخزانة والتصوير والأوسمة).</summary>
+    public static ChromaWardrobePrompt Labeled(RectTransform parent, string label, Color color, float size,
+                                               float fontSize, Pad pad, params string[] keys)
+    {
+        RectTransform group = ChromaWardrobeArt.NewRow(parent, label, 10f, false);
+        group.sizeDelta = new Vector2(10f, size + 8f);
+
+        var prompt = new ChromaWardrobePrompt(group, size, pad, keys);
+        TextMeshProUGUI text = ChromaWardrobeArt.NewText(group, "Text", false, fontSize, color, TextAlignmentOptions.Left);
+        text.text = label;
+        text.rectTransform.sizeDelta = new Vector2(10f, size + 8f);
+        return prompt;
+    }
+
+    private static string[] PadIcons(Pad pad)
+    {
+        switch (pad)
+        {
+            case Pad.Select: return new[] { "Share" };
+            case Pad.Triggers: return new[] { "L2", "R2" };
+            default: return new[] { pad.ToString() };
+        }
+    }
+
+    /// <summary>صورة مفتاح الكيبورد لهذا النصّ، أو null (السهمان يُرسمان).</summary>
+    private static Sprite KeyIcon(string label)
+    {
+        switch (label)
+        {
+            case "ENTER": return Load("KeyEnter");
+            case "TAB": return Load("KeyTab");
+            case "ESC": return Load("KeyEsc");
+            case "SPACE": return Load("KeySpace");
+            case "ARROWS": return Load("KeyArrows");
+        }
+        return label != null && label.Length == 1 && char.IsLetter(label[0]) ? Load("Key" + char.ToUpperInvariant(label[0])) : null;
+    }
+
+    private static readonly System.Collections.Generic.Dictionary<string, Sprite> cache =
+        new System.Collections.Generic.Dictionary<string, Sprite>();
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics() => cache.Clear();
+
+    private static Sprite Load(string name)
+    {
+        if (cache.TryGetValue(name, out Sprite found)) return found;
+        return cache[name] = Resources.Load<Sprite>(Icons + name);
+    }
+
+    /// <summary>صورةٌ مربّعة بارتفاع الزرّ، أو null إن لم توجد.</summary>
+    private RectTransform Icon(Transform parent, Sprite sprite)
+    {
+        if (sprite == null) return null;
+        Image image = ChromaWardrobeArt.NewImage(parent, sprite.name, sprite, Color.white);
+        image.preserveAspect = true;
+        return ChromaWardrobeArt.Place(image, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero,
+                                       new Vector2(height, height));
+    }
+
     /// <summary>يرسم زرّ الجهاز الذي يلعب به اللاعب الآن، ويأخذ عرضه.</summary>
     public void Refresh()
     {
@@ -88,7 +172,9 @@ public sealed class ChromaWardrobePrompt
         keys.SetActive(!gamepad);
         padArt.gameObject.SetActive(gamepad);
 
-        float width = gamepad ? (pad == Pad.Select ? SelectWidth() : height) : keysWidth;
+        float width = !gamepad ? keysWidth
+                     : padIcons > 0 ? padIcons * height + (padIcons - 1) * 6f
+                     : pad == Pad.Select ? SelectWidth() : height;
         Rect.sizeDelta = new Vector2(width, height);
         layout.preferredWidth = width;
         layout.preferredHeight = height;

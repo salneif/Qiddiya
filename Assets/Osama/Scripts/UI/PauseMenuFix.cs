@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Reflection;
 using TMPro;
 using UnityEngine;
@@ -41,6 +42,7 @@ public class PauseMenuFix : MonoBehaviour
     private const string SettingsName = "Settings_Canvas";
     private const string ResumeName = "Resume_Button";
     private const string ExitName = "Exit_Button";
+    private const string SettingsButtonName = "Settings_Button";
     private const string AddedTag = " (Chroma)";
     private const string RestartLabel = "Restart", ConfirmLabel = "Sure?";
     private const float ConfirmWindow = 3f;
@@ -112,6 +114,7 @@ public class PauseMenuFix : MonoBehaviour
         else if (open) KeepSelection();
 
         if (confirmUntil >= 0f && (!open || Time.unscaledTime > confirmUntil)) Unconfirm();
+        if (open) Pointer();
 
         wasOpen = canvas.enabled;
         settingsWasOpen = settings != null && settings.activeSelf;
@@ -230,6 +233,19 @@ public class PauseMenuFix : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// مؤشر الماوس ليد التحكّم لا يُرى ولا يُحسب: لوحة علي تُظهره وتفكّه عند الفتح، فيقف في وسط الشاشة
+    /// فوق الأزرار — ويسرق التحديد إليه كلّما مرّ عليه زرّ، فيقفز الإبراز من تحت العصا. مقفولًا لا يرسل
+    /// الـ UI موضعه أصلًا. وأوّل حركة ماوس تعيده (<see cref="InputScheme"/>).
+    /// </summary>
+    private static void Pointer()
+    {
+        bool pad = InputScheme.UsingGamepad;
+        if (Cursor.visible == pad) Cursor.visible = !pad;
+        CursorLockMode want = pad ? CursorLockMode.Locked : CursorLockMode.None;
+        if (Cursor.lockState != want) Cursor.lockState = want;
+    }
+
     // ---------- الريست: Respawn وRestart ----------
 
     /// <summary>
@@ -243,41 +259,93 @@ public class PauseMenuFix : MonoBehaviour
         confirmUntil = -1f;
         if (holder == null) return;
 
-        Transform resume = null, exit = null;
+        Transform resume = null, settingsButton = null, exit = null;
         foreach (Transform child in holder.transform)
         {
             string n = child.name.Trim();
             if (n.EndsWith(AddedTag)) return;           // أُضيفا من قبل في هذه اللوحة
             if (n == ResumeName) resume = child;
             else if (n == ExitName) exit = child;
+            else if (n.StartsWith(SettingsButtonName) && child.GetComponent<Button>() != null) settingsButton = child;
         }
         var resumeRect = resume as RectTransform;
         var exitRect = exit as RectTransform;
         if (resumeRect == null || exitRect == null) return;
         UIPanel[] panels = MenuBaseline.Settle(holder.transform);   // الأزرار في حالها الطبيعية قبل النسخ
 
-        // الخطوة بين الأزرار كما رصّها صاحب اللوحة (Resume → Settings → Exit)
+        // الخطوة الأصلية بين الأزرار كما رصّها صاحب اللوحة (Resume → Settings → Exit)
         float step = (resumeRect.anchoredPosition.y - exitRect.anchoredPosition.y) * 0.5f;
         if (step <= 0f) return;
 
-        Vector2 at = exitRect.anchoredPosition;
-        Clone(resumeRect, "Respawn", at, OnRespawn);
-        int moved = 1;
+        var order = new List<RectTransform> { resumeRect };
+        if (settingsButton is RectTransform s) order.Add(s);
+        order.Add(Clone(resumeRect, "Respawn", OnRespawn, out _));
         if (LevelRestart.Available)
         {
-            restartText = Clone(resumeRect, RestartLabel, at + Vector2.down * step, OnRestart);
-            moved = 2;
+            order.Add(Clone(resumeRect, RestartLabel, OnRestart, out TMP_Text text));
+            restartText = text;
         }
-        exitRect.anchoredPosition = at + Vector2.down * step * moved;
-        MenuBaseline.Recapture(panels);   // وإلا أعادت لوحة علي Exit فوق Respawn عند الرجوع من الإعدادات
+        order.Add(exitRect);
+
+        Arrange(order, step);
+        Chain(order);
+        MenuBaseline.Recapture(panels);   // وإلا أعادت لوحة علي كل زرٍّ لموضعه القديم عند الرجوع من الإعدادات
     }
 
-    private static TMP_Text Clone(RectTransform template, string label, Vector2 at, UnityAction click)
+    /// <summary>
+    /// رصٌّ متساوٍ بين عنوان PAUSED وأسفل الشاشة. المرجع <b>وسط الكلام المرسوم</b> لا مربّع الزر: زرّ
+    /// Settings بمقياسٍ ومحورٍ غير أخويه، فمواضع المربّعات المتساوية تُرى كلامًا غير متساوٍ.
+    /// </summary>
+    private void Arrange(List<RectTransform> order, float step)
+    {
+        Transform space = holder.transform;
+        Vector2 first = LabelCenter(order[0], space);
+        float top = first.y + step * 0.6f;
+        float gap = step * 0.9f;               // خمسة أزرار في مساحة أربعة، والأخير فوق حافة الشاشة
+        for (int i = 0; i < order.Count; i++)
+        {
+            Vector2 at = LabelCenter(order[i], space);
+            order[i].anchoredPosition += new Vector2(first.x - at.x, top - gap * i - at.y);
+        }
+    }
+
+    /// <summary>وسط الكلام المرسوم في فضاء اللوحة، أو وسط الزر إن لم يُرسم كلامٌ بعد.</summary>
+    private static Vector2 LabelCenter(RectTransform button, Transform space)
+    {
+        TMP_Text label = button.GetComponentInChildren<TMP_Text>(true);
+        if (label != null)
+        {
+            label.ForceMeshUpdate();
+            Bounds b = label.textBounds;
+            if (b.size.sqrMagnitude > 0.0001f) return space.InverseTransformPoint(label.transform.TransformPoint(b.center));
+        }
+        return space.InverseTransformPoint(button.TransformPoint(button.rect.center));
+    }
+
+    /// <summary>
+    /// تنقّلٌ صريح من أعلى لأسفل ويلفّ من الطرفين. «التلقائي» يختار الجار بالزاوية والمسافة، ومع
+    /// أزرارٍ بمقاييس مختلفة كان يقفز زرًّا أو يتردّد — لا يمين ولا يسار هنا.
+    /// </summary>
+    private static void Chain(List<RectTransform> order)
+    {
+        int n = order.Count;
+        for (int i = 0; i < n; i++)
+        {
+            var button = order[i].GetComponent<Button>();
+            if (button == null) continue;
+            button.navigation = new Navigation
+            {
+                mode = Navigation.Mode.Explicit,
+                selectOnUp = order[(i - 1 + n) % n].GetComponent<Button>(),
+                selectOnDown = order[(i + 1) % n].GetComponent<Button>(),
+            };
+        }
+    }
+
+    private static RectTransform Clone(RectTransform template, string label, UnityAction click, out TMP_Text text)
     {
         GameObject copy = Instantiate(template.gameObject, template.parent);
         copy.name = label + "_Button" + AddedTag;
-        var rect = (RectTransform)copy.transform;
-        rect.anchoredPosition = new Vector2(template.anchoredPosition.x, at.y);
 
         var button = copy.GetComponent<Button>();
         if (button != null)
@@ -289,13 +357,13 @@ public class PauseMenuFix : MonoBehaviour
             button.onClick.AddListener(click);
         }
 
-        TMP_Text first = null;
-        foreach (TMP_Text text in copy.GetComponentsInChildren<TMP_Text>(true))
+        text = null;
+        foreach (TMP_Text t in copy.GetComponentsInChildren<TMP_Text>(true))
         {
-            text.text = label;
-            if (first == null) first = text;
+            t.text = label;
+            if (text == null) text = t;
         }
-        return first;
+        return (RectTransform)copy.transform;
     }
 
     private void OnRespawn()

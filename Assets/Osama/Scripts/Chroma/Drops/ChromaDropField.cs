@@ -98,6 +98,9 @@ public class ChromaDropField : MonoBehaviour
     /// <summary>لون آخر قطرةٍ جُمعت — يُقرأ لحظة <see cref="ChromaBank.Gained"/>.</summary>
     public static Color LastColor { get; private set; } = Color.white;
 
+    /// <summary>مواضع المسار المخطَّطة للسين الحالي — تُقرأ مع <see cref="ChromaFunEvents.DropsPlanned"/> (نقاط الرجوع).</summary>
+    internal static IReadOnlyList<ChromaDropPlanner.Spot> Route => instance != null ? instance.route : null;
+
     private static ChromaDropField instance;
 
     /// <summary>

@@ -17,25 +17,28 @@ public class ChromaTutorial : MonoBehaviour
 {
     private struct Step
     {
-        public string action, line, keys, pad;
+        public string action, line;
+        public string[] keys;                    // صور مفاتيح الكيبورد (Resources/Prompts)
+        public ChromaWardrobePrompt.Pad pad;     // وصورة زرّ اليد
         public float timeout;   // ٠ = ينتظر الفعل حتمًا
     }
 
     private static readonly Step[] Steps =
     {
-        new Step { action = "MOVE",       line = "Walk around",                              keys = "W A S D",   pad = "LEFT STICK", timeout = 0f },
-        new Step { action = "JUMP",       line = "Hop over gaps",                            keys = "SPACE",     pad = "CROSS",      timeout = 0f },
-        new Step { action = "INTERACT",   line = "Levers, doors and flags",                  keys = "E",         pad = "SQUARE",     timeout = 7f },
-        new Step { action = "WAVE",       line = "Say hi to the camera",                     keys = "Q",         pad = "D-PAD DOWN", timeout = 12f },
-        new Step { action = "CLAP",       line = "Celebrate a little",                       keys = "R",         pad = "D-PAD UP",   timeout = 12f },
-        new Step { action = "WARDROBE",   line = "Collect faces to unlock new looks",        keys = "TAB",       pad = "SELECT",     timeout = 10f },
-        new Step { action = "PHOTO MODE", line = "Freeze the moment and take a picture",     keys = "P",         pad = "R3",         timeout = 10f },
+        new Step { action = "MOVE",       line = "Walk around",                          keys = new[] { "W", "A", "S", "D" }, pad = ChromaWardrobePrompt.Pad.LeftStick, timeout = 0f },
+        new Step { action = "JUMP",       line = "Hop over gaps",                        keys = new[] { "SPACE" }, pad = ChromaWardrobePrompt.Pad.Cross,    timeout = 0f },
+        new Step { action = "INTERACT",   line = "Levers, doors and flags",              keys = new[] { "E" },     pad = ChromaWardrobePrompt.Pad.Square,   timeout = 7f },
+        new Step { action = "WAVE",       line = "Say hi to the camera",                 keys = new[] { "Q" },     pad = ChromaWardrobePrompt.Pad.DPadDown, timeout = 12f },
+        new Step { action = "CLAP",       line = "Celebrate a little",                   keys = new[] { "R" },     pad = ChromaWardrobePrompt.Pad.DPadUp,   timeout = 12f },
+        new Step { action = "WARDROBE",   line = "Collect faces to unlock new looks",    keys = new[] { "TAB" },   pad = ChromaWardrobePrompt.Pad.Select,   timeout = 10f },
+        new Step { action = "PHOTO MODE", line = "Freeze the moment and take a picture", keys = new[] { "P" },     pad = ChromaWardrobePrompt.Pad.R3,       timeout = 10f },
     };
 
     private const string Level = "Steam_Final";
     private const float StartAfter = 6.2f;          // بعد اسم المرحلة (٤٫٦ ث + ستارة)
     private const float FadeIn = 0.35f, DoneHold = 0.55f, FadeOut = 0.35f, Gap = 0.5f;
     private const int Reward = 10;
+    private const float PromptSize = 92f;
 
     private static ChromaTutorial instance;
     private static bool doneThisRun;
@@ -67,8 +70,9 @@ public class ChromaTutorial : MonoBehaviour
 
     private Canvas canvas;
     private CanvasGroup group;
-    private RectTransform cap, block;
-    private TextMeshProUGUI capText, action, line, count, actionShade, lineShade;
+    private RectTransform block;
+    private TextMeshProUGUI action, line, count, actionShade, lineShade;
+    private ChromaWardrobePrompt[] prompts;
 
     private void OnEnable()
     {
@@ -240,9 +244,11 @@ public class ChromaTutorial : MonoBehaviour
     {
         if (canvas == null || step < 0 || step >= Steps.Length) return;
         Step s = Steps[step];
-        string key = InputScheme.UsingGamepad ? s.pad : s.keys;
-        capText.text = key;
-        cap.sizeDelta = new Vector2(Mathf.Max(90f, 34f + key.Length * 24f), 76f);
+        for (int i = 0; i < prompts.Length; i++)
+        {
+            prompts[i].Rect.gameObject.SetActive(i == step);
+            if (i == step) prompts[i].Refresh();
+        }
         actionShade.text = action.text = s.action;
         lineShade.text = line.text = s.line;
         count.text = (step + 1) + " / " + Steps.Length;
@@ -266,12 +272,17 @@ public class ChromaTutorial : MonoBehaviour
         block = ChromaWardrobeArt.NewRect(canvas.transform, "Block");
         ChromaWardrobeArt.Place(block, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(1100f, 170f));
 
-        // المفتاح: ورقةٌ بإطار حبر، والزرّ مكتوبٌ عليها
-        cap = ChromaWardrobeArt.NewRect(block, "Key");
-        ChromaWardrobeArt.Place(cap, new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(-18f, 0f), new Vector2(120f, 76f));
-        ChromaWardrobeArt.Card(cap, 3f);
-        capText = ChromaWardrobeArt.NewText(cap, "Key", false, 38f, ink, TextAlignmentOptions.Center);
-        ChromaWardrobeArt.Stretch(capText);
+        // زرّ الخطوة بصورته: مفتاح الكيبورد الأبيض أو لوح اليد — يتبدّل مع الجهاز (Refresh)
+        prompts = new ChromaWardrobePrompt[Steps.Length];
+        for (int i = 0; i < Steps.Length; i++)
+        {
+            prompts[i] = new ChromaWardrobePrompt(block, PromptSize, Steps[i].pad, Steps[i].keys);
+            RectTransform r = prompts[i].Rect;
+            r.anchorMin = r.anchorMax = new Vector2(0.5f, 1f);
+            r.pivot = new Vector2(1f, 1f);
+            r.anchoredPosition = new Vector2(-18f, 8f);
+            r.gameObject.SetActive(false);
+        }
 
         // اسم الحركة بحروف الورق وظلّ الحبر، يمين المفتاح
         actionShade = ChromaWardrobeArt.NewText(block, "ActionShade", true, 64f, shade, TextAlignmentOptions.Left);

@@ -50,6 +50,16 @@ public class ChromaAchievementsPage : MonoBehaviour
     private readonly TextMeshProUGUI[] letters = new TextMeshProUGUI[12];
     private readonly TextMeshProUGUI[] names = new TextMeshProUGUI[12];
     private RectTransform ring;
+    private readonly System.Collections.Generic.List<ChromaWardrobePrompt> prompts =
+        new System.Collections.Generic.List<ChromaWardrobePrompt>();
+
+    private void OnEnable() => InputScheme.Changed += RefreshPrompts;
+    private void OnDisable() => InputScheme.Changed -= RefreshPrompts;
+
+    private void RefreshPrompts()
+    {
+        foreach (ChromaWardrobePrompt p in prompts) p.Refresh();
+    }
 
     private void Update()
     {
@@ -168,11 +178,11 @@ public class ChromaAchievementsPage : MonoBehaviour
         canvas = ChromaWardrobeArt.NewCanvas(transform, "Achievements", SortingOrder, out group);
         Color ink = ChromaWardrobeArt.Ink, paper = ChromaWardrobeArt.Paper;
 
-        // تلميح الفتح أعلى الوسط ما دامت الخزانة مفتوحة
-        var hintText = ChromaWardrobeArt.NewText(canvas.transform, "Hint", false, 30f, paper, TextAlignmentOptions.Center);
-        ChromaWardrobeArt.Place(hintText, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(700f, 44f));
-        hintText.text = "Q  /  Y      ACHIEVEMENTS";
-        hint = hintText.gameObject;
+        // تلميح الفتح أعلى الوسط ما دامت الخزانة مفتوحة: صورة الزرّ وكلمته
+        RectTransform hintRow = ChromaWardrobeArt.NewRow(canvas.transform, "Hint", 0f);
+        ChromaWardrobeArt.Place(hintRow, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -20f), new Vector2(10f, 56f));
+        prompts.Add(ChromaWardrobePrompt.Labeled(hintRow, "ACHIEVEMENTS", paper, 48f, 30f, ChromaWardrobePrompt.Pad.Triangle, "Q"));
+        hint = hintRow.gameObject;
 
         var cardRect = ChromaWardrobeArt.NewRect(canvas.transform, "Card");
         ChromaWardrobeArt.Place(cardRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(CardW, CardH));
@@ -209,9 +219,11 @@ public class ChromaAchievementsPage : MonoBehaviour
         detail.fontSizeMin = 18f;
         detail.fontSizeMax = 30f;
 
-        var foot = ChromaWardrobeArt.NewText(cardRect, "Footer", false, 22f, new Color(ink.r, ink.g, ink.b, 0.6f), TextAlignmentOptions.Center);
-        ChromaWardrobeArt.Place(foot, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 26f), new Vector2(CardW - 80f, 30f));
-        foot.text = "BROWSE: ARROWS / STICK      BACK: Q / Y / CIRCLE";
+        Color soft = new Color(ink.r, ink.g, ink.b, 0.75f);
+        RectTransform foot = ChromaWardrobeArt.NewRow(cardRect, "Footer", 36f);
+        ChromaWardrobeArt.Place(foot, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 14f), new Vector2(10f, 48f));
+        prompts.Add(ChromaWardrobePrompt.Labeled(foot, "BROWSE", soft, 40f, 24f, ChromaWardrobePrompt.Pad.LeftStick, "ARROWS"));
+        prompts.Add(ChromaWardrobePrompt.Labeled(foot, "BACK", soft, 40f, 24f, ChromaWardrobePrompt.Pad.Circle, "Q"));
 
         card.SetActive(false);
     }

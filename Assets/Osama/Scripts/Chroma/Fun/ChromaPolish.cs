@@ -54,9 +54,17 @@ public class ChromaPolish : MonoBehaviour
         InputSystem.onDeviceChange -= OnDeviceChange;
     }
 
+    private bool hadFocus;
+
+    /// <summary>
+    /// بعد أن تملك النافذة التركيز مرّةً فقط: نافذةٌ تبدأ بلا تركيز (تشغيلٌ من المحرّر، أو نقرةٌ في
+    /// مكانٍ آخر أثناء الإقلاع) كانت ستبدأ صامتة — والانترو أوّل ما يُسمع.
+    /// </summary>
     private void OnApplicationFocus(bool focused)
     {
         if (Application.isEditor) return;
+        if (focused) hadFocus = true;
+        if (!hadFocus) return;
         AudioListener.pause = !focused;
     }
 

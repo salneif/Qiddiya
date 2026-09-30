@@ -148,6 +148,26 @@ public class ChromaSave : MonoBehaviour
 
     // ---------- الزرّ ----------
 
+    /// <summary>تنقّلٌ صريح من أعلى لأسفل يلفّ من الطرفين — التلقائي كان يتردّد بين أزرارٍ مائلة المواضع.</summary>
+    private static void Chain(Transform menu)
+    {
+        var buttons = new System.Collections.Generic.List<Button>();
+        foreach (Transform child in menu)
+        {
+            var b = child.GetComponent<Button>();
+            if (b != null && child.gameObject.activeSelf) buttons.Add(b);
+        }
+        buttons.Sort((a, b) => ((RectTransform)b.transform).anchoredPosition.y.CompareTo(((RectTransform)a.transform).anchoredPosition.y));
+        int n = buttons.Count;
+        for (int i = 0; i < n; i++)
+            buttons[i].navigation = new Navigation
+            {
+                mode = Navigation.Mode.Explicit,
+                selectOnUp = buttons[(i - 1 + n) % n],
+                selectOnDown = buttons[(i + 1) % n],
+            };
+    }
+
     private void Update()
     {
         if (!inMenu || buttonDone || Time.unscaledTime < nextTry) return;
@@ -209,6 +229,7 @@ public class ChromaSave : MonoBehaviour
                 button.onClick.SetPersistentListenerState(i, UnityEventCallState.Off);   // لا LoadTargetScene
         button.onClick.AddListener(Continue);
 
+        Chain(menu);
         MenuBaseline.Recapture(panels);
         UIPanel panel = menu.GetComponent<UIPanel>();
         MenuBaseline.SetFirst(panel, copy);   // يد التحكّم تبدأ على Continue

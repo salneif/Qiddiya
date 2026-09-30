@@ -51,11 +51,22 @@ public class StuckWatch : MonoBehaviour
 
     private Canvas canvas;
     private CanvasGroup group;
-    private TextMeshProUGUI text, shade;
+    private ChromaWardrobePrompt key;
     private float alpha;
 
-    private void OnEnable() => SceneManager.sceneLoaded += OnSceneLoaded;
-    private void OnDisable() => SceneManager.sceneLoaded -= OnSceneLoaded;
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        InputScheme.Changed += OnScheme;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        InputScheme.Changed -= OnScheme;
+    }
+
+    private void OnScheme() => key?.Refresh();
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
@@ -191,11 +202,18 @@ public class StuckWatch : MonoBehaviour
         if (canvas == null && !on) return;
         Build();
 
-        if (on) text.text = shade.text = "STUCK?   " + (InputScheme.UsingGamepad ? "OPTIONS" : "ESC") + "  >  RESPAWN";
         alpha = Mathf.MoveTowards(alpha, target, Time.unscaledDeltaTime * (on ? 3f : 4f));
         group.alpha = alpha * alpha * (3f - 2f * alpha);
         bool visible = alpha > 0.001f;
         if (canvas.enabled != visible) canvas.enabled = visible;
+    }
+
+    private static TextMeshProUGUI Word(Transform parent, string s, Color color, TextAlignmentOptions align, Vector2 pivot, Vector2 at)
+    {
+        TextMeshProUGUI text = ChromaWardrobeArt.NewText(parent, s, false, 34f, color, align);
+        ChromaWardrobeArt.Place(text, new Vector2(0.5f, 0f), pivot, at, new Vector2(420f, 44f));
+        text.text = s;
+        return text;
     }
 
     private void Build()
@@ -204,10 +222,19 @@ public class StuckWatch : MonoBehaviour
         canvas = ChromaWardrobeArt.NewCanvas(transform, "StuckHint", -1, out group);
         Color paper = ChromaWardrobeArt.Paper, ink = ChromaWardrobeArt.Ink;
 
-        shade = ChromaWardrobeArt.NewText(canvas.transform, "Shade", false, 32f, new Color(ink.r, ink.g, ink.b, 0.8f), TextAlignmentOptions.Center);
-        ChromaWardrobeArt.Place(shade, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(3f, 21f), new Vector2(1000f, 44f));
-        text = ChromaWardrobeArt.NewText(canvas.transform, "Hint", false, 32f, paper, TextAlignmentOptions.Center);
-        ChromaWardrobeArt.Place(text, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 24f), new Vector2(1000f, 44f));
+        // STUCK?  [زرّ الإيقاف بصورته]  >  RESPAWN
+        const float y = 24f, size = 58f, gap = 16f;
+        Color shadeColor = new Color(ink.r, ink.g, ink.b, 0.8f);
+        Word(canvas.transform, "STUCK?", shadeColor, TextAlignmentOptions.Right, new Vector2(1f, 0f), new Vector2(-size * 0.5f - gap + 3f, y - 3f));
+        Word(canvas.transform, "STUCK?", paper, TextAlignmentOptions.Right, new Vector2(1f, 0f), new Vector2(-size * 0.5f - gap, y));
+        Word(canvas.transform, ">  RESPAWN", shadeColor, TextAlignmentOptions.Left, new Vector2(0f, 0f), new Vector2(size * 0.5f + gap + 3f, y - 3f));
+        Word(canvas.transform, ">  RESPAWN", paper, TextAlignmentOptions.Left, new Vector2(0f, 0f), new Vector2(size * 0.5f + gap, y));
+
+        key = new ChromaWardrobePrompt(canvas.transform, size, ChromaWardrobePrompt.Pad.Options, "ESC");
+        RectTransform r = key.Rect;
+        r.anchorMin = r.anchorMax = new Vector2(0.5f, 0f);
+        r.pivot = new Vector2(0.5f, 0f);
+        r.anchoredPosition = new Vector2(0f, y - 8f);
         group.alpha = 0f;
         canvas.enabled = false;
     }

@@ -981,17 +981,8 @@ public class ChromaWardrobe : MonoBehaviour
 
     /// <summary>زرٌّ ثم نصّه، صفًّا صغيرًا داخل صفّ الأزرار.</summary>
     private static ChromaWardrobePrompt Hint(RectTransform parent, string label, Color color,
-                                             ChromaWardrobePrompt.Pad pad, params string[] keys)
-    {
-        RectTransform group = ChromaWardrobeArt.NewRow(parent, label, 8f, false);
-        group.sizeDelta = new Vector2(10f, 44f);
-
-        var prompt = new ChromaWardrobePrompt(group, 36f, pad, keys);
-        TextMeshProUGUI text = ChromaWardrobeArt.NewText(group, "Text", false, 26f, color, TextAlignmentOptions.Left);
-        text.text = label;
-        text.rectTransform.sizeDelta = new Vector2(10f, 44f);
-        return prompt;
-    }
+                                             ChromaWardrobePrompt.Pad pad, params string[] keys) =>
+        ChromaWardrobePrompt.Labeled(parent, label, color, 44f, 26f, pad, keys);
 
     /// <summary>«معاينة» في الركن السفلي من جهة اللاعب (<see cref="Dock"/>)، فوقه لا فوق اللوحة، حين يُعرض غير الملبوس.</summary>
     private void BuildWatermark(Color ink)

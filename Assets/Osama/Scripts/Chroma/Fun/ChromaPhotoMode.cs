@@ -73,6 +73,7 @@ public class ChromaPhotoMode : MonoBehaviour
     private Canvas canvas;
     private CanvasGroup group;
     private GameObject hints, frame;
+    private readonly List<ChromaWardrobePrompt> prompts = new List<ChromaWardrobePrompt>();
     private TextMeshProUGUI caption, saved;
     private Image flash;
     private float flashAt = -10f, savedAt = -10f;
@@ -81,11 +82,21 @@ public class ChromaPhotoMode : MonoBehaviour
     private Canvas pauseCanvas;
     private float nextPauseScan;
 
-    private void OnEnable() => SceneManager.sceneLoaded += OnSceneLoaded;
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        InputScheme.Changed += RefreshPrompts;
+    }
+
+    private void RefreshPrompts()
+    {
+        foreach (ChromaWardrobePrompt p in prompts) p.Refresh();
+    }
 
     private void OnDisable()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
+        InputScheme.Changed -= RefreshPrompts;
         if (IsOpen) Close(true);
     }
 
@@ -425,14 +436,17 @@ public class ChromaPhotoMode : MonoBehaviour
         // التلميحات أسفل الوسط بحروف الورق وظلّ الحبر
         hints = ChromaWardrobeArt.NewRect(canvas.transform, "Hints").gameObject;
         ChromaWardrobeArt.Stretch(hints.GetComponent<RectTransform>());
-        const string help = "MOVE CAMERA: STICKS / WASD / MOUSE     ZOOM: TRIGGERS / Z X / WHEEL     " +
-                            "PHOTO: CROSS / ENTER     HIDE: TRIANGLE / H     EXIT: CIRCLE / P";
-        var shade = ChromaWardrobeArt.NewText(hints.transform, "HelpShade", false, 26f, new Color(ink.r, ink.g, ink.b, 0.8f), TextAlignmentOptions.Center);
-        ChromaWardrobeArt.Place(shade, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(3, 27), new Vector2(1800, 40));
-        shade.text = help;
-        var text = ChromaWardrobeArt.NewText(hints.transform, "Help", false, 26f, paper, TextAlignmentOptions.Center);
-        ChromaWardrobeArt.Place(text, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(1800, 40));
-        text.text = help;
+        // كل فعلٍ بصورة زرّه (يد / كيبورد حسب الجهاز) وكلمته، على شريطٍ معتمٍ خفيف يُقرأ فوق أيّ مشهد
+        Image strip = ChromaWardrobeArt.NewImage(hints.transform, "Strip", null, new Color(0f, 0f, 0f, 0.38f));
+        ChromaWardrobeArt.Place(strip, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 14), new Vector2(1500, 76));
+        RectTransform row = ChromaWardrobeArt.NewRow(hints.transform, "Help", 40f);
+        ChromaWardrobeArt.Place(row, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 22), new Vector2(10, 60));
+        prompts.Clear();
+        prompts.Add(ChromaWardrobePrompt.Labeled(row, "MOVE", paper, 48f, 28f, ChromaWardrobePrompt.Pad.RightStick, "W", "A", "S", "D"));
+        prompts.Add(ChromaWardrobePrompt.Labeled(row, "ZOOM", paper, 48f, 28f, ChromaWardrobePrompt.Pad.Triggers, "Z", "X"));
+        prompts.Add(ChromaWardrobePrompt.Labeled(row, "PHOTO", paper, 48f, 28f, ChromaWardrobePrompt.Pad.Cross, "ENTER"));
+        prompts.Add(ChromaWardrobePrompt.Labeled(row, "HIDE", paper, 48f, 28f, ChromaWardrobePrompt.Pad.Triangle, "H"));
+        prompts.Add(ChromaWardrobePrompt.Labeled(row, "EXIT", paper, 48f, 28f, ChromaWardrobePrompt.Pad.Circle, "P"));
         var title = ChromaWardrobeArt.NewText(hints.transform, "Mode", true, 44f, paper, TextAlignmentOptions.Center);
         ChromaWardrobeArt.Place(title, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -28), new Vector2(800, 60));
         title.text = "PHOTO MODE";
