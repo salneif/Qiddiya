@@ -254,6 +254,7 @@ public class PauseMenuFix : MonoBehaviour
         var resumeRect = resume as RectTransform;
         var exitRect = exit as RectTransform;
         if (resumeRect == null || exitRect == null) return;
+        UIPanel[] panels = MenuBaseline.Settle(holder.transform);   // الأزرار في حالها الطبيعية قبل النسخ
 
         // الخطوة بين الأزرار كما رصّها صاحب اللوحة (Resume → Settings → Exit)
         float step = (resumeRect.anchoredPosition.y - exitRect.anchoredPosition.y) * 0.5f;
@@ -268,6 +269,7 @@ public class PauseMenuFix : MonoBehaviour
             moved = 2;
         }
         exitRect.anchoredPosition = at + Vector2.down * step * moved;
+        MenuBaseline.Recapture(panels);   // وإلا أعادت لوحة علي Exit فوق Respawn عند الرجوع من الإعدادات
     }
 
     private static TMP_Text Clone(RectTransform template, string label, Vector2 at, UnityAction click)

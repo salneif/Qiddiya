@@ -173,8 +173,12 @@ public class ChromaSave : MonoBehaviour
         if (art == null || playRect == null) { buttonDone = true; return; }
         buttonDone = true;
 
-        // الخطوة بين الأزرار: من Play إلى أقرب زرٍّ تحته
+        // لوحة القائمة تعيد كل زرٍّ لموضعه الأوّل كلّما فُتحت: نعيدها لحالها (لا زرّ منتفخ يُنسخ)،
+        // ثم نلتقطها من جديد بعد النقل
         Transform menu = play.transform.parent;
+        UIPanel[] panels = MenuBaseline.Settle(menu);
+
+        // الخطوة بين الأزرار: من Play إلى أقرب زرٍّ تحته
         float step = 0f, py = playRect.anchoredPosition.y;
         foreach (Transform child in menu)
         {
@@ -204,6 +208,11 @@ public class ChromaSave : MonoBehaviour
             if (button.onClick.GetPersistentMethodName(i) != "PlayOneShot")
                 button.onClick.SetPersistentListenerState(i, UnityEventCallState.Off);   // لا LoadTargetScene
         button.onClick.AddListener(Continue);
+
+        MenuBaseline.Recapture(panels);
+        UIPanel panel = menu.GetComponent<UIPanel>();
+        MenuBaseline.SetFirst(panel, copy);   // يد التحكّم تبدأ على Continue
+        if (panel != null) panel.LastSelected = copy;
 
         EventSystem events = EventSystem.current;
         if (events != null && (events.currentSelectedGameObject == null || events.currentSelectedGameObject == play.gameObject))
